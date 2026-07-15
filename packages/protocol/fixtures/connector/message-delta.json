@@ -1,0 +1,10 @@
+{
+  "type": "message.delta",
+  "visibility": "public",
+  "conversationId": "conversation_01JY5N7P8Q",
+  "runId": "run_01JY5N7P8Q",
+  "messageId": "message_01JY5N7P8Q",
+  "data": {
+    "delta": "Hello"
+  }
+}

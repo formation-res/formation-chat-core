@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "type",
+    "citationId",
+    "sourceId"
+  ],
+  "properties": {
+    "type": {
+      "const": "citation",
+      "type": "string"
+    },
+    "citationId": {
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+      "type": "string"
+    },
+    "sourceId": {
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+      "type": "string"
+    },
+    "title": {
+      "minLength": 1,
+      "maxLength": 500,
+      "type": "string"
+    },
+    "url": {
+      "format": "uri",
+      "pattern": "^https://",
+      "maxLength": 2048,
+      "type": "string"
+    },
+    "excerpt": {
+      "maxLength": 2000,
+      "type": "string"
+    }
+  }
+}

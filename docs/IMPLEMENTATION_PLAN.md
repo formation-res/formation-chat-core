@@ -112,6 +112,10 @@ protocol documentation
 
 **Estimated scope:** Medium
 
+**Completed:** 2026-07-15 in `4d39ee6`. Valid and adversarial identity fixtures covered trusted
+field overrides, expiry, audience, tenant/site isolation, token scope, and credential leakage; all
+repository gates passed.
+
 ### Task 4: Define conversation, message, run, and event contracts
 
 **Description:** Specify conversations, participants, message lifecycle, discriminated content

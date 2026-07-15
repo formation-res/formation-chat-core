@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "type",
+    "requestId",
+    "inputKind",
+    "label",
+    "required",
+    "status"
+  ],
+  "properties": {
+    "type": {
+      "const": "structured_input",
+      "type": "string"
+    },
+    "requestId": {
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+      "type": "string"
+    },
+    "inputKind": {
+      "const": "email",
+      "type": "string"
+    },
+    "label": {
+      "minLength": 1,
+      "maxLength": 200,
+      "type": "string"
+    },
+    "required": {
+      "type": "boolean"
+    },
+    "status": {
+      "anyOf": [
+        {
+          "const": "pending",
+          "type": "string"
+        },
+        {
+          "const": "submitted",
+          "type": "string"
+        },
+        {
+          "const": "declined",
+          "type": "string"
+        }
+      ]
+    }
+  }
+}

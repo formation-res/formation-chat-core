@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "type",
+    "toolCallId",
+    "label",
+    "status"
+  ],
+  "properties": {
+    "type": {
+      "const": "tool_status",
+      "type": "string"
+    },
+    "toolCallId": {
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+      "type": "string"
+    },
+    "label": {
+      "minLength": 1,
+      "maxLength": 200,
+      "type": "string"
+    },
+    "status": {
+      "anyOf": [
+        {
+          "const": "started",
+          "type": "string"
+        },
+        {
+          "const": "completed",
+          "type": "string"
+        },
+        {
+          "const": "failed",
+          "type": "string"
+        }
+      ]
+    }
+  }
+}

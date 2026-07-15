@@ -1,0 +1,292 @@
+{
+  "openapi": "3.1.1",
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "info": {
+    "title": "Formation Chat Core Public API",
+    "version": "0.1.0",
+    "description": "Public session and conversation API. Writes are ordinary HTTP requests; conversation events stream over SSE."
+  },
+  "servers": [{ "url": "/" }],
+  "security": [{ "sessionToken": [] }],
+  "paths": {
+    "/v1/sessions": {
+      "post": {
+        "operationId": "bootstrapAnonymousSession",
+        "security": [],
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "../schemas/identity/anonymous-bootstrap-request.schema.json" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Session created or resumed",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "../schemas/identity/session-bootstrap-response.schema.json" }
+              }
+            }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/identity/exchange": {
+      "post": {
+        "operationId": "exchangeHostIdentity",
+        "security": [{ "serviceCredential": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "../schemas/identity/identity-exchange-request.schema.json" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Scoped session",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "../schemas/identity/session-bootstrap-response.schema.json" }
+              }
+            }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/conversations": {
+      "get": {
+        "operationId": "listConversations",
+        "parameters": [
+          { "$ref": "#/components/parameters/Cursor" },
+          { "$ref": "#/components/parameters/Limit" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cursor-paginated conversations",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "../schemas/chat/conversation-list.schema.json" }
+              }
+            }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "post": {
+        "operationId": "createConversation",
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "../schemas/chat/create-conversation-request.schema.json" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Conversation created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "../schemas/chat/conversation.schema.json" }
+              }
+            }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/conversations/{conversationId}": {
+      "parameters": [{ "$ref": "#/components/parameters/ConversationId" }],
+      "get": {
+        "operationId": "getConversation",
+        "responses": {
+          "200": {
+            "description": "Canonical conversation snapshot",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "../schemas/chat/conversation.schema.json" }
+              }
+            }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/conversations/{conversationId}/messages": {
+      "parameters": [{ "$ref": "#/components/parameters/ConversationId" }],
+      "get": {
+        "operationId": "listMessages",
+        "parameters": [
+          { "$ref": "#/components/parameters/Cursor" },
+          { "$ref": "#/components/parameters/Limit" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cursor-paginated messages",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "../schemas/chat/message-list.schema.json" }
+              }
+            }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "post": {
+        "operationId": "submitMessage",
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "../schemas/chat/submit-message-request.schema.json" }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Message accepted",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "../schemas/chat/message.schema.json" }
+              }
+            }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/conversations/{conversationId}/events": {
+      "parameters": [{ "$ref": "#/components/parameters/ConversationId" }],
+      "get": {
+        "operationId": "streamConversationEvents",
+        "parameters": [{ "$ref": "#/components/parameters/LastEventId" }],
+        "responses": {
+          "200": {
+            "description": "SSE stream. Each frame uses id=<eventId>, event=<type>, and data=<JSON ConversationEvent>. Only events visible to the session scope are emitted.",
+            "content": {
+              "text/event-stream": {
+                "schema": { "type": "string" },
+                "x-event-payload-schema": {
+                  "$ref": "../schemas/chat/public-conversation-event.schema.json"
+                }
+              }
+            }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/conversations/{conversationId}/inputs/{requestId}": {
+      "parameters": [
+        { "$ref": "#/components/parameters/ConversationId" },
+        { "$ref": "#/components/parameters/RequestId" }
+      ],
+      "post": {
+        "operationId": "submitStructuredInput",
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "../schemas/chat/submit-structured-input-request.schema.json"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Input accepted" },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/conversations/{conversationId}/cancel": {
+      "parameters": [{ "$ref": "#/components/parameters/ConversationId" }],
+      "post": {
+        "operationId": "cancelConversationRun",
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "responses": {
+          "202": { "description": "Cancellation requested" },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/conversations/{conversationId}/retry": {
+      "parameters": [{ "$ref": "#/components/parameters/ConversationId" }],
+      "post": {
+        "operationId": "retryConversationRun",
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "responses": {
+          "202": { "description": "Retry accepted" },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "sessionToken": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT" },
+      "serviceCredential": { "type": "apiKey", "in": "header", "name": "X-Formation-Service-Key" }
+    },
+    "parameters": {
+      "ConversationId": {
+        "name": "conversationId",
+        "in": "path",
+        "required": true,
+        "schema": { "$ref": "../schemas/common/opaque-id.schema.json" }
+      },
+      "RequestId": {
+        "name": "requestId",
+        "in": "path",
+        "required": true,
+        "schema": { "$ref": "../schemas/common/opaque-id.schema.json" }
+      },
+      "Cursor": {
+        "name": "cursor",
+        "in": "query",
+        "schema": {
+          "$ref": "../schemas/common/cursor-page-request.schema.json#/properties/cursor"
+        }
+      },
+      "Limit": {
+        "name": "limit",
+        "in": "query",
+        "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 }
+      },
+      "LastEventId": {
+        "name": "Last-Event-ID",
+        "in": "header",
+        "schema": { "$ref": "../schemas/common/opaque-id.schema.json" }
+      },
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": true,
+        "description": "Scoped retry key. Same key and payload returns the original result; same key with a different payload returns 409 IDEMPOTENCY_CONFLICT.",
+        "schema": {
+          "$ref": "../schemas/common/idempotency-metadata.schema.json#/properties/idempotencyKey"
+        }
+      }
+    },
+    "responses": {
+      "Error": {
+        "description": "Stable error envelope",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "../schemas/common/error-envelope.schema.json" }
+          }
+        }
+      }
+    }
+  }
+}

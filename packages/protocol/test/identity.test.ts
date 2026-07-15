@@ -1,5 +1,5 @@
-import Ajv2020 from 'ajv/dist/2020.js';
-import addFormats from 'ajv-formats';
+import { Ajv2020 } from 'ajv/dist/2020.js';
+import formatsPlugin from 'ajv-formats';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -11,7 +11,7 @@ import {
 } from '../src/index.js';
 
 const ajv = new Ajv2020({ allErrors: true, strict: true });
-addFormats(ajv);
+formatsPlugin.default(ajv);
 
 describe('identity and session contracts', () => {
   it('rejects browser attempts to claim trusted identity or routing fields', () => {
@@ -86,7 +86,7 @@ describe('identity and session contracts', () => {
     ).toBe(true);
   });
 
-  it('keeps service credentials out of bootstrap responses', () => {
+  it('rejects service credentials in bootstrap responses', () => {
     const validate = ajv.compile(SessionBootstrapResponseSchema);
     const response = {
       accessToken: 'short-lived-token',

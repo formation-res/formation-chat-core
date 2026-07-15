@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "anyOf": [
+    {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "value",
+        "consent"
+      ],
+      "properties": {
+        "value": {
+          "format": "email",
+          "maxLength": 320,
+          "type": "string"
+        },
+        "consent": {
+          "const": true,
+          "type": "boolean"
+        }
+      }
+    },
+    {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "declined"
+      ],
+      "properties": {
+        "declined": {
+          "const": true,
+          "type": "boolean"
+        }
+      }
+    }
+  ]
+}

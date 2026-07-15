@@ -1,5 +1,5 @@
-import Ajv2020 from 'ajv/dist/2020.js';
-import addFormats from 'ajv-formats';
+import { Ajv2020 } from 'ajv/dist/2020.js';
+import formatsPlugin from 'ajv-formats';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -12,7 +12,7 @@ import {
 } from '../src/index.js';
 
 const ajv = new Ajv2020({ allErrors: true, strict: true });
-addFormats(ajv);
+formatsPlugin.default(ajv);
 
 describe('common protocol schemas', () => {
   it('accepts opaque identifiers and rejects whitespace-bearing identifiers', () => {

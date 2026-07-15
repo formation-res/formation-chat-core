@@ -1,0 +1,213 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": true,
+  "type": "object",
+  "required": [
+    "conversationId",
+    "tenantId",
+    "siteId",
+    "principalId",
+    "agentRef",
+    "status",
+    "participants",
+    "createdAt",
+    "updatedAt"
+  ],
+  "properties": {
+    "conversationId": {
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+      "type": "string"
+    },
+    "tenantId": {
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+      "type": "string"
+    },
+    "siteId": {
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+      "type": "string"
+    },
+    "principalId": {
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+      "type": "string"
+    },
+    "agentRef": {
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+      "type": "string"
+    },
+    "status": {
+      "anyOf": [
+        {
+          "const": "active",
+          "type": "string"
+        },
+        {
+          "const": "completed",
+          "type": "string"
+        },
+        {
+          "const": "cancelled",
+          "type": "string"
+        }
+      ]
+    },
+    "participants": {
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "additionalProperties": true,
+            "type": "object",
+            "required": [
+              "participantId",
+              "kind",
+              "principalId"
+            ],
+            "properties": {
+              "participantId": {
+                "minLength": 1,
+                "maxLength": 128,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+                "type": "string"
+              },
+              "kind": {
+                "const": "user",
+                "type": "string"
+              },
+              "principalId": {
+                "minLength": 1,
+                "maxLength": 128,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+                "type": "string"
+              },
+              "agentRef": {
+                "not": {}
+              }
+            }
+          },
+          {
+            "additionalProperties": true,
+            "type": "object",
+            "required": [
+              "participantId",
+              "kind",
+              "agentRef"
+            ],
+            "properties": {
+              "participantId": {
+                "minLength": 1,
+                "maxLength": 128,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+                "type": "string"
+              },
+              "kind": {
+                "const": "agent",
+                "type": "string"
+              },
+              "principalId": {
+                "not": {}
+              },
+              "agentRef": {
+                "minLength": 1,
+                "maxLength": 128,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+                "type": "string"
+              }
+            }
+          },
+          {
+            "additionalProperties": true,
+            "type": "object",
+            "required": [
+              "participantId",
+              "kind"
+            ],
+            "properties": {
+              "participantId": {
+                "minLength": 1,
+                "maxLength": 128,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+                "type": "string"
+              },
+              "kind": {
+                "pattern": "^[a-z][a-z0-9_]*$",
+                "maxLength": 64,
+                "not": {
+                  "enum": [
+                    "user",
+                    "agent"
+                  ]
+                },
+                "type": "string"
+              },
+              "principalId": {
+                "minLength": 1,
+                "maxLength": 128,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+                "type": "string"
+              },
+              "agentRef": {
+                "minLength": 1,
+                "maxLength": 128,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+                "type": "string"
+              }
+            }
+          }
+        ]
+      },
+      "minItems": 2,
+      "allOf": [
+        {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "const": "user"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "const": "agent"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        }
+      ]
+    },
+    "createdAt": {
+      "format": "date-time",
+      "pattern": "Z$",
+      "type": "string"
+    },
+    "updatedAt": {
+      "format": "date-time",
+      "pattern": "Z$",
+      "type": "string"
+    }
+  }
+}
