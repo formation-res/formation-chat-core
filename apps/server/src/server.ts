@@ -1,0 +1,44 @@
+import { randomUUID } from 'node:crypto';
+
+import Fastify, { type FastifyServerOptions } from 'fastify';
+
+export interface BuildServerOptions {
+  checkDatabase: () => Promise<void>;
+  logger?: FastifyServerOptions['logger'];
+}
+
+export function buildServer(options: BuildServerOptions) {
+  const server = Fastify({
+    bodyLimit: 1024 * 1024,
+    genReqId: () => randomUUID(),
+    logger: options.logger ?? true,
+    requestIdHeader: false,
+    requestTimeout: 120_000,
+  });
+
+  server.addHook('onSend', async (request, reply, payload) => {
+    void reply.header('x-correlation-id', request.id);
+    return payload;
+  });
+
+  server.get('/health/live', async () => ({ status: 'ok' as const }));
+
+  server.get('/health/ready', async (request, reply) => {
+    try {
+      await options.checkDatabase();
+      return { status: 'ready' as const };
+    } catch {
+      void reply.code(503);
+      return {
+        status: 'unavailable' as const,
+        error: {
+          code: 'DATABASE_UNAVAILABLE' as const,
+          message: 'The database is unavailable.',
+          correlationId: request.id,
+        },
+      };
+    }
+  });
+
+  return server;
+}

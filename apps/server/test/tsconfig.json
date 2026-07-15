@@ -1,0 +1,11 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "noEmit": true,
+    "rootDir": "..",
+    "types": ["node", "vitest/globals"]
+  },
+  "include": ["./**/*.ts", "../src/**/*.ts"]
+}
