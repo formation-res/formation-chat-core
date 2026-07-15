@@ -295,12 +295,19 @@ describe('RunWorker', () => {
       database,
       events,
       () => blockingConnector,
-      { leaseMs: 30_000, maxAttempts: 3 },
+      { leaseMs: 50, maxAttempts: 3 },
       coordinator,
     );
     const service = new RunService(database, coordinator);
     const processing = worker.processNext();
     await waitForRunStarted();
+    await new Promise((resolve) => setTimeout(resolve, 120));
+    const competingWorker = new RunWorker(database, events, () => new MockConnector(), {
+      leaseMs: 50,
+      maxAttempts: 3,
+    });
+
+    expect(await competingWorker.processNext()).toBe(false);
 
     const outcome = await service.cancel(scope, conversation.conversationId, crypto.randomUUID());
     await processing;

@@ -59,6 +59,18 @@ export class RunWorker {
 
     const controller = new AbortController();
     const unregister = this.cancellation?.register(run.run_id, { controller, connector });
+    const heartbeat = setInterval(
+      () => {
+        void this.renewLease(run).then(
+          (renewed) => {
+            if (!renewed) controller.abort();
+          },
+          () => controller.abort(),
+        );
+      },
+      Math.max(1, Math.floor(this.options.leaseMs / 2)),
+    );
+    heartbeat.unref();
     try {
       const context = await this.loadContext(run);
       for await (const event of connector.run({
@@ -66,9 +78,12 @@ export class RunWorker {
         assistantMessageId: run.assistant_message_id,
         signal: controller.signal,
       })) {
-        if (controller.signal.aborted || (await this.isCancellationRequested(run.run_id))) {
-          controller.abort();
-          await connector.cancel?.(run.run_id);
+        const cancellationRequested = await this.isCancellationRequested(run.run_id);
+        if (controller.signal.aborted || cancellationRequested) {
+          if (!controller.signal.aborted) {
+            controller.abort();
+            await connector.cancel?.(run.run_id);
+          }
           await this.cancel(run, now);
           return true;
         }
@@ -106,6 +121,7 @@ export class RunWorker {
         await this.fail(run.run_id, 'CONNECTOR_EXECUTION_FAILED', now);
       }
     } finally {
+      clearInterval(heartbeat);
       unregister?.();
     }
     return true;
@@ -311,6 +327,20 @@ export class RunWorker {
       .where('run_id', '=', runId)
       .executeTakeFirstOrThrow();
     return run.status === 'cancel_requested' || run.status === 'cancelled';
+  }
+
+  private async renewLease(run: ClaimedRun): Promise<boolean> {
+    const result = await this.database
+      .updateTable('agent_runs')
+      .set({
+        lease_expires_at: new Date(Date.now() + this.options.leaseMs),
+        updated_at: new Date(),
+      })
+      .where('run_id', '=', run.run_id)
+      .where('status', '=', 'running')
+      .where('attempt', '=', run.attempt)
+      .executeTakeFirst();
+    return result.numUpdatedRows === 1n;
   }
 
   private async cancel(run: ClaimedRun, now: Date): Promise<void> {
