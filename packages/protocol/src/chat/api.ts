@@ -1,6 +1,6 @@
 import { type Static, Type } from '@sinclair/typebox';
 
-import { CursorPageSchema } from '../common/index.js';
+import { CursorPageSchema, OpaqueIdSchema } from '../common/index.js';
 import { TextPartSchema } from './content.js';
 import { ConversationSchema, MessageSchema } from './resources.js';
 
@@ -26,6 +26,20 @@ export const SubmitStructuredInputRequestSchema = Type.Union([
   Type.Object({ declined: Type.Literal(true) }, { additionalProperties: false }),
 ]);
 export type SubmitStructuredInputRequest = Static<typeof SubmitStructuredInputRequestSchema>;
+
+export const CancelRunResponseSchema = Type.Object(
+  {
+    conversationId: OpaqueIdSchema,
+    runId: OpaqueIdSchema,
+    cancellationStatus: Type.Union([
+      Type.Literal('cancel_requested'),
+      Type.Literal('cancelled'),
+      Type.Literal('already_finished'),
+    ]),
+  },
+  { additionalProperties: false },
+);
+export type CancelRunResponse = Static<typeof CancelRunResponseSchema>;
 
 export const ConversationListSchema = Type.Object(
   { data: Type.Array(ConversationSchema), pagination: CursorPageSchema },

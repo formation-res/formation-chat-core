@@ -5,6 +5,7 @@ import formatsPlugin from 'ajv-formats';
 import { describe, expect, it } from 'vitest';
 
 import {
+  CancelRunResponseSchema,
   ConnectorEventSchema,
   ConnectorRunRequestSchema,
   ConversationSchema,
@@ -38,6 +39,21 @@ const readConnectorDelta = (event: ConnectorEvent): string | undefined => {
 };
 
 describe('chat and connector contracts', () => {
+  it('defines explicit best-effort cancellation outcomes', () => {
+    const validate = ajv.compile(CancelRunResponseSchema);
+
+    expect(
+      validate({
+        conversationId: 'conversation_1',
+        runId: 'run_1',
+        cancellationStatus: 'cancel_requested',
+      }),
+    ).toBe(true);
+    expect(
+      validate({ conversationId: 'conversation_1', runId: 'run_1', cancellationStatus: 'maybe' }),
+    ).toBe(false);
+  });
+
   it('exports a discriminated TypeScript connector event union', () => {
     expect(
       readConnectorDelta({

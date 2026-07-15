@@ -1,4 +1,5 @@
 import {
+  CancelRunResponseSchema,
   ConversationListSchema,
   CreateConversationRequestSchema,
   MessageListSchema,
@@ -29,6 +30,7 @@ import {
 } from './resources.js';
 
 export const chatSchemaArtifacts = {
+  'cancel-run-response': CancelRunResponseSchema,
   'agent-run': AgentRunSchema,
   'citation-part': CitationPartSchema,
   'connector-event': ConnectorEventSchema,

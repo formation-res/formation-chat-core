@@ -216,7 +216,14 @@
         "operationId": "cancelConversationRun",
         "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
         "responses": {
-          "202": { "description": "Cancellation requested" },
+          "202": {
+            "description": "Best-effort cancellation outcome",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "../schemas/chat/cancel-run-response.schema.json" }
+              }
+            }
+          },
           "default": { "$ref": "#/components/responses/Error" }
         }
       }
