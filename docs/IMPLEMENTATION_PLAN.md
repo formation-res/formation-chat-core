@@ -294,6 +294,15 @@ event validator, integration tests
 
 **Estimated scope:** Medium, use separate commits for SDK and mock implementation
 
+**Completed:** 2026-07-15 in `d222e7a`, `d82ab01`, `96a2052`, `cd7e168`, `4f72e56`, and
+`fe131da`. The
+connector SDK defines a vendor-neutral async event boundary, and the deterministic mock covers
+success and failure output. User-message transactions schedule one durable run. PostgreSQL leases
+support restart recovery and renew leases during long calls. Stable assistant message IDs prevent
+duplicate transcript entries on retry. Connector output is validated before storage, private visibility stays out of SSE, and
+the scoped idempotent cancellation API interrupts active in-process connectors on a best-effort
+basis. Local Compose runs the mock worker; the server default leaves connector execution disabled.
+
 ### Checkpoint: Headless chat
 
 - A test client creates an anonymous session and conversation.

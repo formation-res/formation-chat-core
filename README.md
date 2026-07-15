@@ -9,11 +9,11 @@ to support other agent systems and message sources without changing the chat mod
 
 ## Project status
 
-Tasks 1 through 8 are complete. The repository now has the TypeScript toolchain, language-neutral
+Tasks 1 through 9 are complete. The repository now has the TypeScript toolchain, language-neutral
 contracts, PostgreSQL-backed sessions and conversations, idempotent user messages, ordered event
-storage, and reconnectable SSE delivery. Task 9 adds connector execution and the deterministic mock
-connector. UI and Haystack-specific work remain outside the core until that headless path is
-proven.
+storage, reconnectable SSE delivery, durable connector jobs, and a deterministic mock agent. Task
+10 adds the framework-neutral browser client. Haystack integration remains an adapter outside the
+core.
 
 ## Start here
 

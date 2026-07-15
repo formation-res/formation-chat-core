@@ -30,3 +30,9 @@ Use the returned cursor for the next page. Invalid cursors return `400 INVALID_C
 The server returns `401` for a missing or invalid bearer token. It returns `403` when the token
 lacks the required scope. Resources outside the token's tenant, site, or principal scope return
 `404` so the response does not reveal whether another scope owns the identifier.
+
+## Run cancellation
+
+`POST /v1/conversations/{conversationId}/cancel` requires `Idempotency-Key`. The response reports
+whether a queued run was cancelled, active work received a best-effort cancellation request, or the
+latest run had already finished. Retrying the same key returns the original outcome.
