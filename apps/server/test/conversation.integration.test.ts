@@ -27,6 +27,7 @@ let tokenB: string;
 beforeAll(async () => {
   await migrateDatabase(database);
   await database.deleteFrom('command_idempotency').execute();
+  await database.deleteFrom('agent_runs').execute();
   await database.deleteFrom('messages').execute();
   await database.deleteFrom('conversation_participants').execute();
   await database.deleteFrom('conversations').execute();
@@ -121,6 +122,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await database.deleteFrom('command_idempotency').execute();
+  await database.deleteFrom('agent_runs').execute();
   await database.deleteFrom('messages').execute();
   await database.deleteFrom('conversation_participants').execute();
   await database.deleteFrom('conversations').execute();
@@ -263,6 +265,12 @@ describe('message API', () => {
       .where('conversation_id', '=', conversation.conversationId)
       .execute();
     expect(rows).toHaveLength(1);
+    const runs = await database
+      .selectFrom('agent_runs')
+      .select(['trigger_message_id', 'status'])
+      .where('conversation_id', '=', conversation.conversationId)
+      .execute();
+    expect(runs).toEqual([{ trigger_message_id: first.json().messageId, status: 'queued' }]);
   });
 
   it('allocates unique contiguous order under concurrent submissions', async () => {

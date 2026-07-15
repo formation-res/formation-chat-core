@@ -17,6 +17,7 @@ beforeAll(async () => {
   await migrateDatabase(database);
   await database.deleteFrom('conversation_events').execute();
   await database.deleteFrom('command_idempotency').execute();
+  await database.deleteFrom('agent_runs').execute();
   await database.deleteFrom('messages').execute();
   await database.deleteFrom('conversation_participants').execute();
   await database.deleteFrom('conversations').execute();
@@ -55,6 +56,7 @@ beforeAll(async () => {
 beforeEach(async () => {
   await database.deleteFrom('conversation_events').execute();
   await database.deleteFrom('command_idempotency').execute();
+  await database.deleteFrom('agent_runs').execute();
   await database.deleteFrom('messages').execute();
   await database.deleteFrom('conversation_participants').execute();
   await database.deleteFrom('conversations').execute();

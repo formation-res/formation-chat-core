@@ -20,6 +20,7 @@ const server = buildServer({
 beforeAll(async () => {
   await migrateDatabase(database);
   await database.deleteFrom('command_idempotency').execute();
+  await database.deleteFrom('agent_runs').execute();
   await database.deleteFrom('messages').execute();
   await database.deleteFrom('conversation_participants').execute();
   await database.deleteFrom('conversations').execute();

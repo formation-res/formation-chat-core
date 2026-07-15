@@ -77,7 +77,7 @@ export class MessageService {
 
       const conversation = await transaction
         .selectFrom('conversations')
-        .select('conversation_id')
+        .select(['conversation_id', 'agent_ref'])
         .where('tenant_id', '=', scope.tenantId)
         .where('site_id', '=', scope.siteId)
         .where('principal_id', '=', scope.principalId)
@@ -103,6 +103,8 @@ export class MessageService {
         .returning('next_message_sequence')
         .executeTakeFirstOrThrow();
       const id = randomUUID();
+      const runId = randomUUID();
+      const assistantMessageId = randomUUID();
       await transaction
         .insertInto('messages')
         .values({
@@ -116,6 +118,19 @@ export class MessageService {
           status: 'completed',
           parts: JSON.stringify(request.parts),
           completed_at: now,
+        })
+        .execute();
+      await transaction
+        .insertInto('agent_runs')
+        .values({
+          run_id: runId,
+          tenant_id: scope.tenantId,
+          site_id: scope.siteId,
+          conversation_id: conversationId,
+          trigger_message_id: id,
+          assistant_message_id: assistantMessageId,
+          agent_ref: conversation.agent_ref,
+          status: 'queued',
         })
         .execute();
       await transaction

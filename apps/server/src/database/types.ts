@@ -106,6 +106,26 @@ export interface ConversationEventTable {
   occurred_at: Generated<Date>;
 }
 
+export interface AgentRunTable {
+  run_id: string;
+  tenant_id: string;
+  site_id: string;
+  conversation_id: string;
+  trigger_message_id: string;
+  assistant_message_id: string;
+  agent_ref: string;
+  status: 'queued' | 'running' | 'completed' | 'failed' | 'cancel_requested' | 'cancelled';
+  attempt: Generated<number>;
+  available_at: Generated<Date>;
+  claimed_at: Date | null;
+  lease_expires_at: Date | null;
+  cancel_requested_at: Date | null;
+  error_code: string | null;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+  completed_at: Date | null;
+}
+
 export interface DatabaseSchema {
   tenants: TenantTable;
   sites: SiteTable;
@@ -117,4 +137,5 @@ export interface DatabaseSchema {
   messages: MessageTable;
   command_idempotency: CommandIdempotencyTable;
   conversation_events: ConversationEventTable;
+  agent_runs: AgentRunTable;
 }

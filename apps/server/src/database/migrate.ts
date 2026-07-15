@@ -4,6 +4,7 @@ import * as createTenantsAndSites from './migrations/001_create_tenants_and_site
 import * as createAnonymousSessions from './migrations/002_create_anonymous_sessions.js';
 import * as createConversationsAndMessages from './migrations/003_create_conversations_and_messages.js';
 import * as createConversationEvents from './migrations/004_create_conversation_events.js';
+import * as createAgentRuns from './migrations/005_create_agent_runs.js';
 import type { Database } from './database.js';
 
 const migrations: Record<string, Migration> = {
@@ -11,6 +12,7 @@ const migrations: Record<string, Migration> = {
   '002_create_anonymous_sessions': createAnonymousSessions,
   '003_create_conversations_and_messages': createConversationsAndMessages,
   '004_create_conversation_events': createConversationEvents,
+  '005_create_agent_runs': createAgentRuns,
 };
 
 export class DatabaseMigrationError extends Error {
