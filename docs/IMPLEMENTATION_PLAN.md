@@ -175,6 +175,11 @@ configuration, server tests
 
 **Estimated scope:** Medium, split setup and first migration into separate commits
 
+**Completed:** 2026-07-15 in `9212b30` and `f0cefb2`. The Fastify health shell, validated
+configuration, PostgreSQL/Kysely lifecycle, repeatable tenant/site migration, safe startup,
+container image, Compose environment, and rollback policy are implemented. Unit gates, a clean
+PostgreSQL migration integration test, and an image-internal readiness smoke test passed.
+
 ### Task 6: Implement anonymous session bootstrap
 
 **Description:** Create or resume an anonymous principal and browser session for a trusted site.
