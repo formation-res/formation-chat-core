@@ -62,6 +62,9 @@ npm run typecheck
 
 **Estimated scope:** Medium
 
+**Completed:** 2026-07-15 in `355b78e`. Clean install resolved with zero vulnerabilities; build,
+test, lint, formatting, and type checking passed.
+
 ### Task 2: Define common protocol primitives
 
 **Description:** Define language-neutral schemas for opaque IDs, timestamps, cursor pagination,
