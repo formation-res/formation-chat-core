@@ -2,12 +2,17 @@ import { randomUUID } from 'node:crypto';
 
 import Fastify, { type FastifyServerOptions } from 'fastify';
 
+import { registerConversationRoutes } from './conversation/route.js';
+import type { ConversationService } from './conversation/service.js';
 import { registerSessionRoutes, type BootstrapAnonymous } from './session/route.js';
+import type { SessionTokenService } from './session/token.js';
 
 export interface BuildServerOptions {
   checkDatabase: () => Promise<void>;
   closeDatabase?: () => Promise<void>;
   bootstrapAnonymous?: BootstrapAnonymous;
+  conversationService?: ConversationService;
+  sessionTokens?: SessionTokenService;
   logger?: FastifyServerOptions['logger'];
 }
 
@@ -47,6 +52,9 @@ export function buildServer(options: BuildServerOptions) {
   });
 
   if (options.bootstrapAnonymous) registerSessionRoutes(server, options.bootstrapAnonymous);
+  if (options.conversationService && options.sessionTokens) {
+    registerConversationRoutes(server, options.conversationService, options.sessionTokens);
+  }
 
   return server;
 }
