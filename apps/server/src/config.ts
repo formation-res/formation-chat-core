@@ -6,6 +6,8 @@ export interface ServerConfig {
   port: number;
   logLevel: LogLevel;
   databasePoolMax: number;
+  sessionTokenSecret: string;
+  sessionTokenTtlSeconds: number;
 }
 
 export class ConfigurationError extends Error {
@@ -37,6 +39,7 @@ export function loadConfig(env: NodeJS.ProcessEnv): ServerConfig {
   const invalid: string[] = [];
   const port = parseInteger(env.PORT, 3000);
   const databasePoolMax = parseInteger(env.DB_POOL_MAX, 10);
+  const sessionTokenTtlSeconds = parseInteger(env.SESSION_TOKEN_TTL_SECONDS, 900);
   const logLevel = env.LOG_LEVEL ?? 'info';
 
   if (!isDatabaseUrl(env.DATABASE_URL)) invalid.push('DATABASE_URL');
@@ -44,6 +47,16 @@ export function loadConfig(env: NodeJS.ProcessEnv): ServerConfig {
   if (!logLevels.has(logLevel as LogLevel)) invalid.push('LOG_LEVEL');
   if (!Number.isInteger(databasePoolMax) || databasePoolMax < 1 || databasePoolMax > 100) {
     invalid.push('DB_POOL_MAX');
+  }
+  if (!env.SESSION_TOKEN_SECRET || Buffer.byteLength(env.SESSION_TOKEN_SECRET) < 32) {
+    invalid.push('SESSION_TOKEN_SECRET');
+  }
+  if (
+    !Number.isInteger(sessionTokenTtlSeconds) ||
+    sessionTokenTtlSeconds < 60 ||
+    sessionTokenTtlSeconds > 3600
+  ) {
+    invalid.push('SESSION_TOKEN_TTL_SECONDS');
   }
   if (invalid.length > 0) throw new ConfigurationError(invalid);
 
@@ -53,5 +66,7 @@ export function loadConfig(env: NodeJS.ProcessEnv): ServerConfig {
     port,
     logLevel: logLevel as LogLevel,
     databasePoolMax,
+    sessionTokenSecret: env.SESSION_TOKEN_SECRET as string,
+    sessionTokenTtlSeconds,
   };
 }

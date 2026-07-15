@@ -21,6 +21,7 @@ services:
       DATABASE_URL: postgresql://chat_core:chat_core@postgres:5432/chat_core
       LOG_LEVEL: info
       PORT: 3000
+      SESSION_TOKEN_SECRET: local-development-secret-change-me
     depends_on:
       postgres:
         condition: service_healthy

@@ -2,9 +2,12 @@ import { randomUUID } from 'node:crypto';
 
 import Fastify, { type FastifyServerOptions } from 'fastify';
 
+import { registerSessionRoutes, type BootstrapAnonymous } from './session/route.js';
+
 export interface BuildServerOptions {
   checkDatabase: () => Promise<void>;
   closeDatabase?: () => Promise<void>;
+  bootstrapAnonymous?: BootstrapAnonymous;
   logger?: FastifyServerOptions['logger'];
 }
 
@@ -42,6 +45,8 @@ export function buildServer(options: BuildServerOptions) {
       };
     }
   });
+
+  if (options.bootstrapAnonymous) registerSessionRoutes(server, options.bootstrapAnonymous);
 
   return server;
 }

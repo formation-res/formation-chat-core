@@ -15,13 +15,35 @@ describe('PostgreSQL persistence base', () => {
     const first = await migrateDatabase(database);
     const second = await migrateDatabase(database);
 
-    expect(first).toContainEqual(
-      expect.objectContaining({ migrationName: '001_create_tenants_and_sites', status: 'Success' }),
-    );
+    expect(first.every((migration) => migration.status === 'Success')).toBe(true);
     expect(second).toEqual([]);
+    const tables = await database.introspection.getTables();
+    expect(
+      tables
+        .map((table) => table.name)
+        .filter((name) =>
+          [
+            'tenants',
+            'sites',
+            'principals',
+            'browser_sessions',
+            'session_bootstrap_idempotency',
+          ].includes(name),
+        )
+        .sort(),
+    ).toEqual([
+      'browser_sessions',
+      'principals',
+      'session_bootstrap_idempotency',
+      'sites',
+      'tenants',
+    ]);
   });
 
   it('stores tenant-scoped sites', async () => {
+    await database.deleteFrom('session_bootstrap_idempotency').execute();
+    await database.deleteFrom('browser_sessions').execute();
+    await database.deleteFrom('principals').execute();
     await database.deleteFrom('sites').execute();
     await database.deleteFrom('tenants').execute();
     await database

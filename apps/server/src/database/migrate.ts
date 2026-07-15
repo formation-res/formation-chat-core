@@ -1,10 +1,12 @@
 import { Migrator, type Migration, type MigrationResult } from 'kysely/migration';
 
 import * as createTenantsAndSites from './migrations/001_create_tenants_and_sites.js';
+import * as createAnonymousSessions from './migrations/002_create_anonymous_sessions.js';
 import type { Database } from './database.js';
 
 const migrations: Record<string, Migration> = {
   '001_create_tenants_and_sites': createTenantsAndSites,
+  '002_create_anonymous_sessions': createAnonymousSessions,
 };
 
 export class DatabaseMigrationError extends Error {

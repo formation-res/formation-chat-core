@@ -2,12 +2,19 @@ import { loadConfig } from './config.js';
 import { checkDatabase, createDatabase } from './database/database.js';
 import { migrateDatabase } from './database/migrate.js';
 import { buildServer } from './server.js';
+import { SessionService } from './session/service.js';
 
 async function main(): Promise<void> {
   const config = loadConfig(process.env);
   const database = createDatabase(config);
+  const sessions = new SessionService(
+    database,
+    config.sessionTokenSecret,
+    config.sessionTokenTtlSeconds,
+  );
   const server = buildServer({
     checkDatabase: async () => checkDatabase(database),
+    bootstrapAnonymous: async (request, context) => sessions.bootstrapAnonymous(request, context),
     closeDatabase: async () => database.destroy(),
     logger: { level: config.logLevel },
   });
