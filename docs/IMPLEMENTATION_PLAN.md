@@ -139,6 +139,11 @@ contract tests
 
 **Estimated scope:** Medium, split message and event schemas if it exceeds five focused files
 
+**Completed:** 2026-07-15 in `6252c2b`. Contract fixtures cover streaming, failure, reconnect,
+citation, tool status, contact request, handoff, public/private separation, trusted correlation,
+and adversarial payloads. OpenAPI 3.1.1, generated-schema drift, TypeScript consumers, and a Python
+Draft 2020-12 validator passed with all repository gates.
+
 ### Checkpoint: Contract review
 
 - All schemas validate independently of server code.

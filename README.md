@@ -1,6 +1,6 @@
 # Formation Chat Core
 
-Formation Chat Core is a planned self-hosted, open-source service for durable AI chat. It will
+Formation Chat Core is a self-hosted, open-source service for durable AI chat. It will
 provide identity, sessions, conversations, message storage, streaming, synchronization, and a
 stable connector protocol without tying applications to one agent runtime or UI framework.
 
@@ -9,9 +9,10 @@ to support other agent systems and message sources without changing the chat mod
 
 ## Project status
 
-The repository currently contains the confirmed project brief, architecture decisions, and the
-implementation plan. Runtime code has not started. Begin with Phase 1 of the plan instead of
-adding a UI or Haystack-specific behavior directly to the core.
+Phase 1 is complete: the TypeScript toolchain, language-neutral JSON Schemas, generated TypeScript
+types, connector fixtures, and OpenAPI 3.1.1 public contract are implemented and verified. The next
+slice is Task 5, the minimal server shell and PostgreSQL persistence base. Do not add UI or
+Haystack-specific behavior before the durable headless-chat path is proven.
 
 ## Start here
 
@@ -54,8 +55,8 @@ architecture scaffolding tends to become misleading.
 - OpenAPI 3.1 and JSON Schema as language-neutral contracts
 - Optional browser, React, Web Component, and Cloudflare packages
 
-The specific server framework, database library, and test runner are intentionally left for the
-first implementation task. Record those choices in an ADR before adopting them.
+ADR-005 selects Fastify, TypeBox/Ajv, Kysely with `pg`, Vitest, ESLint, and Prettier for the
+reference implementation.
 
 ## License
 
