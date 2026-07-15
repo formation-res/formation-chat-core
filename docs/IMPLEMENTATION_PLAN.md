@@ -231,6 +231,14 @@ integration tests
 
 **Estimated scope:** Medium, split conversations and messages if needed
 
+**Completed:** 2026-07-15 in `49d5a05`, `30ccc5e`, and `b717b0c`. PostgreSQL now stores scoped
+conversations, participants, messages, and command idempotency records. Public APIs create, fetch,
+and cursor-page conversations; accept and cursor-page user messages; replay matching retry keys;
+reject changed-payload reuse; and allocate contiguous message sequences under concurrent writes.
+Authorization, pagination, idempotency, and tenant/site/principal isolation passed 20 PostgreSQL
+integration tests. Build, type checking, unit tests, contract drift checks, lint, formatting, and
+the dependency audit passed.
+
 ### Task 8: Implement the ordered event store and SSE replay
 
 **Description:** Persist conversation events, publish them live over SSE, replay after a cursor,
