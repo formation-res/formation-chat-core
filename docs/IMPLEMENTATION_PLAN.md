@@ -87,6 +87,9 @@ package scripts
 
 **Estimated scope:** Medium
 
+**Completed:** 2026-07-15 in `fd3d304`. Schema fixture tests, generated-artifact drift checking,
+build, lint, formatting, and type checking passed.
+
 ### Task 3: Define identity and session contracts
 
 **Description:** Specify tenants, sites, anonymous principals, externally authenticated principals,

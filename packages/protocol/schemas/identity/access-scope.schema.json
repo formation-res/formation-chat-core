@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "anyOf": [
+    {
+      "const": "conversations:read",
+      "type": "string"
+    },
+    {
+      "const": "conversations:write",
+      "type": "string"
+    },
+    {
+      "const": "events:read",
+      "type": "string"
+    },
+    {
+      "const": "inputs:write",
+      "type": "string"
+    }
+  ]
+}

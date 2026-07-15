@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "issuer",
+    "audience",
+    "subject",
+    "tenantId",
+    "siteId",
+    "issuedAt",
+    "expiresAt",
+    "nonce"
+  ],
+  "properties": {
+    "issuer": {
+      "minLength": 1,
+      "maxLength": 512,
+      "type": "string"
+    },
+    "audience": {
+      "minLength": 1,
+      "maxLength": 512,
+      "type": "string"
+    },
+    "subject": {
+      "minLength": 1,
+      "maxLength": 512,
+      "type": "string"
+    },
+    "tenantId": {
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+      "type": "string"
+    },
+    "siteId": {
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+      "type": "string"
+    },
+    "issuedAt": {
+      "format": "date-time",
+      "pattern": "Z$",
+      "type": "string"
+    },
+    "expiresAt": {
+      "format": "date-time",
+      "pattern": "Z$",
+      "type": "string"
+    },
+    "nonce": {
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+      "type": "string"
+    }
+  }
+}

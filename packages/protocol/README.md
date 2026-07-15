@@ -17,3 +17,9 @@ new event type must ignore it and continue advancing its event cursor.
 Removing fields, changing their meaning, or weakening ordering guarantees requires an explicit
 compatibility plan. Run `npm run generate --workspace packages/protocol` after changing a schema.
 Tests include a drift check for committed artifacts.
+
+Identity assertions have two validation layers. JSON Schema checks their portable shape; the
+receiving trusted boundary must additionally verify signature, issuer, nonce replay, expiry,
+audience, tenant, and site. `validateIdentityAssertionContext` implements the dynamic time,
+audience, tenant, and site comparisons for TypeScript consumers, but does not replace signature or
+nonce validation.
