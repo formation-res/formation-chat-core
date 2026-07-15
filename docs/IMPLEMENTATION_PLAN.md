@@ -262,6 +262,13 @@ integration tests
 
 **Estimated scope:** Medium and risk-first
 
+**Completed:** 2026-07-15 in `020edea` and `cb93802`. PostgreSQL stores scoped events with a
+gap-free per-conversation sequence and configurable count retention. The SSE endpoint replays
+public events after `Last-Event-ID`, fans out live events through bounded subscriber queues, and
+returns `sync.required` for expired cursors or slow clients. Tests cover concurrent writes,
+visibility and tenant isolation, reconnect without duplication, concurrent subscribers,
+backpressure overflow, retention, and recovery from canonical messages.
+
 ### Task 9: Add connector execution and a deterministic mock connector
 
 **Description:** Define the in-process connector SDK, validate all connector events, run connector

@@ -9,10 +9,11 @@ to support other agent systems and message sources without changing the chat mod
 
 ## Project status
 
-Phase 1 is complete: the TypeScript toolchain, language-neutral JSON Schemas, generated TypeScript
-types, connector fixtures, and OpenAPI 3.1.1 public contract are implemented and verified. The next
-slice is Task 5, the minimal server shell and PostgreSQL persistence base. Do not add UI or
-Haystack-specific behavior before the durable headless-chat path is proven.
+Tasks 1 through 8 are complete. The repository now has the TypeScript toolchain, language-neutral
+contracts, PostgreSQL-backed sessions and conversations, idempotent user messages, ordered event
+storage, and reconnectable SSE delivery. Task 9 adds connector execution and the deterministic mock
+connector. UI and Haystack-specific work remain outside the core until that headless path is
+proven.
 
 ## Start here
 
@@ -20,6 +21,8 @@ Haystack-specific behavior before the durable headless-chat path is proven.
 2. Read [the implementation plan](docs/IMPLEMENTATION_PLAN.md).
 3. Review [the architecture decisions](docs/decisions/).
 4. Follow [AGENTS.md](AGENTS.md) when using a coding agent in this repository.
+
+The implemented API behavior is documented under [docs/api](docs/api/).
 
 ## Intended repository layout
 
