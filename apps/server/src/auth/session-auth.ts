@@ -14,7 +14,7 @@ export class AuthorizationError extends Error {
 export async function authenticate(
   request: FastifyRequest,
   tokens: SessionTokenService,
-  scope: 'conversations:read' | 'conversations:write',
+  scope: 'conversations:read' | 'conversations:write' | 'events:read',
 ): Promise<SessionTokenClaims> {
   const authorization = request.headers.authorization;
   if (!authorization?.startsWith('Bearer ')) throw new AuthorizationError(401);

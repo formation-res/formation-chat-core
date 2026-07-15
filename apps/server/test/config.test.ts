@@ -13,6 +13,8 @@ describe('loadConfig', () => {
         DB_POOL_MAX: '5',
         SESSION_TOKEN_SECRET: '0123456789abcdef0123456789abcdef',
         SESSION_TOKEN_TTL_SECONDS: '600',
+        EVENT_RETENTION_MAX_EVENTS: '250',
+        EVENT_SUBSCRIBER_BUFFER_SIZE: '32',
       }),
     ).toEqual({
       databaseUrl: 'postgres://chat:password@localhost:5432/chat_core',
@@ -22,6 +24,8 @@ describe('loadConfig', () => {
       databasePoolMax: 5,
       sessionTokenSecret: '0123456789abcdef0123456789abcdef',
       sessionTokenTtlSeconds: 600,
+      eventRetentionMaxEvents: 250,
+      eventSubscriberBufferSize: 32,
     });
   });
 
@@ -61,5 +65,16 @@ describe('loadConfig', () => {
         SESSION_TOKEN_TTL_SECONDS: '7200',
       }),
     ).toThrow('Invalid configuration: SESSION_TOKEN_SECRET, SESSION_TOKEN_TTL_SECONDS');
+  });
+
+  it('rejects invalid event retention and subscriber buffer limits', () => {
+    expect(() =>
+      loadConfig({
+        DATABASE_URL: 'postgres://localhost/chat',
+        SESSION_TOKEN_SECRET: '0123456789abcdef0123456789abcdef',
+        EVENT_RETENTION_MAX_EVENTS: '0',
+        EVENT_SUBSCRIBER_BUFFER_SIZE: '1000001',
+      }),
+    ).toThrow('Invalid configuration: EVENT_RETENTION_MAX_EVENTS, EVENT_SUBSCRIBER_BUFFER_SIZE');
   });
 });

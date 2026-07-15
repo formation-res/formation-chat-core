@@ -21,6 +21,8 @@ services:
       DATABASE_URL: postgresql://chat_core:chat_core@postgres:5432/chat_core
       LOG_LEVEL: info
       PORT: 3000
+      EVENT_RETENTION_MAX_EVENTS: 1000
+      EVENT_SUBSCRIBER_BUFFER_SIZE: 100
       SESSION_TOKEN_SECRET: local-development-secret-change-me
     depends_on:
       postgres:
