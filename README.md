@@ -9,11 +9,11 @@ to support other agent systems and message sources without changing the chat mod
 
 ## Project status
 
-Tasks 1 through 9 are complete. The repository now has the TypeScript toolchain, language-neutral
+Tasks 1 through 12 are complete. The repository now has the TypeScript toolchain, language-neutral
 contracts, PostgreSQL-backed sessions and conversations, idempotent user messages, ordered event
 storage, reconnectable SSE delivery, durable connector jobs, and a deterministic mock agent. Task
-10 adds the framework-neutral browser client. Haystack integration remains an adapter outside the
-core.
+11 adds the React reference UI and Task 12 adds the Cloudflare gateway example. Haystack integration
+remains an adapter outside the core.
 
 ## Start here
 
@@ -22,7 +22,8 @@ core.
 3. Review [the architecture decisions](docs/decisions/).
 4. Follow [AGENTS.md](AGENTS.md) when using a coding agent in this repository.
 
-The implemented API behavior is documented under [docs/api](docs/api/).
+The implemented API behavior is documented under [docs/api](docs/api/). The deployable static-site
+gateway is documented in [examples/cloudflare-worker](examples/cloudflare-worker/README.md).
 
 ## Intended repository layout
 

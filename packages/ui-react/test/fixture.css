@@ -1,0 +1,22 @@
+@import '../src/styles.css';
+
+html,
+body,
+#root {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: #eef0eb;
+}
+
+@media (max-width: 30rem) {
+  body {
+    display: block;
+    padding: 0;
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "name": "@formation-chat-core/ui-react",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Accessible React reference UI for Formation Chat Core.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./styles.css": "./src/styles.css"
+  },
+  "files": [
+    "dist",
+    "src/styles.css"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "eslint src test --no-error-on-unmatched-pattern",
+    "test": "vitest run",
+    "test:browser": "node test/browser-smoke.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p test/tsconfig.json"
+  },
+  "dependencies": {
+    "@formation-chat-core/browser-client": "0.0.0",
+    "@formation-chat-core/protocol": "0.0.0"
+  },
+  "peerDependencies": {
+    "react": ">=19 <20",
+    "react-dom": ">=19 <20"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.10",
+    "@types/react-dom": "19.2.3",
+    "axe-core": "4.11.1",
+    "esbuild": "0.28.1",
+    "jsdom": "27.4.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  }
+}

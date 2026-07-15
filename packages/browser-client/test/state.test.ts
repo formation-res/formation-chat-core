@@ -112,4 +112,55 @@ describe('chat state reducer', () => {
       error: { code: 'MOCK_FAILURE', retryable: true },
     });
   });
+
+  it('exposes structured contact and handoff state from public events', () => {
+    let state = reduceChatState(initialChatState, {
+      type: 'event.received',
+      event: {
+        eventId: 'event-contact',
+        sequence: 4,
+        type: 'contact.requested',
+        visibility: 'public',
+        occurredAt: '2026-07-15T10:00:04.000Z',
+        conversationId: 'conversation-1',
+        runId: 'run-1',
+        data: { requestId: 'request-1', inputKind: 'email', prompt: 'Your email' },
+      },
+    });
+    expect(state.contactRequest).toMatchObject({ requestId: 'request-1', inputKind: 'email' });
+
+    state = reduceChatState(state, {
+      type: 'event.received',
+      event: {
+        eventId: 'event-handoff',
+        sequence: 5,
+        type: 'handoff.requested',
+        visibility: 'public',
+        occurredAt: '2026-07-15T10:00:05.000Z',
+        conversationId: 'conversation-1',
+        runId: 'run-1',
+        data: { handoffId: 'handoff-1' },
+      },
+    });
+    expect(state.handoff).toEqual({ handoffId: 'handoff-1', status: 'requested' });
+
+    state = reduceChatState(state, {
+      type: 'event.received',
+      event: {
+        eventId: 'event-handoff-completed',
+        sequence: 6,
+        type: 'handoff.completed',
+        visibility: 'public',
+        occurredAt: '2026-07-15T10:00:06.000Z',
+        conversationId: 'conversation-1',
+        runId: 'run-1',
+        data: { handoffId: 'handoff-1', status: 'completed' },
+      },
+    });
+    expect(state.handoff).toEqual({ handoffId: 'handoff-1', status: 'completed' });
+
+    state = reduceChatState(state, { type: 'conversation.cleared' });
+    expect(state.contactRequest).toBeUndefined();
+    expect(state.handoff).toBeUndefined();
+  });
 });

@@ -1,0 +1,315 @@
+:where(.fcc-chat) {
+  --fcc-color-surface: #ffffff;
+  --fcc-color-surface-muted: #f4f5f3;
+  --fcc-color-text: #1d201c;
+  --fcc-color-text-muted: #62685f;
+  --fcc-color-border: #d8dcd5;
+  --fcc-color-accent: #1d5c43;
+  --fcc-color-accent-hover: #164a35;
+  --fcc-color-user: #e4efe8;
+  --fcc-color-error: #a12c2c;
+  --fcc-radius: 0.75rem;
+  --fcc-font: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  box-sizing: border-box;
+  position: relative;
+  display: grid;
+  grid-template-rows: auto minmax(12rem, 1fr) auto auto;
+  width: min(100%, 48rem);
+  min-height: 28rem;
+  max-height: min(48rem, 90vh);
+  overflow: hidden;
+  color: var(--fcc-color-text);
+  background: var(--fcc-color-surface);
+  border: 1px solid var(--fcc-color-border);
+  border-radius: var(--fcc-radius);
+  font-family: var(--fcc-font);
+  line-height: 1.5;
+}
+
+:where(.fcc-chat, .fcc-chat *) {
+  box-sizing: border-box;
+}
+
+:where(.fcc-header) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-width: 0;
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid var(--fcc-color-border);
+}
+
+:where(.fcc-header h2) {
+  margin: 0;
+  overflow: hidden;
+  font-size: 1rem;
+  font-weight: 650;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:where(.fcc-status-area) {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+:where(.fcc-status) {
+  margin: 0;
+  color: var(--fcc-color-text-muted);
+  font-size: 0.8125rem;
+}
+
+:where(.fcc-error) {
+  position: absolute;
+  z-index: 1;
+  inset: 3.5rem 1rem auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  color: var(--fcc-color-error);
+  background: var(--fcc-color-surface);
+  border: 1px solid currentColor;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+}
+
+:where(.fcc-transcript) {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 1rem;
+  scrollbar-gutter: stable;
+}
+
+:where(.fcc-empty) {
+  display: grid;
+  align-content: center;
+  min-height: 100%;
+  padding: 2rem 1rem;
+  text-align: center;
+}
+
+:where(.fcc-empty h3) {
+  margin: 0;
+  font-size: 1rem;
+}
+
+:where(.fcc-empty p) {
+  max-width: 28rem;
+  margin: 0.5rem auto 0;
+  color: var(--fcc-color-text-muted);
+  font-size: 0.875rem;
+}
+
+:where(.fcc-messages) {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+:where(.fcc-message) {
+  display: flex;
+  max-width: min(88%, 38rem);
+}
+
+:where(.fcc-message--user) {
+  align-self: flex-end;
+}
+
+:where(.fcc-message--assistant, .fcc-message--system) {
+  align-self: flex-start;
+}
+
+:where(.fcc-bubble) {
+  display: grid;
+  gap: 0.625rem;
+  min-width: 0;
+  padding: 0.75rem 0.875rem;
+  overflow-wrap: anywhere;
+  background: var(--fcc-color-surface-muted);
+  border-radius: var(--fcc-radius);
+  white-space: pre-wrap;
+}
+
+:where(.fcc-message--user .fcc-bubble) {
+  background: var(--fcc-color-user);
+  border-bottom-right-radius: 0.25rem;
+}
+
+:where(.fcc-message--assistant .fcc-bubble) {
+  border-bottom-left-radius: 0.25rem;
+}
+
+:where(.fcc-citation, .fcc-tool, .fcc-input-status) {
+  display: grid;
+  gap: 0.25rem;
+  color: var(--fcc-color-text-muted);
+  font-size: 0.8125rem;
+}
+
+:where(.fcc-chat a) {
+  color: var(--fcc-color-accent);
+  text-underline-offset: 0.15em;
+}
+
+:where(.fcc-caret) {
+  width: 0.4rem;
+  height: 1em;
+  background: var(--fcc-color-accent);
+  animation: fcc-blink 1s steps(2, start) infinite;
+}
+
+:where(.fcc-followup) {
+  padding-inline: 1rem;
+}
+
+:where(.fcc-contact, .fcc-handoff) {
+  margin: 0 0 0.75rem;
+  padding: 0.75rem;
+  background: var(--fcc-color-surface-muted);
+  border: 1px solid var(--fcc-color-border);
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+}
+
+:where(.fcc-contact p) {
+  margin: 0 0 0.5rem;
+}
+
+:where(.fcc-contact label) {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-weight: 600;
+}
+
+:where(.fcc-contact__controls) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+:where(.fcc-contact input) {
+  flex: 1 1 13rem;
+  min-width: 0;
+}
+
+:where(.fcc-composer) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-top: 1px solid var(--fcc-color-border);
+}
+
+:where(.fcc-composer textarea, .fcc-contact input) {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.625rem 0.75rem;
+  color: var(--fcc-color-text);
+  background: var(--fcc-color-surface);
+  border: 1px solid var(--fcc-color-border);
+  border-radius: 0.5rem;
+  font: inherit;
+}
+
+:where(.fcc-composer textarea) {
+  max-height: 9rem;
+  resize: vertical;
+}
+
+:where(.fcc-composer [role='alert']) {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--fcc-color-error);
+  font-size: 0.8125rem;
+}
+
+:where(.fcc-chat button) {
+  min-height: 2.75rem;
+  padding: 0.5rem 0.875rem;
+  color: #ffffff;
+  background: var(--fcc-color-accent);
+  border: 0;
+  border-radius: 0.5rem;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+:where(.fcc-chat button:hover:not(:disabled)) {
+  background: var(--fcc-color-accent-hover);
+}
+
+:where(.fcc-chat button:disabled) {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+:where(
+  .fcc-chat button:focus-visible,
+  .fcc-chat textarea:focus-visible,
+  .fcc-chat input:focus-visible
+) {
+  outline: 3px solid color-mix(in srgb, var(--fcc-color-accent) 35%, transparent);
+  outline-offset: 2px;
+}
+
+:where(.fcc-cancel, .fcc-contact button[type='button']) {
+  color: var(--fcc-color-accent);
+  background: transparent;
+  border: 1px solid var(--fcc-color-border);
+}
+
+:where(.fcc-visually-hidden) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@keyframes fcc-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@media (max-width: 30rem) {
+  :where(.fcc-chat) {
+    width: 100%;
+    min-height: 100dvh;
+    max-height: 100dvh;
+    border: 0;
+    border-radius: 0;
+  }
+
+  :where(.fcc-status) {
+    max-width: 8rem;
+    text-align: right;
+  }
+  :where(.fcc-message) {
+    max-width: 94%;
+  }
+  :where(.fcc-contact__controls) {
+    display: grid;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(.fcc-caret) {
+    animation: none;
+  }
+}

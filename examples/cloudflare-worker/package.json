@@ -1,0 +1,28 @@
+{
+  "name": "@formation-chat-core/cloudflare-worker-example",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Stateless Cloudflare Worker gateway example for Formation Chat Core.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build-site.mjs && tsc -p tsconfig.json",
+    "lint": "eslint src site test scripts --no-error-on-unmatched-pattern",
+    "test": "vitest run test/gateway.test.ts",
+    "test:runtime": "vitest run --config test/vitest.runtime.config.ts test/runtime.test.ts",
+    "typecheck": "wrangler types --strict-vars=false --check && tsc -p tsconfig.json --noEmit && tsc -p site/tsconfig.json && tsc -p test/tsconfig.json"
+  },
+  "dependencies": {
+    "@formation-chat-core/browser-client": "0.0.0",
+    "@formation-chat-core/ui-react": "0.0.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "0.18.4",
+    "@types/react": "19.2.10",
+    "@types/react-dom": "19.2.3",
+    "esbuild": "0.28.1",
+    "wrangler": "4.109.0"
+  }
+}

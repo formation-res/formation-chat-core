@@ -1,0 +1,10 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2024", "DOM"],
+    "noEmit": true,
+    "rootDir": "..",
+    "types": ["node", "vitest/globals", "@cloudflare/vitest-pool-workers/types"]
+  },
+  "include": ["../src/**/*.ts", "./**/*.ts", "../worker-configuration.d.ts"]
+}

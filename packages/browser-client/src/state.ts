@@ -32,7 +32,7 @@ export function reduceChatState(state: ChatState, action: ChatStateAction): Chat
     }
     case 'conversation.cleared':
       return withoutError({
-        ...withoutRun(withoutCursor(withoutConversation(state))),
+        ...withoutConversationState(withoutCursor(withoutConversation(state))),
         messages: [],
         liveMessages: {},
         lastEventSequence: 0,
@@ -96,6 +96,18 @@ function receiveEvent(state: ChatState, event: PublicConversationEvent): ChatSta
       phase: 'error',
       run: { runId: event.runId, status: 'failed', failureCode: event.data.code },
       error: { code: event.data.code, message: 'The agent run failed.', retryable: true },
+    };
+  } else if (event.type === 'contact.requested') {
+    next = { ...next, contactRequest: event.data };
+  } else if (event.type === 'handoff.requested') {
+    next = {
+      ...next,
+      handoff: { handoffId: event.data.handoffId, status: 'requested' },
+    };
+  } else if (event.type === 'handoff.completed') {
+    next = {
+      ...next,
+      handoff: { handoffId: event.data.handoffId, status: 'completed' },
     };
   }
   const messageId = event.messageId;
@@ -200,8 +212,10 @@ function withoutCursor(state: ChatState): ChatState {
   return rest;
 }
 
-function withoutRun(state: ChatState): ChatState {
+function withoutConversationState(state: ChatState): ChatState {
   const rest = { ...state };
   delete rest.run;
+  delete rest.contactRequest;
+  delete rest.handoff;
   return rest;
 }

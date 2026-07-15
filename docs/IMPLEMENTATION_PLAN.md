@@ -365,6 +365,13 @@ example files, browser tests
 
 **Estimated scope:** Medium per UI package; do not combine both packages in one task if large
 
+**Completed:** 2026-07-15. The React package provides accessible empty, loading, streaming,
+completed, failed, retry, reconnecting, structured email, and handoff states; protocol-neutral
+render hooks; and optional low-specificity styles. Eight component tests pass, including axe and
+unsafe-link checks. A real Chrome smoke test passes keyboard submission, axe, completion, and
+contact-to-handoff checks with a clean console; 1024-pixel and 320-pixel screenshots were reviewed.
+The Web Component wrapper remains deliberately deferred until a concrete reuse need appears.
+
 ### Task 12: Add the Cloudflare Worker gateway example
 
 **Description:** Provide a stateless gateway that maps a site hostname to trusted configuration,
@@ -387,6 +394,16 @@ smoke test when credentials are available.
 **Files likely touched:** `examples/cloudflare-worker/*`, deployment guide, static website example
 
 **Estimated scope:** Medium
+
+**Completed:** 2026-07-15. The stateless Worker resolves trusted site configuration from the public
+hostname, enforces configured origins (with a same-origin Fetch Metadata fallback) and a public
+path/method allowlist, limits JSON writes to 128 KiB,
+reconstructs upstream headers, injects a required secret origin credential, and passes upstream
+response streams through unchanged. The example bundles the React reference UI as same-origin
+Cloudflare static assets with restrictive response headers. Seven unit contracts, a local workerd SSE
+integration test, generated-binding drift check, type checking, linting, build, startup analysis,
+secret scan, and Wrangler deployment dry run pass. A deployed preview smoke test remains conditional
+on project credentials and a configured preview origin.
 
 ### Checkpoint: Public website
 

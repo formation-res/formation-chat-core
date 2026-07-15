@@ -3,3 +3,4 @@ dist/
 coverage/
 package-lock.json
 packages/protocol/schemas/
+examples/cloudflare-worker/worker-configuration.d.ts

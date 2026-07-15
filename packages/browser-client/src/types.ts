@@ -37,6 +37,17 @@ export interface RunState {
   failureCode?: string;
 }
 
+export interface ContactRequestState {
+  requestId: string;
+  inputKind: 'email';
+  prompt: string;
+}
+
+export interface HandoffState {
+  handoffId: string;
+  status: 'requested' | 'completed';
+}
+
 export interface ChatState {
   phase: ChatPhase;
   session?: PublicSession;
@@ -44,6 +55,8 @@ export interface ChatState {
   messages: Message[];
   liveMessages: Readonly<Record<string, LiveMessage>>;
   run?: RunState;
+  contactRequest?: ContactRequestState;
+  handoff?: HandoffState;
   lastEventId?: string;
   lastEventSequence: number;
   recentEventIds: readonly string[];

@@ -1,0 +1,24 @@
+:root {
+  color-scheme: light;
+  background: #eef0eb;
+}
+
+body {
+  min-width: 20rem;
+  min-height: 100vh;
+  margin: 0;
+}
+
+main {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 1rem;
+}
+
+@media (max-width: 30rem) {
+  main {
+    display: block;
+    padding: 0;
+  }
+}

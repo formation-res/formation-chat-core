@@ -1,0 +1,30 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "formation-chat-gateway",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "CHAT_CORE_BASE_URL": "https://chat-core.example.com",
+    "CHAT_SITES": "{\"www.example.com\":{\"siteKey\":\"example-site\",\"allowedOrigins\":[\"https://www.example.com\"]}}",
+  },
+  "secrets": {
+    "required": ["CHAT_CORE_SERVICE_TOKEN"],
+  },
+  "assets": {
+    "directory": "./dist/site",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/v1/*"],
+  },
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+    },
+    "traces": {
+      "enabled": true,
+      "head_sampling_rate": 0.1,
+    },
+  },
+}
