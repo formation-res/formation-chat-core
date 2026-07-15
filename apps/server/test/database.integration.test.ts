@@ -32,12 +32,14 @@ describe('PostgreSQL persistence base', () => {
             'conversation_participants',
             'messages',
             'command_idempotency',
+            'conversation_events',
           ].includes(name),
         )
         .sort(),
     ).toEqual([
       'browser_sessions',
       'command_idempotency',
+      'conversation_events',
       'conversation_participants',
       'conversations',
       'messages',
@@ -49,6 +51,7 @@ describe('PostgreSQL persistence base', () => {
   });
 
   it('stores tenant-scoped sites', async () => {
+    await database.deleteFrom('conversation_events').execute();
     await database.deleteFrom('command_idempotency').execute();
     await database.deleteFrom('messages').execute();
     await database.deleteFrom('conversation_participants').execute();

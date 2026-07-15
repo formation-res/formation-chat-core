@@ -51,6 +51,7 @@ export interface ConversationTable {
   agent_ref: string;
   status: 'active' | 'completed' | 'cancelled';
   next_message_sequence: Generated<number>;
+  next_event_sequence: Generated<number>;
   created_at: Generated<Date>;
   updated_at: Generated<Date>;
 }
@@ -91,6 +92,20 @@ export interface CommandIdempotencyTable {
   created_at: Generated<Date>;
 }
 
+export interface ConversationEventTable {
+  event_id: string;
+  tenant_id: string;
+  site_id: string;
+  conversation_id: string;
+  sequence: number;
+  type: string;
+  visibility: 'public' | 'operator' | 'internal';
+  run_id: string | null;
+  message_id: string | null;
+  data: JSONColumnType<Record<string, unknown>>;
+  occurred_at: Generated<Date>;
+}
+
 export interface DatabaseSchema {
   tenants: TenantTable;
   sites: SiteTable;
@@ -101,4 +116,5 @@ export interface DatabaseSchema {
   conversation_participants: ConversationParticipantTable;
   messages: MessageTable;
   command_idempotency: CommandIdempotencyTable;
+  conversation_events: ConversationEventTable;
 }
