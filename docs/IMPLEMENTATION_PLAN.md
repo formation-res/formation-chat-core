@@ -202,6 +202,12 @@ integration tests
 
 **Estimated scope:** Medium
 
+**Completed:** 2026-07-15 in `54db923`. Anonymous bootstrap now resolves trusted site settings,
+enforces browser origins, creates or resumes principals and sessions, replays idempotent resource
+identity, and issues short-lived tenant/site-scoped tokens. Clean PostgreSQL API tests cover create,
+resume, new browser identity, expiry, unknown site, wrong origin, missing or reused idempotency keys,
+cross-site verification, and token tampering. All repository gates passed.
+
 ### Task 7: Implement conversations and idempotent user messages
 
 **Description:** Add conversation creation, conversation lookup, message submission, message
