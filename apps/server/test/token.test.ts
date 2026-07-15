@@ -26,7 +26,8 @@ describe('SessionTokenService', () => {
   it('rejects expired and tampered tokens', async () => {
     const tokens = new SessionTokenService(secret, 60);
     const expired = await tokens.issue(subject, new Date(Date.now() - 120_000));
-    const tampered = `${expired.token.slice(0, -1)}${expired.token.endsWith('a') ? 'b' : 'a'}`;
+    const [header, payload, signature] = expired.token.split('.') as [string, string, string];
+    const tampered = `${header}.${payload}.${signature.startsWith('a') ? 'b' : 'a'}${signature.slice(1)}`;
 
     await expect(tokens.verify(expired.token)).rejects.toThrow();
     await expect(tokens.verify(tampered)).rejects.toThrow();

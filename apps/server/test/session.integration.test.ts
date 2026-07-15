@@ -19,6 +19,10 @@ const server = buildServer({
 
 beforeAll(async () => {
   await migrateDatabase(database);
+  await database.deleteFrom('command_idempotency').execute();
+  await database.deleteFrom('messages').execute();
+  await database.deleteFrom('conversation_participants').execute();
+  await database.deleteFrom('conversations').execute();
   await database.deleteFrom('session_bootstrap_idempotency').execute();
   await database.deleteFrom('browser_sessions').execute();
   await database.deleteFrom('principals').execute();
@@ -144,7 +148,8 @@ describe('POST /v1/sessions', () => {
     await expect(
       tokens.verify(response.accessToken, { tenantId: 'tenant-a', siteId: 'site-b' }),
     ).rejects.toThrow();
-    const tampered = `${response.accessToken.slice(0, -1)}${response.accessToken.endsWith('a') ? 'b' : 'a'}`;
+    const [header, payload, signature] = response.accessToken.split('.') as [string, string, string];
+    const tampered = `${header}.${payload}.${signature.startsWith('a') ? 'b' : 'a'}${signature.slice(1)}`;
     await expect(tokens.verify(tampered)).rejects.toThrow();
   });
 });
