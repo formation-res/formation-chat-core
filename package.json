@@ -4,8 +4,10 @@
   "private": true,
   "description": "Self-hosted, agent-agnostic chat infrastructure.",
   "license": "MIT",
+  "packageManager": "npm@11.16.0",
   "engines": {
-    "node": ">=22"
+    "node": ">=24.11 <25",
+    "npm": ">=11.6 <12"
   },
   "workspaces": [
     "apps/*",
@@ -15,8 +17,19 @@
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
-    "lint": "npm run lint --workspaces --if-present",
+    "format:check": "prettier --check .",
+    "lint": "eslint . && npm run lint --workspaces --if-present && npm run format:check",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present"
-  }
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.13.3",
+    "eslint": "10.7.0",
+    "prettier": "3.9.5",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.64.0",
+    "vitest": "4.1.10"
+  },
+  "type": "module"
 }
