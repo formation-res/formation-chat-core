@@ -1,4 +1,4 @@
-import { type Static, Type } from '@sinclair/typebox';
+import { Kind, type Static, Type } from '@sinclair/typebox';
 
 import { OpaqueIdSchema, TimestampSchema } from '../common/index.js';
 import { ContentPartSchema } from './content.js';
@@ -45,6 +45,7 @@ export const ParticipantSchema = Type.Union([
 export type Participant = Static<typeof ParticipantSchema>;
 
 const participantsSchema = Type.Unsafe<Participant[]>({
+  [Kind]: 'Array',
   type: 'array',
   items: ParticipantSchema,
   minItems: 2,
