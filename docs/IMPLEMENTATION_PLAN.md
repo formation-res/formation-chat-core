@@ -365,7 +365,7 @@ example files, browser tests
 
 **Estimated scope:** Medium per UI package; do not combine both packages in one task if large
 
-**Completed:** 2026-07-15. The React package provides accessible empty, loading, streaming,
+**Completed:** 2026-07-15 in `5a7671c`. The React package provides accessible empty, loading, streaming,
 completed, failed, retry, reconnecting, structured email, and handoff states; protocol-neutral
 render hooks; and optional low-specificity styles. Eight component tests pass, including axe and
 unsafe-link checks. A real Chrome smoke test passes keyboard submission, axe, completion, and
@@ -395,7 +395,7 @@ smoke test when credentials are available.
 
 **Estimated scope:** Medium
 
-**Completed:** 2026-07-15. The stateless Worker resolves trusted site configuration from the public
+**Completed:** 2026-07-15 in `5a7671c`. The stateless Worker resolves trusted site configuration from the public
 hostname, enforces configured origins (with a same-origin Fetch Metadata fallback) and a public
 path/method allowlist, limits JSON writes to 128 KiB,
 reconstructs upstream headers, injects a required secret origin credential, and passes upstream
