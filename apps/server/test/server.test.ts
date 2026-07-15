@@ -1,8 +1,21 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { buildServer } from '../src/server.js';
 
 describe('server health and correlation', () => {
+  it('closes the database when the server closes', async () => {
+    const closeDatabase = vi.fn(async () => undefined);
+    const server = buildServer({
+      checkDatabase: async () => undefined,
+      closeDatabase,
+      logger: false,
+    });
+
+    await server.close();
+
+    expect(closeDatabase).toHaveBeenCalledOnce();
+  });
+
   it('reports liveness without consulting PostgreSQL', async () => {
     let checks = 0;
     const server = buildServer({

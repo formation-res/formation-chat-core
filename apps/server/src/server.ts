@@ -4,6 +4,7 @@ import Fastify, { type FastifyServerOptions } from 'fastify';
 
 export interface BuildServerOptions {
   checkDatabase: () => Promise<void>;
+  closeDatabase?: () => Promise<void>;
   logger?: FastifyServerOptions['logger'];
 }
 
@@ -20,6 +21,8 @@ export function buildServer(options: BuildServerOptions) {
     void reply.header('x-correlation-id', request.id);
     return payload;
   });
+
+  if (options.closeDatabase) server.addHook('onClose', options.closeDatabase);
 
   server.get('/health/live', async () => ({ status: 'ok' as const }));
 

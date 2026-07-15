@@ -1,0 +1,31 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: chat_core
+      POSTGRES_PASSWORD: chat_core
+      POSTGRES_USER: chat_core
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U chat_core -d chat_core']
+      interval: 2s
+      timeout: 2s
+      retries: 20
+    ports:
+      - '127.0.0.1:5432:5432'
+    volumes:
+      - chat-core-postgres:/var/lib/postgresql/data
+
+  server:
+    build: .
+    environment:
+      DATABASE_URL: postgresql://chat_core:chat_core@postgres:5432/chat_core
+      LOG_LEVEL: info
+      PORT: 3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - '127.0.0.1:3000:3000'
+
+volumes:
+  chat-core-postgres:
