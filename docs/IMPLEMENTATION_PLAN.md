@@ -334,6 +334,14 @@ connector.
 
 **Estimated scope:** Medium, split protocol transport from state management
 
+**Completed:** 2026-07-15 in `6910c74` and `b5a8778`. The framework-neutral client now owns typed
+state, canonical ordering, transient stream state, anonymous resume, cursor persistence,
+idempotent commands, cancellation, retry, automatic snapshot recovery, bounded reconnection, and
+multi-tab convergence through injectable storage. The validated fetch/SSE transport keeps bearer
+tokens in memory, supports custom fetch adapters, cursor-pages all messages, and rejects invalid
+or oversized event frames. Fifteen unit tests and a real Chrome test against PostgreSQL and the
+deterministic mock connector passed, including refresh resume and two-tab convergence.
+
 ### Task 11: Build a minimal accessible reference UI
 
 **Description:** Add a simple modern chat UI as a thin layer over the browser client. Implement the
