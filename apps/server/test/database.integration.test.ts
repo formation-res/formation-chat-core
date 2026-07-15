@@ -49,6 +49,10 @@ describe('PostgreSQL persistence base', () => {
   });
 
   it('stores tenant-scoped sites', async () => {
+    await database.deleteFrom('command_idempotency').execute();
+    await database.deleteFrom('messages').execute();
+    await database.deleteFrom('conversation_participants').execute();
+    await database.deleteFrom('conversations').execute();
     await database.deleteFrom('session_bootstrap_idempotency').execute();
     await database.deleteFrom('browser_sessions').execute();
     await database.deleteFrom('principals').execute();

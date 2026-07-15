@@ -148,7 +148,11 @@ describe('POST /v1/sessions', () => {
     await expect(
       tokens.verify(response.accessToken, { tenantId: 'tenant-a', siteId: 'site-b' }),
     ).rejects.toThrow();
-    const [header, payload, signature] = response.accessToken.split('.') as [string, string, string];
+    const [header, payload, signature] = response.accessToken.split('.') as [
+      string,
+      string,
+      string,
+    ];
     const tampered = `${header}.${payload}.${signature.startsWith('a') ? 'b' : 'a'}${signature.slice(1)}`;
     await expect(tokens.verify(tampered)).rejects.toThrow();
   });

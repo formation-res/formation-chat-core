@@ -3,6 +3,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { ConversationService } from '../src/conversation/service.js';
 import { createDatabase } from '../src/database/database.js';
 import { migrateDatabase } from '../src/database/migrate.js';
+import { MessageService } from '../src/message/service.js';
 import { buildServer } from '../src/server.js';
 import { SessionTokenService } from '../src/session/token.js';
 
@@ -12,9 +13,11 @@ const database = createDatabase({ databaseUrl, databasePoolMax: 4 });
 const secret = '0123456789abcdef0123456789abcdef';
 const tokens = new SessionTokenService(secret, 600);
 const conversations = new ConversationService(database);
+const messages = new MessageService(database);
 const server = buildServer({
   checkDatabase: async () => undefined,
   conversationService: conversations,
+  messageService: messages,
   sessionTokens: tokens,
   logger: false,
 });
@@ -136,6 +139,19 @@ const createConversation = (token: string, idempotencyKey = crypto.randomUUID())
     payload: {},
   });
 
+const submitMessage = (
+  token: string,
+  conversationId: string,
+  text: string,
+  idempotencyKey = crypto.randomUUID(),
+) =>
+  server.inject({
+    method: 'POST',
+    url: `/v1/conversations/${conversationId}/messages`,
+    headers: { authorization: `Bearer ${token}`, 'idempotency-key': idempotencyKey },
+    payload: { parts: [{ type: 'text', text }] },
+  });
+
 describe('conversation API', () => {
   it('creates a conversation from trusted token and site configuration', async () => {
     const response = await createConversation(tokenA);
@@ -206,6 +222,106 @@ describe('conversation API', () => {
     const response = await server.inject({
       method: 'GET',
       url: '/v1/conversations?cursor=bm90LWpzb24',
+      headers: { authorization: `Bearer ${tokenA}` },
+    });
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toMatchObject({ error: { code: 'INVALID_CURSOR' } });
+  });
+});
+
+describe('message API', () => {
+  it('accepts a completed user message attributed to the conversation participant', async () => {
+    const conversation = (await createConversation(tokenA)).json();
+    const response = await submitMessage(tokenA, conversation.conversationId, 'Hello');
+
+    expect(response.statusCode).toBe(202);
+    expect(response.json()).toMatchObject({
+      conversationId: conversation.conversationId,
+      sequence: 1,
+      participantId: conversation.participants[0].participantId,
+      role: 'user',
+      status: 'completed',
+      parts: [{ type: 'text', text: 'Hello' }],
+    });
+    expect(response.json().completedAt).toMatch(/Z$/);
+  });
+
+  it('returns the original message for a retry and rejects changed payload reuse', async () => {
+    const conversation = (await createConversation(tokenA)).json();
+    const key = crypto.randomUUID();
+    const first = await submitMessage(tokenA, conversation.conversationId, 'First', key);
+    const replay = await submitMessage(tokenA, conversation.conversationId, 'First', key);
+    const conflict = await submitMessage(tokenA, conversation.conversationId, 'Changed', key);
+
+    expect(replay.statusCode).toBe(202);
+    expect(replay.json().messageId).toBe(first.json().messageId);
+    expect(conflict.statusCode).toBe(409);
+    expect(conflict.json()).toMatchObject({ error: { code: 'IDEMPOTENCY_CONFLICT' } });
+    const rows = await database
+      .selectFrom('messages')
+      .select('message_id')
+      .where('conversation_id', '=', conversation.conversationId)
+      .execute();
+    expect(rows).toHaveLength(1);
+  });
+
+  it('allocates unique contiguous order under concurrent submissions', async () => {
+    const conversation = (await createConversation(tokenA)).json();
+    const responses = await Promise.all(
+      Array.from({ length: 12 }, (_, index) =>
+        submitMessage(tokenA, conversation.conversationId, `Message ${index}`),
+      ),
+    );
+    const sequences = responses.map((response) => response.json().sequence).sort((a, b) => a - b);
+
+    expect(responses.every((response) => response.statusCode === 202)).toBe(true);
+    expect(sequences).toEqual(Array.from({ length: 12 }, (_, index) => index + 1));
+  });
+
+  it('lists messages in sequence order with cursor pagination', async () => {
+    const conversation = (await createConversation(tokenA)).json();
+    await submitMessage(tokenA, conversation.conversationId, 'One');
+    await submitMessage(tokenA, conversation.conversationId, 'Two');
+    await submitMessage(tokenA, conversation.conversationId, 'Three');
+
+    const first = await server.inject({
+      method: 'GET',
+      url: `/v1/conversations/${conversation.conversationId}/messages?limit=2`,
+      headers: { authorization: `Bearer ${tokenA}` },
+    });
+    const page = first.json();
+    const second = await server.inject({
+      method: 'GET',
+      url: `/v1/conversations/${conversation.conversationId}/messages?limit=2&cursor=${page.pagination.nextCursor}`,
+      headers: { authorization: `Bearer ${tokenA}` },
+    });
+
+    expect(page.data.map((message: { sequence: number }) => message.sequence)).toEqual([1, 2]);
+    expect(page.pagination).toMatchObject({ hasMore: true });
+    expect(second.json().data.map((message: { sequence: number }) => message.sequence)).toEqual([
+      3,
+    ]);
+    expect(second.json().pagination).toEqual({ hasMore: false });
+  });
+
+  it('hides message endpoints from another tenant and site', async () => {
+    const conversation = (await createConversation(tokenA)).json();
+    expect((await submitMessage(tokenB, conversation.conversationId, 'Blocked')).statusCode).toBe(
+      404,
+    );
+    const list = await server.inject({
+      method: 'GET',
+      url: `/v1/conversations/${conversation.conversationId}/messages`,
+      headers: { authorization: `Bearer ${tokenB}` },
+    });
+    expect(list.statusCode).toBe(404);
+  });
+
+  it('rejects a malformed message cursor', async () => {
+    const conversation = (await createConversation(tokenA)).json();
+    const response = await server.inject({
+      method: 'GET',
+      url: `/v1/conversations/${conversation.conversationId}/messages?cursor=bm90LWEtc2VxdWVuY2U`,
       headers: { authorization: `Bearer ${tokenA}` },
     });
     expect(response.statusCode).toBe(400);

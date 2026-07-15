@@ -2,6 +2,7 @@ import { loadConfig } from './config.js';
 import { ConversationService } from './conversation/service.js';
 import { checkDatabase, createDatabase } from './database/database.js';
 import { migrateDatabase } from './database/migrate.js';
+import { MessageService } from './message/service.js';
 import { buildServer } from './server.js';
 import { SessionService } from './session/service.js';
 import { SessionTokenService } from './session/token.js';
@@ -19,10 +20,12 @@ async function main(): Promise<void> {
     config.sessionTokenTtlSeconds,
   );
   const conversations = new ConversationService(database);
+  const messages = new MessageService(database);
   const server = buildServer({
     checkDatabase: async () => checkDatabase(database),
     bootstrapAnonymous: async (request, context) => sessions.bootstrapAnonymous(request, context),
     conversationService: conversations,
+    messageService: messages,
     sessionTokens,
     closeDatabase: async () => database.destroy(),
     logger: { level: config.logLevel },
