@@ -1,3 +1,5 @@
+import { setTimeout as delay } from 'node:timers/promises';
+
 import type { ConnectorEvent, ConnectorRunRequest, Message } from '@formation-chat-core/protocol';
 import {
   validateConnectorEventContext,
@@ -9,6 +11,7 @@ import { sql, type Selectable, type Transaction } from 'kysely';
 import type { Database } from '../database/database.js';
 import type { AgentRunTable, DatabaseSchema, MessageTable } from '../database/types.js';
 import { EventService } from '../event/service.js';
+import type { RunCancellationCoordinator } from './cancellation.js';
 import { isConnectorEvent } from './validation.js';
 
 type ClaimedRun = Selectable<AgentRunTable>;
@@ -20,12 +23,28 @@ export class RunWorker {
     private readonly events: EventService,
     private readonly resolveConnector: ResolveConnector,
     private readonly options: { leaseMs: number; maxAttempts: number },
+    private readonly cancellation?: RunCancellationCoordinator,
   ) {
     if (!Number.isSafeInteger(options.leaseMs) || options.leaseMs < 1) {
       throw new RangeError('leaseMs must be a positive safe integer.');
     }
     if (!Number.isSafeInteger(options.maxAttempts) || options.maxAttempts < 1) {
       throw new RangeError('maxAttempts must be a positive safe integer.');
+    }
+  }
+
+  async run(signal: AbortSignal, pollIntervalMs: number): Promise<void> {
+    if (!Number.isSafeInteger(pollIntervalMs) || pollIntervalMs < 1) {
+      throw new RangeError('pollIntervalMs must be a positive safe integer.');
+    }
+    while (!signal.aborted) {
+      if (await this.processNext()) continue;
+      try {
+        await delay(pollIntervalMs, undefined, { signal });
+      } catch (error) {
+        if (signal.aborted) return;
+        throw error;
+      }
     }
   }
 
@@ -38,13 +57,21 @@ export class RunWorker {
       return true;
     }
 
+    const controller = new AbortController();
+    const unregister = this.cancellation?.register(run.run_id, { controller, connector });
     try {
       const context = await this.loadContext(run);
       for await (const event of connector.run({
         request: context.request,
         assistantMessageId: run.assistant_message_id,
-        signal: new AbortController().signal,
+        signal: controller.signal,
       })) {
+        if (controller.signal.aborted || (await this.isCancellationRequested(run.run_id))) {
+          controller.abort();
+          await connector.cancel?.(run.run_id);
+          await this.cancel(run, now);
+          return true;
+        }
         if (
           !isConnectorEvent(event) ||
           !validateConnectorEventContext(event, {
@@ -67,9 +94,19 @@ export class RunWorker {
           return true;
         }
       }
+      if (controller.signal.aborted || (await this.isCancellationRequested(run.run_id))) {
+        await this.cancel(run, now);
+        return true;
+      }
       await this.fail(run.run_id, 'CONNECTOR_INCOMPLETE', now);
     } catch {
-      await this.fail(run.run_id, 'CONNECTOR_EXECUTION_FAILED', now);
+      if (controller.signal.aborted || (await this.isCancellationRequested(run.run_id))) {
+        await this.cancel(run, now);
+      } else {
+        await this.fail(run.run_id, 'CONNECTOR_EXECUTION_FAILED', now);
+      }
+    } finally {
+      unregister?.();
     }
     return true;
   }
@@ -265,6 +302,31 @@ export class RunWorker {
       .set({ status: 'completed', completed_at: now, lease_expires_at: null, updated_at: now })
       .where('run_id', '=', runId)
       .execute();
+  }
+
+  private async isCancellationRequested(runId: string): Promise<boolean> {
+    const run = await this.database
+      .selectFrom('agent_runs')
+      .select('status')
+      .where('run_id', '=', runId)
+      .executeTakeFirstOrThrow();
+    return run.status === 'cancel_requested' || run.status === 'cancelled';
+  }
+
+  private async cancel(run: ClaimedRun, now: Date): Promise<void> {
+    await this.database.transaction().execute(async (transaction) => {
+      await transaction
+        .updateTable('agent_runs')
+        .set({ status: 'cancelled', completed_at: now, lease_expires_at: null, updated_at: now })
+        .where('run_id', '=', run.run_id)
+        .execute();
+      await transaction
+        .updateTable('messages')
+        .set({ status: 'cancelled', completed_at: now })
+        .where('message_id', '=', run.assistant_message_id)
+        .where('status', 'in', ['pending', 'streaming'])
+        .execute();
+    });
   }
 
   private fail(runId: string, code: string, now: Date) {

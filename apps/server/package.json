@@ -15,10 +15,10 @@
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p test/tsconfig.json"
   },
   "devDependencies": {
-    "@formation-chat-core/mock-connector": "0.0.0",
     "@types/pg": "8.20.0"
   },
   "dependencies": {
+    "@formation-chat-core/mock-connector": "0.0.0",
     "@formation-chat-core/protocol": "0.0.0",
     "@formation-chat-core/server-sdk": "0.0.0",
     "@sinclair/typebox": "0.34.52",

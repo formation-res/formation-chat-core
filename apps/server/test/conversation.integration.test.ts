@@ -4,6 +4,7 @@ import { ConversationService } from '../src/conversation/service.js';
 import { createDatabase } from '../src/database/database.js';
 import { migrateDatabase } from '../src/database/migrate.js';
 import { MessageService } from '../src/message/service.js';
+import { RunService } from '../src/run/service.js';
 import { buildServer } from '../src/server.js';
 import { SessionTokenService } from '../src/session/token.js';
 
@@ -14,10 +15,12 @@ const secret = '0123456789abcdef0123456789abcdef';
 const tokens = new SessionTokenService(secret, 600);
 const conversations = new ConversationService(database);
 const messages = new MessageService(database);
+const runs = new RunService(database);
 const server = buildServer({
   checkDatabase: async () => undefined,
   conversationService: conversations,
   messageService: messages,
+  runService: runs,
   sessionTokens: tokens,
   logger: false,
 });
@@ -152,6 +155,13 @@ const submitMessage = (
     url: `/v1/conversations/${conversationId}/messages`,
     headers: { authorization: `Bearer ${token}`, 'idempotency-key': idempotencyKey },
     payload: { parts: [{ type: 'text', text }] },
+  });
+
+const cancelRun = (token: string, conversationId: string, idempotencyKey = crypto.randomUUID()) =>
+  server.inject({
+    method: 'POST',
+    url: `/v1/conversations/${conversationId}/cancel`,
+    headers: { authorization: `Bearer ${token}`, 'idempotency-key': idempotencyKey },
   });
 
 describe('conversation API', () => {
@@ -334,5 +344,49 @@ describe('message API', () => {
     });
     expect(response.statusCode).toBe(400);
     expect(response.json()).toMatchObject({ error: { code: 'INVALID_CURSOR' } });
+  });
+});
+
+describe('run cancellation API', () => {
+  it('cancels a queued run immediately and replays the same outcome', async () => {
+    const conversation = (await createConversation(tokenA)).json();
+    await submitMessage(tokenA, conversation.conversationId, 'Cancel me');
+    const key = crypto.randomUUID();
+
+    const response = await cancelRun(tokenA, conversation.conversationId, key);
+    const replay = await cancelRun(tokenA, conversation.conversationId, key);
+
+    expect(response.statusCode).toBe(202);
+    expect(response.json()).toMatchObject({
+      conversationId: conversation.conversationId,
+      cancellationStatus: 'cancelled',
+    });
+    expect(replay.json()).toEqual(response.json());
+    expect(
+      (await database.selectFrom('agent_runs').select('status').executeTakeFirstOrThrow()).status,
+    ).toBe('cancelled');
+  });
+
+  it('marks a running run for best-effort cancellation', async () => {
+    const conversation = (await createConversation(tokenA)).json();
+    await submitMessage(tokenA, conversation.conversationId, 'Stop running');
+    await database.updateTable('agent_runs').set({ status: 'running' }).execute();
+
+    const response = await cancelRun(tokenA, conversation.conversationId);
+
+    expect(response.statusCode).toBe(202);
+    expect(response.json().cancellationStatus).toBe('cancel_requested');
+    expect(
+      (await database.selectFrom('agent_runs').select('status').executeTakeFirstOrThrow()).status,
+    ).toBe('cancel_requested');
+  });
+
+  it('does not reveal cancellation state across tenant scope', async () => {
+    const conversation = (await createConversation(tokenA)).json();
+    await submitMessage(tokenA, conversation.conversationId, 'Private run');
+
+    const response = await cancelRun(tokenB, conversation.conversationId);
+
+    expect(response.statusCode).toBe(404);
   });
 });

@@ -7,6 +7,8 @@ import type { ConversationService } from './conversation/service.js';
 import { registerEventRoutes } from './event/route.js';
 import type { EventService } from './event/service.js';
 import type { MessageService } from './message/service.js';
+import { registerRunRoutes } from './run/route.js';
+import type { RunService } from './run/service.js';
 import { registerSessionRoutes, type BootstrapAnonymous } from './session/route.js';
 import type { SessionTokenService } from './session/token.js';
 
@@ -17,6 +19,7 @@ export interface BuildServerOptions {
   conversationService?: ConversationService;
   messageService?: MessageService;
   eventService?: EventService;
+  runService?: RunService;
   sessionTokens?: SessionTokenService;
   logger?: FastifyServerOptions['logger'];
 }
@@ -67,6 +70,9 @@ export function buildServer(options: BuildServerOptions) {
   }
   if (options.eventService && options.sessionTokens) {
     registerEventRoutes(server, options.eventService, options.sessionTokens);
+  }
+  if (options.runService && options.sessionTokens) {
+    registerRunRoutes(server, options.runService, options.sessionTokens);
   }
 
   return server;

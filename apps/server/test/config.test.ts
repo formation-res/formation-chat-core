@@ -15,6 +15,10 @@ describe('loadConfig', () => {
         SESSION_TOKEN_TTL_SECONDS: '600',
         EVENT_RETENTION_MAX_EVENTS: '250',
         EVENT_SUBSCRIBER_BUFFER_SIZE: '32',
+        CONNECTOR_MODE: 'mock',
+        RUN_WORKER_POLL_INTERVAL_MS: '100',
+        RUN_LEASE_MS: '45000',
+        RUN_MAX_ATTEMPTS: '5',
       }),
     ).toEqual({
       databaseUrl: 'postgres://chat:password@localhost:5432/chat_core',
@@ -26,6 +30,10 @@ describe('loadConfig', () => {
       sessionTokenTtlSeconds: 600,
       eventRetentionMaxEvents: 250,
       eventSubscriberBufferSize: 32,
+      connectorMode: 'mock',
+      runWorkerPollIntervalMs: 100,
+      runLeaseMs: 45000,
+      runMaxAttempts: 5,
     });
   });
 
@@ -76,5 +84,20 @@ describe('loadConfig', () => {
         EVENT_SUBSCRIBER_BUFFER_SIZE: '1000001',
       }),
     ).toThrow('Invalid configuration: EVENT_RETENTION_MAX_EVENTS, EVENT_SUBSCRIBER_BUFFER_SIZE');
+  });
+
+  it('rejects invalid connector worker configuration', () => {
+    expect(() =>
+      loadConfig({
+        DATABASE_URL: 'postgres://localhost/chat',
+        SESSION_TOKEN_SECRET: '0123456789abcdef0123456789abcdef',
+        CONNECTOR_MODE: 'haystack',
+        RUN_WORKER_POLL_INTERVAL_MS: '0',
+        RUN_LEASE_MS: '999',
+        RUN_MAX_ATTEMPTS: '0',
+      }),
+    ).toThrow(
+      'Invalid configuration: CONNECTOR_MODE, RUN_WORKER_POLL_INTERVAL_MS, RUN_LEASE_MS, RUN_MAX_ATTEMPTS',
+    );
   });
 });

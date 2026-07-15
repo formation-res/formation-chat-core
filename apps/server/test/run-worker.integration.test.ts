@@ -10,6 +10,8 @@ import { EventBroker } from '../src/event/broker.js';
 import { EventService } from '../src/event/service.js';
 import { EventStore } from '../src/event/store.js';
 import { MessageService } from '../src/message/service.js';
+import { RunCancellationCoordinator } from '../src/run/cancellation.js';
+import { RunService } from '../src/run/service.js';
 import { RunWorker } from '../src/run/worker.js';
 
 const databaseUrl = process.env.DATABASE_URL;
@@ -265,4 +267,61 @@ describe('RunWorker', () => {
       { type: 'run.completed', visibility: 'public' },
     ]);
   });
+
+  it('interrupts an active connector after a best-effort cancellation request', async () => {
+    const conversation = await submit();
+    const coordinator = new RunCancellationCoordinator();
+    let connectorCancelCalled = false;
+    const blockingConnector: ChatConnector = {
+      async *run(execution) {
+        yield {
+          type: 'run.started',
+          visibility: 'public',
+          conversationId: execution.request.conversationId,
+          runId: execution.request.runId,
+          data: { agentRef: execution.request.agentRef },
+        };
+        await new Promise<void>((resolve) => {
+          if (execution.signal.aborted) resolve();
+          else execution.signal.addEventListener('abort', () => resolve(), { once: true });
+        });
+      },
+      async cancel() {
+        connectorCancelCalled = true;
+        return 'accepted';
+      },
+    };
+    const worker = new RunWorker(
+      database,
+      events,
+      () => blockingConnector,
+      { leaseMs: 30_000, maxAttempts: 3 },
+      coordinator,
+    );
+    const service = new RunService(database, coordinator);
+    const processing = worker.processNext();
+    await waitForRunStarted();
+
+    const outcome = await service.cancel(scope, conversation.conversationId, crypto.randomUUID());
+    await processing;
+
+    expect(outcome.cancellationStatus).toBe('cancel_requested');
+    expect(connectorCancelCalled).toBe(true);
+    expect(
+      (await database.selectFrom('agent_runs').select('status').executeTakeFirstOrThrow()).status,
+    ).toBe('cancelled');
+  });
 });
+
+async function waitForRunStarted(): Promise<void> {
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    const event = await database
+      .selectFrom('conversation_events')
+      .select('event_id')
+      .where('type', '=', 'run.started')
+      .executeTakeFirst();
+    if (event) return;
+    await new Promise<void>((resolve) => setImmediate(resolve));
+  }
+  throw new Error('Run did not start.');
+}

@@ -10,6 +10,10 @@ export interface ServerConfig {
   sessionTokenTtlSeconds: number;
   eventRetentionMaxEvents: number;
   eventSubscriberBufferSize: number;
+  connectorMode: 'disabled' | 'mock';
+  runWorkerPollIntervalMs: number;
+  runLeaseMs: number;
+  runMaxAttempts: number;
 }
 
 export class ConfigurationError extends Error {
@@ -44,6 +48,10 @@ export function loadConfig(env: NodeJS.ProcessEnv): ServerConfig {
   const sessionTokenTtlSeconds = parseInteger(env.SESSION_TOKEN_TTL_SECONDS, 900);
   const eventRetentionMaxEvents = parseInteger(env.EVENT_RETENTION_MAX_EVENTS, 1000);
   const eventSubscriberBufferSize = parseInteger(env.EVENT_SUBSCRIBER_BUFFER_SIZE, 100);
+  const connectorMode = env.CONNECTOR_MODE ?? 'disabled';
+  const runWorkerPollIntervalMs = parseInteger(env.RUN_WORKER_POLL_INTERVAL_MS, 250);
+  const runLeaseMs = parseInteger(env.RUN_LEASE_MS, 30_000);
+  const runMaxAttempts = parseInteger(env.RUN_MAX_ATTEMPTS, 3);
   const logLevel = env.LOG_LEVEL ?? 'info';
 
   if (!isDatabaseUrl(env.DATABASE_URL)) invalid.push('DATABASE_URL');
@@ -76,6 +84,20 @@ export function loadConfig(env: NodeJS.ProcessEnv): ServerConfig {
   ) {
     invalid.push('EVENT_SUBSCRIBER_BUFFER_SIZE');
   }
+  if (connectorMode !== 'disabled' && connectorMode !== 'mock') invalid.push('CONNECTOR_MODE');
+  if (
+    !Number.isInteger(runWorkerPollIntervalMs) ||
+    runWorkerPollIntervalMs < 10 ||
+    runWorkerPollIntervalMs > 60_000
+  ) {
+    invalid.push('RUN_WORKER_POLL_INTERVAL_MS');
+  }
+  if (!Number.isInteger(runLeaseMs) || runLeaseMs < 1_000 || runLeaseMs > 3_600_000) {
+    invalid.push('RUN_LEASE_MS');
+  }
+  if (!Number.isInteger(runMaxAttempts) || runMaxAttempts < 1 || runMaxAttempts > 20) {
+    invalid.push('RUN_MAX_ATTEMPTS');
+  }
   if (invalid.length > 0) throw new ConfigurationError(invalid);
 
   return {
@@ -88,5 +110,9 @@ export function loadConfig(env: NodeJS.ProcessEnv): ServerConfig {
     sessionTokenTtlSeconds,
     eventRetentionMaxEvents,
     eventSubscriberBufferSize,
+    connectorMode: connectorMode as ServerConfig['connectorMode'],
+    runWorkerPollIntervalMs,
+    runLeaseMs,
+    runMaxAttempts,
   };
 }

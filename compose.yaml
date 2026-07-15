@@ -23,6 +23,7 @@ services:
       PORT: 3000
       EVENT_RETENTION_MAX_EVENTS: 1000
       EVENT_SUBSCRIBER_BUFFER_SIZE: 100
+      CONNECTOR_MODE: mock
       SESSION_TOKEN_SECRET: local-development-secret-change-me
     depends_on:
       postgres:
