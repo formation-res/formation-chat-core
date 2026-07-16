@@ -143,4 +143,8 @@ export function isHaystackAgentResponse(value: unknown): value is HaystackAgentR
   return Value.Check(HaystackAgentResponseSchema, value);
 }
 
+export function isHaystackAgentRequest(value: unknown): value is HaystackAgentRequest {
+  return Value.Check(HaystackAgentRequestSchema, value);
+}
+
 const invalidConfig = () => new TypeError('Invalid Haystack connector configuration.');

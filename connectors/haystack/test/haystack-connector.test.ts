@@ -152,6 +152,47 @@ describe('HaystackConnector', () => {
     expect(events[1]).toMatchObject({ data: { code: 'HAYSTACK_INVALID_RESPONSE' } });
   });
 
+  it('classifies malformed JSON as an invalid response rather than an outage', async () => {
+    const connector = new HaystackConnector(
+      {
+        baseUrl: 'http://haystack:8080',
+        tenantKey: 'formationxyz_com',
+        agentSlug: 'support',
+      },
+      {
+        fetch: async () => new Response('{', { headers: { 'Content-Type': 'application/json' } }),
+      },
+    );
+
+    const events = await collect(connector.run(execution()));
+
+    expect(events.map(({ type }) => type)).toEqual(['run.started', 'run.failed']);
+    expect(events[1]).toMatchObject({ data: { code: 'HAYSTACK_INVALID_RESPONSE' } });
+  });
+
+  it('rejects aggregate user text outside the Haystack request contract before fetch', async () => {
+    const fetch = vi.fn(async () => Response.json(successResponse()));
+    const connector = new HaystackConnector(
+      {
+        baseUrl: 'http://haystack:8080',
+        tenantKey: 'formationxyz_com',
+        agentSlug: 'support',
+      },
+      { fetch },
+    );
+    const oversized = execution();
+    oversized.request.currentMessage.parts = [
+      { type: 'text', text: 'x'.repeat(60_000) },
+      { type: 'text', text: 'y'.repeat(60_000) },
+    ];
+
+    const events = await collect(connector.run(oversized));
+
+    expect(events.map(({ type }) => type)).toEqual(['run.started', 'run.failed']);
+    expect(events[1]).toMatchObject({ data: { code: 'HAYSTACK_INVALID_REQUEST' } });
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
   it('maps non-completed Haystack statuses to a failed run', async () => {
     const connector = connectorReturning({ ...successResponse(), status: 'rejected' });
 

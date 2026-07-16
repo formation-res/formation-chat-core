@@ -10,6 +10,7 @@ import {
   HaystackAgentResponseSchema,
   HaystackConnectorConfigSchema,
   HaystackConnectorMapSchema,
+  isHaystackAgentRequest,
   isHaystackAgentResponse,
   parseHaystackConfig,
   parseHaystackConnectorMap,
@@ -69,18 +70,27 @@ export class HaystackConnector implements ChatConnector {
     const timeout = new AbortController();
     const timer = setTimeout(() => timeout.abort(), this.config.timeoutMs ?? 30_000);
     const signal = AbortSignal.any([execution.signal, timeout.signal]);
-    let response: Response;
     let body: unknown;
     try {
-      response = await this.dependencies.fetch(
-        new Request(`${this.config.baseUrl}/api/agents/knowledge/chat`, {
-          method: 'POST',
-          headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-          redirect: 'error',
-          signal,
-        }),
-      );
+      let response: Response;
+      try {
+        response = await this.dependencies.fetch(
+          new Request(`${this.config.baseUrl}/api/agents/knowledge/chat`, {
+            method: 'POST',
+            headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            redirect: 'error',
+            signal,
+          }),
+        );
+      } catch {
+        if (execution.signal.aborted) return;
+        yield failedEvent(
+          execution,
+          timeout.signal.aborted ? 'HAYSTACK_TIMEOUT' : 'HAYSTACK_UNAVAILABLE',
+        );
+        return;
+      }
       if (execution.signal.aborted) return;
       if (!response.ok) {
         yield failedEvent(execution, 'HAYSTACK_HTTP_ERROR');
@@ -90,14 +100,16 @@ export class HaystackConnector implements ChatConnector {
         yield failedEvent(execution, 'HAYSTACK_INVALID_RESPONSE');
         return;
       }
-      body = JSON.parse(await readBoundedText(response, signal));
-    } catch {
-      if (execution.signal.aborted) return;
-      yield failedEvent(
-        execution,
-        timeout.signal.aborted ? 'HAYSTACK_TIMEOUT' : 'HAYSTACK_UNAVAILABLE',
-      );
-      return;
+      try {
+        body = JSON.parse(await readBoundedText(response, signal));
+      } catch {
+        if (execution.signal.aborted) return;
+        yield failedEvent(
+          execution,
+          timeout.signal.aborted ? 'HAYSTACK_TIMEOUT' : 'HAYSTACK_INVALID_RESPONSE',
+        );
+        return;
+      }
     } finally {
       clearTimeout(timer);
     }
@@ -126,7 +138,7 @@ function requestPayload(
     .trim();
   if (!text) return undefined;
   const origin = execution.request.trustedMetadata.origin;
-  return {
+  const payload = {
     channel: 'web',
     tenant_key: config.tenantKey,
     agent_slug: config.agentSlug,
@@ -146,6 +158,7 @@ function requestPayload(
       },
     },
   };
+  return isHaystackAgentRequest(payload) ? payload : undefined;
 }
 
 function isValidResponse(
@@ -193,6 +206,9 @@ async function readBoundedText(response: Response, signal: AbortSignal): Promise
       if (length > RESPONSE_LIMIT_BYTES) throw new Error('Response too large.');
       chunks.push(result.value);
     }
+  } catch (error) {
+    await reader.cancel().catch(() => undefined);
+    throw error;
   } finally {
     reader.releaseLock();
   }
