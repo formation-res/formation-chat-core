@@ -26,6 +26,14 @@ services:
       CONNECTOR_MODE: mock
       SESSION_TOKEN_SECRET: local-development-secret-change-me
       ADMIN_TOKEN_SECRET: local-development-admin-secret-change-me
+      METRICS_BEARER_TOKEN: local-development-metrics-secret-change-me
+      HTTP_BODY_LIMIT_BYTES: 262144
+      PUBLIC_RATE_LIMIT_MAX: 120
+      BOOTSTRAP_RATE_LIMIT_MAX: 30
+      ADMIN_RATE_LIMIT_MAX: 600
+      ANONYMOUS_RETENTION_DAYS: 30
+      AUTHENTICATED_RETENTION_DAYS: 365
+      CONTACT_VALUE_RETENTION_HOURS: 24
     depends_on:
       postgres:
         condition: service_healthy

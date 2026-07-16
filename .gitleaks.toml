@@ -1,0 +1,11 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Deterministic signing-key fixtures used only by token/config integration tests"
+paths = [
+  '''apps/server/test/config\.test\.ts''',
+  '''apps/server/test/conversation\.integration\.test\.ts''',
+  '''apps/server/test/session\.integration\.test\.ts''',
+  '''apps/server/test/token\.test\.ts''',
+]

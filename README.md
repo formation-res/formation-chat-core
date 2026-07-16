@@ -9,13 +9,15 @@ to support other agent systems and message sources without changing the chat mod
 
 ## Project status
 
-Tasks 1 through 17 are complete. The repository now has the TypeScript toolchain, language-neutral
+Tasks 1 through 18 are complete. The repository now has the TypeScript toolchain, language-neutral
 contracts, PostgreSQL-backed sessions and conversations, idempotent user messages, ordered event
 storage, reconnectable SSE delivery, durable connector jobs, and a deterministic mock agent. Task
 11 adds the React reference UI, Task 12 adds the Cloudflare gateway example, Tasks 13 and 14 add
 Haystack connector paths, Task 15 completes email handoff, Task 16 adds separately authenticated
 read-only admin APIs, and Task 17 adds the responsive operations dashboard. Haystack integration
-remains an adapter outside the core.
+remains an adapter outside the core. Task 18 adds HTTP hardening, durable audit records, retention
+and contact redaction, signing-key rotation, private metrics, backup/restore tooling, and release
+operations guidance.
 
 ## Start here
 
@@ -29,6 +31,10 @@ gateway is documented in [examples/cloudflare-worker](examples/cloudflare-worker
 The temporary Haystack integration is documented in
 [docs/connectors/haystack-compatibility.md](docs/connectors/haystack-compatibility.md).
 The read-only operations UI is documented in [apps/dashboard](apps/dashboard/README.md).
+Deployment paths are summarized in [the quick starts](docs/quickstarts.md); production operators
+should also review [security and retention](docs/operations/security-and-retention.md),
+[backup and restore](docs/operations/backup-and-restore.md), and the
+[release checklist](docs/operations/observability-and-release.md).
 
 ## Intended repository layout
 
