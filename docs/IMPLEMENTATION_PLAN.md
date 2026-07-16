@@ -509,6 +509,17 @@ handoff tool, outbound delivery path, cross-repository tests
 
 **Estimated scope:** Split into core contact lifecycle and Haystack delivery tasks before coding
 
+**Completed:** 2026-07-16 on chat-core branch `codex/initial-foundation` and Haystack branch
+`codex/task-15-email-handoff`. Chat Core now persists scoped handoff and structured-input resources,
+pauses runs for typed email input, records purpose-bound consent or decline decisions, and resumes
+the same run with private `resolvedInputs`. The browser client and React UI submit the validated,
+idempotent command without retaining contact data. Haystack pauses after `contact.requested`, then
+uses trusted agent sender/target configuration to send a bounded deterministic transcript summary,
+CC the consented visitor, and emit only generic outcomes. SQLite delivery state and a stable
+run-derived message ID prevent duplicate delivery and permit transient retries. Tests cover valid,
+invalid, declined, isolated, successful, transient, permanent, duplicate, contract, and header
+injection paths.
+
 ### Checkpoint: Production agent path
 
 - Cloudflare-hosted site streams a Haystack answer through the core.

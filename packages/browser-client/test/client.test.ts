@@ -45,6 +45,18 @@ class FakeTransport implements ChatTransport {
   readonly getConversation = vi.fn(async () => conversation);
   readonly listMessages = vi.fn(async () => this.messages);
   readonly submitMessage = vi.fn(async () => this.messages[0] as Message);
+  readonly submitStructuredInput = vi.fn(async (_conversationId, requestId) => ({
+    requestId,
+    conversationId: conversation.conversationId,
+    runId: 'run-1',
+    inputKind: 'email' as const,
+    purpose: 'handoff_email_delivery' as const,
+    prompt: 'Where can we reach you?',
+    required: false,
+    status: 'submitted' as const,
+    createdAt: '2026-07-15T10:00:00.000Z',
+    updatedAt: '2026-07-15T10:01:00.000Z',
+  }));
   readonly cancel = vi.fn(async () => ({
     conversationId: conversation.conversationId,
     runId: 'run-1',
@@ -157,5 +169,46 @@ describe('framework-neutral chat client', () => {
     expect(second.getState().messages.map(({ messageId }) => messageId)).toEqual(['message-2']);
     first.destroy();
     second.destroy();
+  });
+
+  it('submits active structured input without retaining the email in state', async () => {
+    const transport = new FakeTransport();
+    const client = createChatClient({
+      siteKey: 'site-key',
+      transport,
+      createId: () => 'input-key',
+    });
+    await client.start();
+    await client.createConversation();
+    await transport.emit({
+      eventId: 'contact-1',
+      sequence: 1,
+      type: 'contact.requested',
+      visibility: 'public',
+      occurredAt: '2026-07-15T10:00:00.000Z',
+      conversationId: 'conversation-1',
+      runId: 'run-1',
+      data: {
+        requestId: 'request-1',
+        inputKind: 'email',
+        purpose: 'handoff_email_delivery',
+        prompt: 'Where can we reach you?',
+        required: false,
+      },
+    });
+    await client.submitStructuredInput('request-1', {
+      value: 'visitor@example.com',
+      consent: true,
+    });
+
+    expect(transport.submitStructuredInput).toHaveBeenCalledWith(
+      'conversation-1',
+      'request-1',
+      { value: 'visitor@example.com', consent: true },
+      'input-key',
+    );
+    expect(client.getState().contactRequest).toBeUndefined();
+    expect(JSON.stringify(client.getState())).not.toContain('visitor@example.com');
+    client.destroy();
   });
 });

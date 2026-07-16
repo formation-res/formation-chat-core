@@ -1,5 +1,10 @@
 import type { ChatClient, ChatState } from '@formation-chat-core/browser-client';
-import type { Conversation, Message, SubmitMessageRequest } from '@formation-chat-core/protocol';
+import type {
+  Conversation,
+  Message,
+  StructuredInputRequest,
+  SubmitMessageRequest,
+} from '@formation-chat-core/protocol';
 import axe from 'axe-core';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -39,7 +44,9 @@ class BrowserFixtureClient implements ChatClient {
             contactRequest: {
               requestId: 'browser-contact',
               inputKind: 'email' as const,
+              purpose: 'handoff_email_delivery' as const,
               prompt: 'Where can our team reach you?',
+              required: false,
             },
           }
         : {}),
@@ -127,7 +134,7 @@ class BrowserFixtureClient implements ChatClient {
     this.listeners.clear();
   }
 
-  submitStructuredInput = async (): Promise<void> => {
+  submitStructuredInput = async (requestId: string): Promise<StructuredInputRequest> => {
     const next = { ...this.state };
     delete next.contactRequest;
     this.state = {
@@ -135,6 +142,18 @@ class BrowserFixtureClient implements ChatClient {
       handoff: { handoffId: 'browser-handoff', status: 'requested' },
     };
     this.emit();
+    return {
+      requestId,
+      conversationId: conversation.conversationId,
+      runId: 'browser-run',
+      inputKind: 'email',
+      purpose: 'handoff_email_delivery',
+      prompt: 'Where can our team reach you?',
+      required: false,
+      status: 'submitted',
+      createdAt: now,
+      updatedAt: now,
+    };
   };
 
   private completeResponse(userMessage: Message): void {
@@ -179,11 +198,7 @@ class BrowserFixtureClient implements ChatClient {
 const client = new BrowserFixtureClient(new URL(location.href).searchParams.has('contact'));
 createRoot(document.getElementById('root') as HTMLElement).render(
   <StrictMode>
-    <ChatPanel
-      client={client}
-      title="Formation assistant"
-      onSubmitStructuredInput={client.submitStructuredInput}
-    />
+    <ChatPanel client={client} title="Formation assistant" />
   </StrictMode>,
 );
 

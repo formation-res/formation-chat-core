@@ -6,6 +6,8 @@ import type {
   PublicConversationEvent,
   SessionBootstrapResponse,
   SubmitMessageRequest,
+  SubmitStructuredInputRequest,
+  StructuredInputRequest,
 } from '@formation-chat-core/protocol';
 
 export type ChatPhase = 'idle' | 'bootstrapping' | 'ready' | 'streaming' | 'reconnecting' | 'error';
@@ -41,6 +43,8 @@ export interface ContactRequestState {
   requestId: string;
   inputKind: 'email';
   prompt: string;
+  purpose: 'handoff_email_delivery';
+  required: boolean;
 }
 
 export interface HandoffState {
@@ -72,6 +76,7 @@ export type ChatStateAction =
   | { type: 'message.submitted'; message: Message }
   | { type: 'run.cancelled'; runId: string; requested: boolean }
   | { type: 'run.retrying' }
+  | { type: 'structured-input.submitted'; requestId: string }
   | { type: 'event.received'; event: PublicConversationEvent }
   | { type: 'cursor.restored'; eventId: string; sequence: number }
   | { type: 'cursor.cleared' }
@@ -116,6 +121,12 @@ export interface ChatTransport {
     request: SubmitMessageRequest,
     idempotencyKey: string,
   ): Promise<Message>;
+  submitStructuredInput(
+    conversationId: string,
+    requestId: string,
+    request: SubmitStructuredInputRequest,
+    idempotencyKey: string,
+  ): Promise<StructuredInputRequest>;
   cancel(conversationId: string, idempotencyKey: string): Promise<CancelRunResponse>;
   retry(conversationId: string, idempotencyKey: string): Promise<void>;
   streamEvents(request: StreamEventsRequest): Promise<void>;
@@ -138,6 +149,10 @@ export interface ChatClient {
   createConversation(): Promise<Conversation>;
   selectConversation(conversationId: string): Promise<void>;
   sendMessage(request: SubmitMessageRequest): Promise<Message>;
+  submitStructuredInput(
+    requestId: string,
+    request: SubmitStructuredInputRequest,
+  ): Promise<StructuredInputRequest>;
   cancel(): Promise<CancelRunResponse>;
   retryRun(): Promise<void>;
   retry(): Promise<void>;

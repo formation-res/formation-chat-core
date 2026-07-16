@@ -25,6 +25,19 @@ export function ChatPanel(props: ChatPanelProps) {
   };
   const className = ['fcc-chat', props.className].filter(Boolean).join(' ');
   const isLoading = state.phase === 'idle' || state.phase === 'bootstrapping';
+  const submitStructuredInput =
+    props.onSubmitStructuredInput ??
+    ((submission) => {
+      const { requestId } = submission;
+      return props.client
+        .submitStructuredInput(
+          requestId,
+          'declined' in submission
+            ? { declined: true }
+            : { value: submission.value, consent: submission.consent },
+        )
+        .then(() => undefined);
+    });
 
   return (
     <section className={className} aria-label={labels.title}>
@@ -51,7 +64,7 @@ export function ChatPanel(props: ChatPanelProps) {
       <StructuredInput
         {...(state.contactRequest ? { request: state.contactRequest } : {})}
         {...(state.handoff ? { handoff: state.handoff } : {})}
-        {...(props.onSubmitStructuredInput ? { onSubmit: props.onSubmitStructuredInput } : {})}
+        onSubmit={submitStructuredInput}
       />
       <Composer
         client={props.client}

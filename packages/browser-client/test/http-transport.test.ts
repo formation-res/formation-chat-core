@@ -86,6 +86,46 @@ describe('HTTP chat transport', () => {
       transport.bootstrap({ siteKey: 'missing', idempotencyKey: 'key-1' }),
     ).rejects.toMatchObject({ code: 'SITE_NOT_FOUND', status: 404 });
   });
+
+  it('submits structured input with authentication and idempotency', async () => {
+    const input = {
+      requestId: 'request-1',
+      conversationId: 'conversation-1',
+      runId: 'run-1',
+      inputKind: 'email' as const,
+      purpose: 'handoff_email_delivery' as const,
+      prompt: 'Where can we reach you?',
+      required: false,
+      status: 'submitted' as const,
+      createdAt: '2026-07-15T10:00:00.000Z',
+      updatedAt: '2026-07-15T10:01:00.000Z',
+    };
+    const calls: Array<[RequestInfo | URL, RequestInit | undefined]> = [];
+    const responses = [Response.json(session), Response.json(input)];
+    const transport = createHttpChatTransport({
+      baseUrl: 'https://chat.example',
+      fetch: vi.fn(async (url, init) => {
+        calls.push([url, init]);
+        return responses.shift() as Response;
+      }),
+    });
+    await transport.bootstrap({ siteKey: 'site-key', idempotencyKey: 'bootstrap-key' });
+
+    await expect(
+      transport.submitStructuredInput(
+        'conversation-1',
+        'request-1',
+        { value: 'visitor@example.com', consent: true },
+        'input-key',
+      ),
+    ).resolves.toEqual(input);
+    expect(calls[1]?.[1]).toMatchObject({
+      method: 'POST',
+      headers: expect.objectContaining({ 'Idempotency-Key': 'input-key' }),
+      body: JSON.stringify({ value: 'visitor@example.com', consent: true }),
+    });
+    expect(calls[1]?.[1]?.headers).toMatchObject({ Authorization: 'Bearer secret-token' });
+  });
 });
 
 describe('SSE parser', () => {

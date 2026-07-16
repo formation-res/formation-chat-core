@@ -6,6 +6,8 @@ import {
   PublicConversationEventSchema,
   SessionBootstrapResponseSchema,
   SubmitMessageRequestSchema,
+  SubmitStructuredInputRequestSchema,
+  StructuredInputRequestSchema,
   type Message,
   type PublicConversationEvent,
   type SessionBootstrapResponse,
@@ -161,6 +163,18 @@ export function createHttpChatTransport(options: HttpChatTransportOptions): Chat
           body: JSON.stringify(request),
         },
         MessageSchema,
+      );
+    },
+    submitStructuredInput: (conversationId, requestId, request, idempotencyKey) => {
+      validate(SubmitStructuredInputRequestSchema, request, 'structured input request');
+      return requestJson(
+        `/v1/conversations/${encodeURIComponent(conversationId)}/inputs/${encodeURIComponent(requestId)}`,
+        {
+          method: 'POST',
+          headers: { 'Idempotency-Key': idempotencyKey },
+          body: JSON.stringify(request),
+        },
+        StructuredInputRequestSchema,
       );
     },
     cancel: (conversationId, idempotencyKey) =>

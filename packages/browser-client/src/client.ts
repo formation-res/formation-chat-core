@@ -4,6 +4,8 @@ import type {
   Message,
   PublicConversationEvent,
   SubmitMessageRequest,
+  SubmitStructuredInputRequest,
+  StructuredInputRequest,
 } from '@formation-chat-core/protocol';
 
 import { initialChatState, reduceChatState } from './state.js';
@@ -121,6 +123,27 @@ export function createChatClient(options: ChatClientOptions): ChatClient {
       requested: outcome.cancellationStatus === 'cancel_requested',
     });
     return outcome;
+  }
+
+  async function submitStructuredInput(
+    requestId: string,
+    request: SubmitStructuredInputRequest,
+  ): Promise<StructuredInputRequest> {
+    const conversation = requireConversation();
+    if (state.contactRequest?.requestId !== requestId) {
+      throw new Error('The structured input request is not active.');
+    }
+    const result = await runCommand(() =>
+      options.transport.submitStructuredInput(
+        conversation.conversationId,
+        requestId,
+        request,
+        createId(),
+      ),
+    );
+    dispatch({ type: 'structured-input.submitted', requestId });
+    openStream();
+    return result;
   }
 
   async function retryRun(): Promise<void> {
@@ -287,6 +310,7 @@ export function createChatClient(options: ChatClientOptions): ChatClient {
     createConversation,
     selectConversation,
     sendMessage,
+    submitStructuredInput,
     cancel,
     retryRun,
     retry,

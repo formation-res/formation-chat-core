@@ -21,6 +21,15 @@ await client.start();
 if (!client.getState().conversation) await client.createConversation();
 await client.sendMessage({ parts: [{ type: 'text', text: 'Hello' }] });
 
+// When state.contactRequest is present, submit or decline the typed request:
+const contactRequest = client.getState().contactRequest;
+if (contactRequest) {
+  await client.submitStructuredInput(contactRequest.requestId, {
+    value: 'visitor@example.com',
+    consent: true,
+  });
+}
+
 // On teardown:
 unsubscribe();
 client.destroy();
@@ -56,6 +65,9 @@ in public client state or persisted storage. Persisted data is restricted to:
 - the opaque anonymous browser identity;
 - the selected conversation ID;
 - the last public event ID and sequence.
+
+Submitted contact values are sent directly to the scoped structured-input endpoint. They are not
+copied into client state or persisted browser storage.
 
 Treat the browser identity as a credential: do not log it, place it in URLs, or copy it between
 origins. Production public sites should use the same-origin gateway described in the project brief.

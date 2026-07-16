@@ -134,6 +134,8 @@ describe('ChatPanel', () => {
         requestId: 'request-1',
         inputKind: 'email',
         prompt: 'Where can we reach you?',
+        purpose: 'handoff_email_delivery',
+        required: false,
       },
       handoff: { handoffId: 'handoff-1', status: 'requested' },
     });
@@ -153,6 +155,33 @@ describe('ChatPanel', () => {
       consent: true,
     });
     expect(container?.textContent).toContain('Connecting you with our team');
+  });
+
+  it('uses the browser client structured-input command by default', async () => {
+    const fake = createFakeClient({
+      phase: 'ready',
+      contactRequest: {
+        requestId: 'request-default',
+        inputKind: 'email',
+        purpose: 'handoff_email_delivery',
+        prompt: 'Where can we reach you?',
+        required: false,
+      },
+    });
+    render(<ChatPanel client={fake.client} />);
+    expect(container?.textContent).toContain('send this conversation');
+    const input = container?.querySelector<HTMLInputElement>('input[type="email"]');
+    if (!input) throw new Error('Missing email input.');
+    await act(async () => {
+      setInputValue(input, 'visitor@example.com');
+      container
+        ?.querySelector('form[aria-label="Share contact details"]')
+        ?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    });
+    expect(fake.client.submitStructuredInput).toHaveBeenCalledWith('request-default', {
+      value: 'visitor@example.com',
+      consent: true,
+    });
   });
 
   it('has no automated accessibility violations in the ready state', async () => {
@@ -201,6 +230,18 @@ function createFakeClient(overrides: Partial<ChatState>) {
     createConversation: vi.fn(async () => conversation),
     selectConversation: vi.fn(async () => undefined),
     sendMessage: vi.fn(async () => message('sent-message', 'user', 'sent')),
+    submitStructuredInput: vi.fn(async (requestId) => ({
+      requestId,
+      conversationId: 'conversation-1',
+      runId: 'run-1',
+      inputKind: 'email' as const,
+      purpose: 'handoff_email_delivery' as const,
+      prompt: 'Where can we reach you?',
+      required: false,
+      status: 'submitted' as const,
+      createdAt: '2026-07-15T10:00:00.000Z',
+      updatedAt: '2026-07-15T10:01:00.000Z',
+    })),
     cancel: vi.fn(async () => ({
       conversationId: 'conversation-1',
       runId: 'run-1',

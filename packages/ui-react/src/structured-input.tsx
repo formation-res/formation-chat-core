@@ -75,6 +75,7 @@ function EmailInput({
   return (
     <form className="fcc-contact" aria-label="Share contact details" onSubmit={submit}>
       <p>{request.prompt}</p>
+      <p>Your email will be used to send this conversation to our team and copy you.</p>
       <label htmlFor={emailId}>Email address</label>
       <div className="fcc-contact__controls">
         <input

@@ -18,7 +18,9 @@ export function SupportChat({ client }: { client: ChatClient }) {
 The panel starts the supplied client when mounted. The host remains responsible for constructing
 the client, providing its transport and storage adapters, and destroying it when appropriate.
 
-When the protocol requests an email address, submit it through the host application's endpoint:
+When the protocol requests an email address, the panel submits it through the browser client by
+default. The form explains that the address is used to deliver the handoff and CC the visitor.
+Hosts with a custom transport can override the command:
 
 ```tsx
 <ChatPanel
@@ -30,7 +32,7 @@ When the protocol requests an email address, submit it through the host applicat
 ```
 
 The callback receives a protocol-neutral `StructuredInputSubmission`; the UI does not retain or
-log the submitted address. Contact delivery is deliberately outside this package.
+log the submitted address.
 
 ## Customize
 

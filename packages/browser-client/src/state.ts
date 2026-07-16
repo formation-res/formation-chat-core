@@ -57,6 +57,12 @@ export function reduceChatState(state: ChatState, action: ChatStateAction): Chat
       };
     case 'run.retrying':
       return withoutError({ ...state, phase: 'streaming', run: { status: 'queued' } });
+    case 'structured-input.submitted': {
+      if (state.contactRequest?.requestId !== action.requestId) return state;
+      const next = { ...state };
+      delete next.contactRequest;
+      return withoutError({ ...next, phase: 'streaming' });
+    }
     case 'cursor.cleared':
       return { ...withoutCursor(state), lastEventSequence: 0, recentEventIds: [] };
     case 'cursor.restored':
