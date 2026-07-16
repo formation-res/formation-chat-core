@@ -7,10 +7,12 @@
     "conversationId",
     "runId",
     "inputKind",
+    "purpose",
     "prompt",
     "required",
     "status",
-    "createdAt"
+    "createdAt",
+    "updatedAt"
   ],
   "properties": {
     "requestId": {
@@ -33,6 +35,10 @@
     },
     "inputKind": {
       "const": "email",
+      "type": "string"
+    },
+    "purpose": {
+      "const": "handoff_email_delivery",
       "type": "string"
     },
     "prompt": {
@@ -64,6 +70,11 @@
       ]
     },
     "createdAt": {
+      "format": "date-time",
+      "pattern": "Z$",
+      "type": "string"
+    },
+    "updatedAt": {
       "format": "date-time",
       "pattern": "Z$",
       "type": "string"

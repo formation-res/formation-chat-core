@@ -2,6 +2,9 @@ import { type Static, Type } from '@sinclair/typebox';
 
 import { OpaqueIdSchema } from '../common/index.js';
 
+export const StructuredInputPurposeSchema = Type.Literal('handoff_email_delivery');
+export type StructuredInputPurpose = Static<typeof StructuredInputPurposeSchema>;
+
 export const TextPartSchema = Type.Object(
   { type: Type.Literal('text'), text: Type.String({ minLength: 1, maxLength: 100_000 }) },
   { additionalProperties: false },
@@ -49,6 +52,7 @@ export const StructuredInputPartSchema = Type.Object(
     type: Type.Literal('structured_input'),
     requestId: OpaqueIdSchema,
     inputKind: Type.Literal('email'),
+    purpose: StructuredInputPurposeSchema,
     label: Type.String({ minLength: 1, maxLength: 200 }),
     required: Type.Boolean(),
     status: Type.Union([

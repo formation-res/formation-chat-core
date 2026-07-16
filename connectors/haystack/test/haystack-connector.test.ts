@@ -37,6 +37,7 @@ const execution = (): ConnectorExecution => ({
       },
     ],
     principalContext: { kind: 'anonymous', principalId: 'principal-1' },
+    resolvedInputs: [],
     trustedMetadata: { origin: 'https://www.example.com' },
   },
 });

@@ -1,7 +1,7 @@
 import { Kind, type Static, Type } from '@sinclair/typebox';
 
 import { OpaqueIdSchema, TimestampSchema } from '../common/index.js';
-import { ContentPartSchema } from './content.js';
+import { ContentPartSchema, StructuredInputPurposeSchema } from './content.js';
 
 const UserParticipantSchema = Type.Object(
   {
@@ -154,6 +154,7 @@ export const StructuredInputRequestSchema = Type.Object(
     conversationId: OpaqueIdSchema,
     runId: OpaqueIdSchema,
     inputKind: Type.Literal('email'),
+    purpose: StructuredInputPurposeSchema,
     prompt: Type.String({ minLength: 1, maxLength: 500 }),
     required: Type.Boolean(),
     status: Type.Union([
@@ -163,6 +164,7 @@ export const StructuredInputRequestSchema = Type.Object(
       Type.Literal('expired'),
     ]),
     createdAt: TimestampSchema,
+    updatedAt: TimestampSchema,
   },
   { additionalProperties: true },
 );

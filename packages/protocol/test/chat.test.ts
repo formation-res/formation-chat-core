@@ -14,7 +14,10 @@ import {
   CreateConversationRequestSchema,
   MessageSchema,
   PublicConversationEventSchema,
+  StructuredInputRequestSchema,
+  StructuredInputResolutionSchema,
   SubmitMessageRequestSchema,
+  SubmitStructuredInputRequestSchema,
   validateConnectorEventContext,
   validateConnectorRunRequestContext,
   validateConversationParticipantContext,
@@ -143,6 +146,62 @@ describe('chat and connector contracts', () => {
     ).toBe(false);
   });
 
+  it('binds structured email consent to the handoff delivery purpose', () => {
+    const validateSubmission = ajv.compile(SubmitStructuredInputRequestSchema);
+    const validateRequest = ajv.compile(StructuredInputRequestSchema);
+    const validateResolution = ajv.compile(StructuredInputResolutionSchema);
+
+    expect(validateSubmission({ value: 'visitor@example.com', consent: true })).toBe(true);
+    expect(validateSubmission({ value: 'visitor@example.com', consent: false })).toBe(false);
+    expect(
+      validateSubmission({
+        value: 'visitor@example.com',
+        consent: true,
+        purpose: 'marketing',
+      }),
+    ).toBe(false);
+    expect(
+      validateRequest({
+        requestId: 'request_1',
+        conversationId: 'conversation_1',
+        runId: 'run_1',
+        inputKind: 'email',
+        purpose: 'handoff_email_delivery',
+        prompt: 'Where can our team reach you?',
+        required: true,
+        status: 'pending',
+        createdAt: '2026-07-16T12:00:00.000Z',
+        updatedAt: '2026-07-16T12:00:00.000Z',
+      }),
+    ).toBe(true);
+    expect(
+      validateResolution({
+        requestId: 'request_1',
+        inputKind: 'email',
+        purpose: 'handoff_email_delivery',
+        status: 'submitted',
+        value: 'visitor@example.com',
+        consent: {
+          status: 'granted',
+          recordedAt: '2026-07-16T12:01:00.000Z',
+        },
+      }),
+    ).toBe(true);
+    expect(
+      validateResolution({
+        requestId: 'request_1',
+        inputKind: 'email',
+        purpose: 'handoff_email_delivery',
+        status: 'declined',
+        value: 'visitor@example.com',
+        consent: {
+          status: 'declined',
+          recordedAt: '2026-07-16T12:01:00.000Z',
+        },
+      }),
+    ).toBe(false);
+  });
+
   it('validates discriminated public message parts', () => {
     const validate = ajv.compile(MessageSchema);
     const message = {
@@ -230,7 +289,13 @@ describe('chat and connector contracts', () => {
       'contact request',
       {
         type: 'contact.requested',
-        data: { requestId: 'request_1', inputKind: 'email', prompt: 'Where can we reach you?' },
+        data: {
+          requestId: 'request_1',
+          inputKind: 'email',
+          purpose: 'handoff_email_delivery',
+          prompt: 'Where can we reach you?',
+          required: true,
+        },
       },
     ],
     [
@@ -376,6 +441,7 @@ describe('chat and connector contracts', () => {
       userParticipantId: 'participant_user',
       history: [userMessage],
       principalContext: { principalId: 'principal_1', kind: 'anonymous' },
+      resolvedInputs: [],
       trustedMetadata: { origin: 'https://example.com' },
     } satisfies ConnectorRunRequest;
 
@@ -448,6 +514,7 @@ describe('chat and connector contracts', () => {
         userParticipantId: 'participant_user',
         history: [userMessage],
         principalContext: { principalId: 'principal_1', kind: 'anonymous' },
+        resolvedInputs: [],
         trustedMetadata: { origin: 'https://example.com' },
       },
     } satisfies ConnectorExecutionRequest;

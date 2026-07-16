@@ -149,6 +149,7 @@
         "type",
         "requestId",
         "inputKind",
+        "purpose",
         "label",
         "required",
         "status"
@@ -166,6 +167,10 @@
         },
         "inputKind": {
           "const": "email",
+          "type": "string"
+        },
+        "purpose": {
+          "const": "handoff_email_delivery",
           "type": "string"
         },
         "label": {

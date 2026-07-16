@@ -205,7 +205,14 @@
           }
         },
         "responses": {
-          "200": { "description": "Input accepted" },
+          "200": {
+            "description": "Input accepted",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "../schemas/chat/structured-input-request.schema.json" }
+              }
+            }
+          },
           "default": { "$ref": "#/components/responses/Error" }
         }
       }

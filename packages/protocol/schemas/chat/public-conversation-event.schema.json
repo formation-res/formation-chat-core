@@ -571,6 +571,7 @@
                       "type",
                       "requestId",
                       "inputKind",
+                      "purpose",
                       "label",
                       "required",
                       "status"
@@ -588,6 +589,10 @@
                       },
                       "inputKind": {
                         "const": "email",
+                        "type": "string"
+                      },
+                      "purpose": {
+                        "const": "handoff_email_delivery",
                         "type": "string"
                       },
                       "label": {
@@ -1009,7 +1014,9 @@
           "required": [
             "requestId",
             "inputKind",
-            "prompt"
+            "purpose",
+            "prompt",
+            "required"
           ],
           "properties": {
             "requestId": {
@@ -1022,10 +1029,17 @@
               "const": "email",
               "type": "string"
             },
+            "purpose": {
+              "const": "handoff_email_delivery",
+              "type": "string"
+            },
             "prompt": {
               "minLength": 1,
               "maxLength": 500,
               "type": "string"
+            },
+            "required": {
+              "type": "boolean"
             }
           }
         }

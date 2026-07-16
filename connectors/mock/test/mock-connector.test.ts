@@ -30,6 +30,7 @@ const execution = {
       principalId: 'principal-1',
       kind: 'anonymous' as const,
     },
+    resolvedInputs: [],
     trustedMetadata: {},
   },
   assistantMessageId: 'assistant-message-1',

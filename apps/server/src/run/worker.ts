@@ -219,6 +219,7 @@ export class RunWorker {
       userParticipantId,
       history: historyDescending.reverse().map(toMessage),
       principalContext: { kind: principalRow.kind, principalId: principalRow.principal_id },
+      resolvedInputs: [],
       trustedMetadata: {},
     };
     if (

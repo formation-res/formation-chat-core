@@ -10,6 +10,7 @@
     "userParticipantId",
     "history",
     "principalContext",
+    "resolvedInputs",
     "trustedMetadata"
   ],
   "properties": {
@@ -315,6 +316,7 @@
                       "type",
                       "requestId",
                       "inputKind",
+                      "purpose",
                       "label",
                       "required",
                       "status"
@@ -332,6 +334,10 @@
                       },
                       "inputKind": {
                         "const": "email",
+                        "type": "string"
+                      },
+                      "purpose": {
+                        "const": "handoff_email_delivery",
                         "type": "string"
                       },
                       "label": {
@@ -686,6 +692,7 @@
                     "type",
                     "requestId",
                     "inputKind",
+                    "purpose",
                     "label",
                     "required",
                     "status"
@@ -703,6 +710,10 @@
                     },
                     "inputKind": {
                       "const": "email",
+                      "type": "string"
+                    },
+                    "purpose": {
+                      "const": "handoff_email_delivery",
                       "type": "string"
                     },
                     "label": {
@@ -802,6 +813,120 @@
           }
         }
       ]
+    },
+    "resolvedInputs": {
+      "maxItems": 10,
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "requestId",
+              "inputKind",
+              "purpose",
+              "status",
+              "value",
+              "consent"
+            ],
+            "properties": {
+              "requestId": {
+                "minLength": 1,
+                "maxLength": 128,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+                "type": "string"
+              },
+              "inputKind": {
+                "const": "email",
+                "type": "string"
+              },
+              "purpose": {
+                "const": "handoff_email_delivery",
+                "type": "string"
+              },
+              "status": {
+                "const": "submitted",
+                "type": "string"
+              },
+              "value": {
+                "format": "email",
+                "maxLength": 320,
+                "type": "string"
+              },
+              "consent": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "status",
+                  "recordedAt"
+                ],
+                "properties": {
+                  "status": {
+                    "const": "granted",
+                    "type": "string"
+                  },
+                  "recordedAt": {
+                    "format": "date-time",
+                    "pattern": "Z$",
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "requestId",
+              "inputKind",
+              "purpose",
+              "status",
+              "consent"
+            ],
+            "properties": {
+              "requestId": {
+                "minLength": 1,
+                "maxLength": 128,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+                "type": "string"
+              },
+              "inputKind": {
+                "const": "email",
+                "type": "string"
+              },
+              "purpose": {
+                "const": "handoff_email_delivery",
+                "type": "string"
+              },
+              "status": {
+                "const": "declined",
+                "type": "string"
+              },
+              "consent": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "status",
+                  "recordedAt"
+                ],
+                "properties": {
+                  "status": {
+                    "const": "declined",
+                    "type": "string"
+                  },
+                  "recordedAt": {
+                    "format": "date-time",
+                    "pattern": "Z$",
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
     },
     "trustedMetadata": {
       "type": "object",

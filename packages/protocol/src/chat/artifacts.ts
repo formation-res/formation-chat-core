@@ -6,7 +6,11 @@ import {
   SubmitMessageRequestSchema,
   SubmitStructuredInputRequestSchema,
 } from './api.js';
-import { ConnectorExecutionRequestSchema, ConnectorRunRequestSchema } from './connector.js';
+import {
+  ConnectorExecutionRequestSchema,
+  ConnectorRunRequestSchema,
+  StructuredInputResolutionSchema,
+} from './connector.js';
 import {
   CitationPartSchema,
   ContentPartSchema,
@@ -49,6 +53,7 @@ export const chatSchemaArtifacts = {
   participant: ParticipantSchema,
   'structured-input-part': StructuredInputPartSchema,
   'structured-input-request': StructuredInputRequestSchema,
+  'structured-input-resolution': StructuredInputResolutionSchema,
   'submit-message-request': SubmitMessageRequestSchema,
   'submit-structured-input-request': SubmitStructuredInputRequestSchema,
   'text-part': TextPartSchema,

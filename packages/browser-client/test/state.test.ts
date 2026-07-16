@@ -124,7 +124,13 @@ describe('chat state reducer', () => {
         occurredAt: '2026-07-15T10:00:04.000Z',
         conversationId: 'conversation-1',
         runId: 'run-1',
-        data: { requestId: 'request-1', inputKind: 'email', prompt: 'Your email' },
+        data: {
+          requestId: 'request-1',
+          inputKind: 'email',
+          purpose: 'handoff_email_delivery',
+          prompt: 'Your email',
+          required: true,
+        },
       },
     });
     expect(state.contactRequest).toMatchObject({ requestId: 'request-1', inputKind: 'email' });

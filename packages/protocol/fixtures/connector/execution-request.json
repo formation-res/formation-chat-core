@@ -52,6 +52,7 @@
       }
     ],
     "principalContext": { "kind": "anonymous", "principalId": "principal_1" },
+    "resolvedInputs": [],
     "trustedMetadata": { "origin": "https://example.com" }
   }
 }
