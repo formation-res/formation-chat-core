@@ -10,18 +10,13 @@
     "npm": ">=11.6 <12"
   },
   "workspaces": [
-    "packages/protocol",
-    "packages/server-sdk",
-    "packages/browser-client",
-    "connectors/haystack",
-    "connectors/mock",
-    "apps/server",
-    "packages/ui-react",
-    "apps/dashboard",
-    "examples/cloudflare-worker"
+    "apps/*",
+    "packages/*",
+    "connectors/*",
+    "examples/*"
   ],
   "scripts": {
-    "build": "npm run build --workspaces --if-present",
+    "build": "npm run build --workspace @formation-chat-core/protocol && npm run build --workspace @formation-chat-core/server-sdk && npm run build --workspace @formation-chat-core/browser-client && npm run build --workspace @formation-chat-core/haystack-connector && npm run build --workspace @formation-chat-core/mock-connector && npm run build --workspace @formation-chat-core/server && npm run build --workspace @formation-chat-core/ui-react && npm run build --workspace @formation-chat-core/dashboard && npm run build --workspace @formation-chat-core/cloudflare-worker-example",
     "format:check": "prettier --check .",
     "lint": "eslint . && npm run lint --workspaces --if-present && npm run format:check",
     "test": "npm run test --workspaces --if-present",
