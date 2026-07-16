@@ -1,0 +1,29 @@
+{
+  "name": "@formation-chat-core/dashboard",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Read-only operations dashboard for Formation Chat Core.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "dev": "node scripts/dev.mjs",
+    "lint": "eslint src test scripts --no-error-on-unmatched-pattern",
+    "test": "vitest run",
+    "test:browser": "node test/browser-smoke.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p test/tsconfig.json"
+  },
+  "dependencies": {
+    "@formation-chat-core/protocol": "0.0.0",
+    "@sinclair/typebox": "0.34.52",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.10",
+    "@types/react-dom": "19.2.3",
+    "axe-core": "4.11.1",
+    "esbuild": "0.28.1",
+    "jsdom": "27.4.0"
+  }
+}
