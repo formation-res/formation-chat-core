@@ -463,6 +463,30 @@ describe('chat and connector contracts', () => {
     ).toBe(true);
     expect(
       validateConnectorRunRequestContext(
+        {
+          ...request,
+          history: [
+            userMessage,
+            {
+              ...userMessage,
+              messageId: 'message_2',
+              sequence: 2,
+              participantId: 'participant_agent',
+              role: 'assistant',
+            },
+          ],
+        },
+        {
+          conversationId: 'conversation_1',
+          runId: 'run_1',
+          agentRef: 'agent_1',
+          userParticipantId: 'participant_user',
+          currentMessageId: 'message_1',
+        },
+      ),
+    ).toBe(true);
+    expect(
+      validateConnectorRunRequestContext(
         { ...request, history: [{ ...userMessage, conversationId: 'conversation_other' }] },
         {
           conversationId: 'conversation_1',

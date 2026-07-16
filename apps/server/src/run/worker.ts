@@ -100,6 +100,10 @@ export class RunWorker {
         }
         await this.materialize(run, context.assistantParticipantId, event, now);
         await this.events.append(context.scope, event);
+        if (event.type === 'contact.requested') {
+          await this.waitForInput(run.run_id, now);
+          return true;
+        }
         if (event.type === 'run.completed') {
           await this.complete(run.run_id, now);
           return true;
@@ -187,7 +191,6 @@ export class RunWorker {
         .where('tenant_id', '=', run.tenant_id)
         .where('site_id', '=', run.site_id)
         .where('conversation_id', '=', run.conversation_id)
-        .where('sequence', '<=', currentMessage.sequence)
         .orderBy('sequence', 'desc')
         .limit(1000)
         .execute(),
@@ -199,13 +202,33 @@ export class RunWorker {
         .where('conversation_id', '=', run.conversation_id)
         .execute(),
     ]);
-    const principalRow = await this.database
-      .selectFrom('principals')
-      .select(['principal_id', 'kind'])
-      .where('tenant_id', '=', run.tenant_id)
-      .where('site_id', '=', run.site_id)
-      .where('principal_id', '=', conversation.principal_id)
-      .executeTakeFirstOrThrow();
+    const [principalRow, resolvedInputRows] = await Promise.all([
+      this.database
+        .selectFrom('principals')
+        .select(['principal_id', 'kind'])
+        .where('tenant_id', '=', run.tenant_id)
+        .where('site_id', '=', run.site_id)
+        .where('principal_id', '=', conversation.principal_id)
+        .executeTakeFirstOrThrow(),
+      this.database
+        .selectFrom('structured_input_requests')
+        .select([
+          'request_id',
+          'input_kind',
+          'purpose',
+          'status',
+          'value',
+          'consent_status',
+          'consent_recorded_at',
+        ])
+        .where('tenant_id', '=', run.tenant_id)
+        .where('site_id', '=', run.site_id)
+        .where('conversation_id', '=', run.conversation_id)
+        .where('run_id', '=', run.run_id)
+        .where('status', 'in', ['submitted', 'declined'])
+        .orderBy('created_at')
+        .execute(),
+    ]);
     const userParticipantId = participants.find(({ kind }) => kind === 'user')?.participant_id;
     const assistantParticipantId = participants.find(
       ({ kind }) => kind === 'agent',
@@ -219,7 +242,37 @@ export class RunWorker {
       userParticipantId,
       history: historyDescending.reverse().map(toMessage),
       principalContext: { kind: principalRow.kind, principalId: principalRow.principal_id },
-      resolvedInputs: [],
+      resolvedInputs: resolvedInputRows.map((input) => {
+        if (!input.consent_recorded_at || !input.consent_status) {
+          throw new Error('Resolved input is missing its consent decision.');
+        }
+        if (input.status === 'submitted' && input.value && input.consent_status === 'granted') {
+          return {
+            requestId: input.request_id,
+            inputKind: input.input_kind,
+            purpose: input.purpose,
+            status: input.status,
+            value: input.value,
+            consent: {
+              status: input.consent_status,
+              recordedAt: input.consent_recorded_at.toISOString(),
+            },
+          };
+        }
+        if (input.status === 'declined' && input.consent_status === 'declined') {
+          return {
+            requestId: input.request_id,
+            inputKind: input.input_kind,
+            purpose: input.purpose,
+            status: input.status,
+            consent: {
+              status: input.consent_status,
+              recordedAt: input.consent_recorded_at.toISOString(),
+            },
+          };
+        }
+        throw new Error('Resolved input has an inconsistent consent decision.');
+      }),
       trustedMetadata: {},
     };
     if (
@@ -286,6 +339,82 @@ export class RunWorker {
         .execute();
       if (result[0]?.numUpdatedRows !== 1n) throw new Error('Assistant message was not started.');
     }
+    if (event.type === 'handoff.requested') {
+      await this.database
+        .insertInto('handoffs')
+        .values({
+          handoff_id: event.data.handoffId,
+          tenant_id: run.tenant_id,
+          site_id: run.site_id,
+          conversation_id: run.conversation_id,
+          run_id: run.run_id,
+          status: 'requested',
+          created_at: now,
+          updated_at: now,
+        })
+        .onConflict((conflict) => conflict.column('handoff_id').doNothing())
+        .execute();
+      const handoff = await this.database
+        .selectFrom('handoffs')
+        .select('run_id')
+        .where('handoff_id', '=', event.data.handoffId)
+        .executeTakeFirstOrThrow();
+      if (handoff.run_id !== run.run_id) throw new Error('Handoff ID belongs to another run.');
+    }
+    if (event.type === 'contact.requested') {
+      await this.database.transaction().execute(async (transaction) => {
+        const handoff = await transaction
+          .selectFrom('handoffs')
+          .select('handoff_id')
+          .where('run_id', '=', run.run_id)
+          .executeTakeFirstOrThrow();
+        await transaction
+          .insertInto('structured_input_requests')
+          .values({
+            request_id: event.data.requestId,
+            tenant_id: run.tenant_id,
+            site_id: run.site_id,
+            conversation_id: run.conversation_id,
+            run_id: run.run_id,
+            input_kind: event.data.inputKind,
+            purpose: event.data.purpose,
+            prompt: event.data.prompt,
+            required: event.data.required,
+            status: 'pending',
+            value: null,
+            consent_status: null,
+            consent_recorded_at: null,
+            created_at: now,
+            updated_at: now,
+          })
+          .onConflict((conflict) => conflict.column('request_id').doNothing())
+          .execute();
+        const input = await transaction
+          .selectFrom('structured_input_requests')
+          .select('run_id')
+          .where('request_id', '=', event.data.requestId)
+          .executeTakeFirstOrThrow();
+        if (input.run_id !== run.run_id)
+          throw new Error('Input request ID belongs to another run.');
+        await transaction
+          .updateTable('handoffs')
+          .set({ status: 'awaiting_contact', updated_at: now })
+          .where('handoff_id', '=', handoff.handoff_id)
+          .execute();
+      });
+    }
+    if (event.type === 'handoff.completed') {
+      const result = await this.database
+        .updateTable('handoffs')
+        .set({ status: 'completed', updated_at: now })
+        .where('tenant_id', '=', run.tenant_id)
+        .where('site_id', '=', run.site_id)
+        .where('conversation_id', '=', run.conversation_id)
+        .where('run_id', '=', run.run_id)
+        .where('handoff_id', '=', event.data.handoffId)
+        .executeTakeFirst();
+      if (result.numUpdatedRows !== 1n) throw new Error('Handoff was not requested.');
+    }
   }
 
   private insertAssistant(
@@ -319,6 +448,23 @@ export class RunWorker {
       .set({ status: 'completed', completed_at: now, lease_expires_at: null, updated_at: now })
       .where('run_id', '=', runId)
       .execute();
+  }
+
+  private waitForInput(runId: string, now: Date) {
+    return this.database
+      .updateTable('agent_runs')
+      .set({
+        status: 'waiting_for_input',
+        claimed_at: null,
+        lease_expires_at: null,
+        updated_at: now,
+      })
+      .where('run_id', '=', runId)
+      .where('status', '=', 'running')
+      .executeTakeFirst()
+      .then((result) => {
+        if (result.numUpdatedRows !== 1n) throw new Error('Run cannot wait for input.');
+      });
   }
 
   private async isCancellationRequested(runId: string): Promise<boolean> {
@@ -360,18 +506,26 @@ export class RunWorker {
     });
   }
 
-  private fail(runId: string, code: string, now: Date) {
-    return this.database
-      .updateTable('agent_runs')
-      .set({
-        status: 'failed',
-        error_code: code,
-        completed_at: now,
-        lease_expires_at: null,
-        updated_at: now,
-      })
-      .where('run_id', '=', runId)
-      .execute();
+  private async fail(runId: string, code: string, now: Date) {
+    await this.database.transaction().execute(async (transaction) => {
+      await transaction
+        .updateTable('agent_runs')
+        .set({
+          status: 'failed',
+          error_code: code,
+          completed_at: now,
+          lease_expires_at: null,
+          updated_at: now,
+        })
+        .where('run_id', '=', runId)
+        .execute();
+      await transaction
+        .updateTable('handoffs')
+        .set({ status: 'failed', updated_at: now })
+        .where('run_id', '=', runId)
+        .where('status', 'not in', ['completed', 'failed'])
+        .execute();
+    });
   }
 }
 

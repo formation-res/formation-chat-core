@@ -13,6 +13,7 @@ import { RunWorker } from './run/worker.js';
 import { buildServer } from './server.js';
 import { SessionService } from './session/service.js';
 import { SessionTokenService } from './session/token.js';
+import { StructuredInputService } from './structured-input/service.js';
 
 async function main(): Promise<void> {
   const config = loadConfig(process.env);
@@ -30,6 +31,7 @@ async function main(): Promise<void> {
   const messages = new MessageService(database);
   const cancellation = new RunCancellationCoordinator();
   const runs = new RunService(database, cancellation);
+  const structuredInputs = new StructuredInputService(database);
   const events = new EventService(
     new EventStore(database, { retentionMaxEvents: config.eventRetentionMaxEvents }),
     new EventBroker({ subscriberBufferSize: config.eventSubscriberBufferSize }),
@@ -53,6 +55,7 @@ async function main(): Promise<void> {
     messageService: messages,
     eventService: events,
     runService: runs,
+    structuredInputService: structuredInputs,
     sessionTokens,
     closeDatabase: async () => {
       workerAbort.abort();

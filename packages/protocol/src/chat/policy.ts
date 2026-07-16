@@ -24,8 +24,6 @@ export function validateConnectorRunRequestContext(
   request: ConnectorRunRequest,
   expected: ConnectorRunContext,
 ): boolean {
-  const tail = request.history.at(-1);
-
   return (
     request.conversationId === expected.conversationId &&
     request.runId === expected.runId &&
@@ -34,7 +32,7 @@ export function validateConnectorRunRequestContext(
     request.currentMessage.messageId === expected.currentMessageId &&
     request.currentMessage.conversationId === expected.conversationId &&
     request.currentMessage.participantId === expected.userParticipantId &&
-    tail?.messageId === expected.currentMessageId &&
+    request.history.some(({ messageId }) => messageId === expected.currentMessageId) &&
     request.history.every((message) => message.conversationId === expected.conversationId)
   );
 }

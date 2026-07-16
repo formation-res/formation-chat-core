@@ -1,4 +1,4 @@
-import type { SessionTokenClaims } from '@formation-chat-core/protocol';
+import type { AccessScope, SessionTokenClaims } from '@formation-chat-core/protocol';
 import type { FastifyRequest } from 'fastify';
 
 import { SessionTokenService } from '../session/token.js';
@@ -14,7 +14,7 @@ export class AuthorizationError extends Error {
 export async function authenticate(
   request: FastifyRequest,
   tokens: SessionTokenService,
-  scope: 'conversations:read' | 'conversations:write' | 'events:read',
+  scope: AccessScope,
 ): Promise<SessionTokenClaims> {
   const authorization = request.headers.authorization;
   if (!authorization?.startsWith('Bearer ')) throw new AuthorizationError(401);

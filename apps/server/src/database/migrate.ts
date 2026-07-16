@@ -5,6 +5,7 @@ import * as createAnonymousSessions from './migrations/002_create_anonymous_sess
 import * as createConversationsAndMessages from './migrations/003_create_conversations_and_messages.js';
 import * as createConversationEvents from './migrations/004_create_conversation_events.js';
 import * as createAgentRuns from './migrations/005_create_agent_runs.js';
+import * as createHandoffsAndStructuredInputs from './migrations/006_create_handoffs_and_structured_inputs.js';
 import type { Database } from './database.js';
 
 const migrations: Record<string, Migration> = {
@@ -13,11 +14,12 @@ const migrations: Record<string, Migration> = {
   '003_create_conversations_and_messages': createConversationsAndMessages,
   '004_create_conversation_events': createConversationEvents,
   '005_create_agent_runs': createAgentRuns,
+  '006_create_handoffs_and_structured_inputs': createHandoffsAndStructuredInputs,
 };
 
 export class DatabaseMigrationError extends Error {
-  constructor() {
-    super('Database migration failed.');
+  constructor(cause?: unknown) {
+    super('Database migration failed.', { cause });
     this.name = 'DatabaseMigrationError';
   }
 }
@@ -29,6 +31,6 @@ export async function migrateDatabase(database: Database): Promise<readonly Migr
   });
   const result = await migrator.migrateToLatest();
 
-  if (result.error) throw new DatabaseMigrationError();
+  if (result.error) throw new DatabaseMigrationError(result.error);
   return result.results ?? [];
 }

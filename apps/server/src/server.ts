@@ -11,6 +11,8 @@ import { registerRunRoutes } from './run/route.js';
 import type { RunService } from './run/service.js';
 import { registerSessionRoutes, type BootstrapAnonymous } from './session/route.js';
 import type { SessionTokenService } from './session/token.js';
+import { registerStructuredInputRoutes } from './structured-input/route.js';
+import type { StructuredInputService } from './structured-input/service.js';
 
 export interface BuildServerOptions {
   checkDatabase: () => Promise<void>;
@@ -20,6 +22,7 @@ export interface BuildServerOptions {
   messageService?: MessageService;
   eventService?: EventService;
   runService?: RunService;
+  structuredInputService?: StructuredInputService;
   sessionTokens?: SessionTokenService;
   logger?: FastifyServerOptions['logger'];
 }
@@ -73,6 +76,9 @@ export function buildServer(options: BuildServerOptions) {
   }
   if (options.runService && options.sessionTokens) {
     registerRunRoutes(server, options.runService, options.sessionTokens);
+  }
+  if (options.structuredInputService && options.sessionTokens) {
+    registerStructuredInputRoutes(server, options.structuredInputService, options.sessionTokens);
   }
 
   return server;

@@ -114,7 +114,14 @@ export interface AgentRunTable {
   trigger_message_id: string;
   assistant_message_id: string;
   agent_ref: string;
-  status: 'queued' | 'running' | 'completed' | 'failed' | 'cancel_requested' | 'cancelled';
+  status:
+    | 'queued'
+    | 'running'
+    | 'waiting_for_input'
+    | 'completed'
+    | 'failed'
+    | 'cancel_requested'
+    | 'cancelled';
   attempt: Generated<number>;
   available_at: Generated<Date>;
   claimed_at: Date | null;
@@ -124,6 +131,35 @@ export interface AgentRunTable {
   created_at: Generated<Date>;
   updated_at: Generated<Date>;
   completed_at: Date | null;
+}
+
+export interface HandoffTable {
+  handoff_id: string;
+  tenant_id: string;
+  site_id: string;
+  conversation_id: string;
+  run_id: string;
+  status: 'requested' | 'awaiting_contact' | 'delivering' | 'completed' | 'failed';
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
+export interface StructuredInputRequestTable {
+  request_id: string;
+  tenant_id: string;
+  site_id: string;
+  conversation_id: string;
+  run_id: string;
+  input_kind: 'email';
+  purpose: 'handoff_email_delivery';
+  prompt: string;
+  required: boolean;
+  status: 'pending' | 'submitted' | 'declined' | 'expired';
+  value: string | null;
+  consent_status: 'granted' | 'declined' | null;
+  consent_recorded_at: Date | null;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
 }
 
 export interface DatabaseSchema {
@@ -138,4 +174,6 @@ export interface DatabaseSchema {
   command_idempotency: CommandIdempotencyTable;
   conversation_events: ConversationEventTable;
   agent_runs: AgentRunTable;
+  handoffs: HandoffTable;
+  structured_input_requests: StructuredInputRequestTable;
 }
