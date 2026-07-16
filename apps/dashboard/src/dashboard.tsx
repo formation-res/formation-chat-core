@@ -69,7 +69,7 @@ export function Dashboard({
           </div>
           <div className="topbar-actions">
             <button
-              className={`icon-button ${refreshVersion ? '' : ''}`}
+              className="icon-button"
               aria-label="Refresh current view"
               onClick={() => setRefreshVersion((value) => value + 1)}
               title="Refresh"
@@ -101,6 +101,7 @@ export function Dashboard({
               refreshVersion={refreshVersion}
               requestedRunId={requestedRunId}
               onOpenConversation={openConversation}
+              onOpenRun={openRun}
             />
           )}
         </main>

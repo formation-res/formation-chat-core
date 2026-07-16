@@ -29,6 +29,7 @@ interface OperationsListProps {
   refreshVersion: number;
   requestedRunId: string | undefined;
   onOpenConversation(conversationId: string): void;
+  onOpenRun(runId: string): void;
 }
 
 export function OperationsList({
@@ -37,6 +38,7 @@ export function OperationsList({
   refreshVersion,
   requestedRunId,
   onOpenConversation,
+  onOpenRun,
 }: OperationsListProps) {
   const [status, setStatus] = useState('');
   const loader = useCallback<(signal: AbortSignal) => Promise<OperationPage>>(
@@ -114,7 +116,12 @@ export function OperationsList({
             : null}
           {view === 'failures'
             ? (data as AdminFailure[]).map((item) => (
-                <FailureRow key={item.runId} item={item} onOpenConversation={onOpenConversation} />
+                <FailureRow
+                  key={item.runId}
+                  item={item}
+                  onOpenConversation={onOpenConversation}
+                  onOpenRun={onOpenRun}
+                />
               ))
             : null}
           {view === 'handoffs'
@@ -123,6 +130,7 @@ export function OperationsList({
                   key={item.handoffId}
                   item={item}
                   onOpenConversation={onOpenConversation}
+                  onOpenRun={onOpenRun}
                 />
               ))
             : null}
@@ -206,9 +214,11 @@ function RunRow({
 function FailureRow({
   item,
   onOpenConversation,
+  onOpenRun,
 }: {
   item: AdminFailure;
   onOpenConversation(id: string): void;
+  onOpenRun(id: string): void;
 }) {
   return (
     <details className="expandable-row failure-row">
@@ -231,7 +241,7 @@ function FailureRow({
       </summary>
       <div className="expanded-content">
         <div className="correlation-grid">
-          <CorrelationId label="Run" value={item.runId} />
+          <CorrelationId label="Run" value={item.runId} onOpen={() => onOpenRun(item.runId)} />
           <CorrelationId
             label="Conversation"
             value={item.conversationId}
@@ -252,9 +262,11 @@ function FailureRow({
 function HandoffRow({
   item,
   onOpenConversation,
+  onOpenRun,
 }: {
   item: AdminHandoff;
   onOpenConversation(id: string): void;
+  onOpenRun(id: string): void;
 }) {
   return (
     <details className="expandable-row">
@@ -276,7 +288,7 @@ function HandoffRow({
       <div className="expanded-content">
         <div className="correlation-grid">
           <CorrelationId label="Handoff" value={item.handoffId} />
-          <CorrelationId label="Run" value={item.runId} />
+          <CorrelationId label="Run" value={item.runId} onOpen={() => onOpenRun(item.runId)} />
           <CorrelationId
             label="Conversation"
             value={item.conversationId}

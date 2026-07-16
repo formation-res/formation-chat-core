@@ -89,6 +89,24 @@ describe('operations dashboard', () => {
     });
     expect(result.violations.map(({ id }) => id)).toEqual([]);
   });
+
+  it('navigates from a handoff correlation to its agent run', async () => {
+    render(<App initialClient={fakeApi()} />);
+    await act(async () => {
+      [...(container?.querySelectorAll<HTMLButtonElement>('button') ?? [])]
+        .find((button) => button.textContent === 'Handoffs')
+        ?.click();
+      await settle();
+    });
+    await act(async () => {
+      container
+        ?.querySelector('summary')
+        ?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      container?.querySelector<HTMLButtonElement>('.id-link')?.click();
+      await settle();
+    });
+    expect(container?.textContent).toContain('Agent runs');
+  });
 });
 
 function render(node: React.ReactNode): void {
