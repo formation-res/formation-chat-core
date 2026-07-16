@@ -6,7 +6,7 @@ import {
   SubmitMessageRequestSchema,
   SubmitStructuredInputRequestSchema,
 } from './api.js';
-import { ConnectorRunRequestSchema } from './connector.js';
+import { ConnectorExecutionRequestSchema, ConnectorRunRequestSchema } from './connector.js';
 import {
   CitationPartSchema,
   ContentPartSchema,
@@ -34,6 +34,7 @@ export const chatSchemaArtifacts = {
   'agent-run': AgentRunSchema,
   'citation-part': CitationPartSchema,
   'connector-event': ConnectorEventSchema,
+  'connector-execution-request': ConnectorExecutionRequestSchema,
   'connector-run-request': ConnectorRunRequestSchema,
   'content-part': ContentPartSchema,
   conversation: ConversationSchema,

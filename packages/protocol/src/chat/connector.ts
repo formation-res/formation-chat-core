@@ -34,3 +34,12 @@ export const ConnectorRunRequestSchema = Type.Object(
   { additionalProperties: false },
 );
 export type ConnectorRunRequest = Static<typeof ConnectorRunRequestSchema>;
+
+export const ConnectorExecutionRequestSchema = Type.Object(
+  {
+    assistantMessageId: OpaqueIdSchema,
+    request: ConnectorRunRequestSchema,
+  },
+  { additionalProperties: false },
+);
+export type ConnectorExecutionRequest = Static<typeof ConnectorExecutionRequestSchema>;

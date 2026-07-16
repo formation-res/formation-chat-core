@@ -1,0 +1,57 @@
+{
+  "assistantMessageId": "message_assistant_1",
+  "request": {
+    "runId": "run_1",
+    "conversationId": "conversation_1",
+    "agentRef": "support",
+    "currentMessage": {
+      "messageId": "message_1",
+      "conversationId": "conversation_1",
+      "sequence": 3,
+      "participantId": "participant_user",
+      "role": "user",
+      "status": "completed",
+      "parts": [{ "type": "text", "text": "Where is my shipment?" }],
+      "createdAt": "2026-07-16T09:00:00.000Z",
+      "completedAt": "2026-07-16T09:00:00.000Z"
+    },
+    "userParticipantId": "participant_user",
+    "history": [
+      {
+        "messageId": "message_earlier_user",
+        "conversationId": "conversation_1",
+        "sequence": 1,
+        "participantId": "participant_user",
+        "role": "user",
+        "status": "completed",
+        "parts": [{ "type": "text", "text": "My tracking number is NW-42." }],
+        "createdAt": "2026-07-16T08:58:00.000Z",
+        "completedAt": "2026-07-16T08:58:00.000Z"
+      },
+      {
+        "messageId": "message_earlier_assistant",
+        "conversationId": "conversation_1",
+        "sequence": 2,
+        "participantId": "participant_agent",
+        "role": "assistant",
+        "status": "completed",
+        "parts": [{ "type": "text", "text": "I can check that shipment." }],
+        "createdAt": "2026-07-16T08:59:00.000Z",
+        "completedAt": "2026-07-16T08:59:01.000Z"
+      },
+      {
+        "messageId": "message_1",
+        "conversationId": "conversation_1",
+        "sequence": 3,
+        "participantId": "participant_user",
+        "role": "user",
+        "status": "completed",
+        "parts": [{ "type": "text", "text": "Where is my shipment?" }],
+        "createdAt": "2026-07-16T09:00:00.000Z",
+        "completedAt": "2026-07-16T09:00:00.000Z"
+      }
+    ],
+    "principalContext": { "kind": "anonymous", "principalId": "principal_1" },
+    "trustedMetadata": { "origin": "https://example.com" }
+  }
+}

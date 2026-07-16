@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   CancelRunResponseSchema,
+  ConnectorExecutionRequestSchema,
   ConnectorEventSchema,
   ConnectorRunRequestSchema,
   ConversationSchema,
@@ -19,7 +20,13 @@ import {
   validateConversationParticipantContext,
   validateMessageAttribution,
 } from '../src/index.js';
-import type { ConnectorEvent, ConnectorRunRequest, Conversation, Message } from '../src/index.js';
+import type {
+  ConnectorEvent,
+  ConnectorExecutionRequest,
+  ConnectorRunRequest,
+  Conversation,
+  Message,
+} from '../src/index.js';
 
 const ajv = new Ajv2020({ allErrors: true, strict: true });
 formatsPlugin.default(ajv);
@@ -418,12 +425,55 @@ describe('chat and connector contracts', () => {
     ).toBe(false);
   });
 
+  it('defines the network execution envelope with a reserved assistant message ID', () => {
+    const validate = ajv.compile(ConnectorExecutionRequestSchema);
+    const userMessage = {
+      messageId: 'message_1',
+      conversationId: 'conversation_1',
+      sequence: 1,
+      participantId: 'participant_user',
+      role: 'user',
+      status: 'completed',
+      parts: [{ type: 'text', text: 'Hello' }],
+      createdAt: '2026-07-16T09:00:00.000Z',
+      completedAt: '2026-07-16T09:00:00.000Z',
+    } satisfies Message;
+    const execution = {
+      assistantMessageId: 'message_assistant_1',
+      request: {
+        runId: 'run_1',
+        conversationId: 'conversation_1',
+        agentRef: 'support',
+        currentMessage: userMessage,
+        userParticipantId: 'participant_user',
+        history: [userMessage],
+        principalContext: { principalId: 'principal_1', kind: 'anonymous' },
+        trustedMetadata: { origin: 'https://example.com' },
+      },
+    } satisfies ConnectorExecutionRequest;
+
+    expect(validate(execution)).toBe(true);
+    expect(validate({ ...execution, assistantMessageId: 'invalid id' })).toBe(false);
+    expect(validate({ ...execution, signal: 'not-serializable' })).toBe(false);
+  });
+
   it('publishes a connector fixture usable by non-TypeScript validators', async () => {
     const fixture = JSON.parse(
       await readFile(new URL('../fixtures/connector/message-delta.json', import.meta.url), 'utf8'),
     ) as unknown;
 
     expect(ajv.compile(ConnectorEventSchema)(fixture)).toBe(true);
+  });
+
+  it('publishes a network execution fixture usable by non-TypeScript connectors', async () => {
+    const fixture = JSON.parse(
+      await readFile(
+        new URL('../fixtures/connector/execution-request.json', import.meta.url),
+        'utf8',
+      ),
+    );
+
+    expect(ajv.compile(ConnectorExecutionRequestSchema)(fixture)).toBe(true);
   });
 
   it('publishes the planned public API as OpenAPI 3.1', async () => {
