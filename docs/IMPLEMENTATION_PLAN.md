@@ -509,8 +509,8 @@ handoff tool, outbound delivery path, cross-repository tests
 
 **Estimated scope:** Split into core contact lifecycle and Haystack delivery tasks before coding
 
-**Completed:** 2026-07-16 on chat-core branch `codex/initial-foundation` and Haystack branch
-`codex/task-15-email-handoff`. Chat Core now persists scoped handoff and structured-input resources,
+**Completed:** 2026-07-16 in chat-core commits `06552d0`, `2274c49`, and `c94bb84`, plus Haystack
+commit `427a54d` on branch `codex/task-15-email-handoff`. Chat Core now persists scoped handoff and structured-input resources,
 pauses runs for typed email input, records purpose-bound consent or decline decisions, and resumes
 the same run with private `resolvedInputs`. The browser client and React UI submit the validated,
 idempotent command without retaining contact data. Haystack pauses after `contact.requested`, then
