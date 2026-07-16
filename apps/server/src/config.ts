@@ -13,6 +13,7 @@ export interface ServerConfig {
   databasePoolMax: number;
   sessionTokenSecret: string;
   sessionTokenTtlSeconds: number;
+  admin?: { tokenSecret: string; tokenTtlSeconds: number };
   eventRetentionMaxEvents: number;
   eventSubscriberBufferSize: number;
   connectorMode: 'disabled' | 'mock' | 'haystack';
@@ -52,6 +53,9 @@ export function loadConfig(env: NodeJS.ProcessEnv): ServerConfig {
   const port = parseInteger(env.PORT, 3000);
   const databasePoolMax = parseInteger(env.DB_POOL_MAX, 10);
   const sessionTokenTtlSeconds = parseInteger(env.SESSION_TOKEN_TTL_SECONDS, 900);
+  const adminTokenTtlSeconds = parseInteger(env.ADMIN_TOKEN_TTL_SECONDS, 3600);
+  const adminConfigured =
+    env.ADMIN_TOKEN_SECRET !== undefined || env.ADMIN_TOKEN_TTL_SECONDS !== undefined;
   const eventRetentionMaxEvents = parseInteger(env.EVENT_RETENTION_MAX_EVENTS, 1000);
   const eventSubscriberBufferSize = parseInteger(env.EVENT_SUBSCRIBER_BUFFER_SIZE, 100);
   const connectorMode = env.CONNECTOR_MODE ?? 'disabled';
@@ -76,6 +80,20 @@ export function loadConfig(env: NodeJS.ProcessEnv): ServerConfig {
     sessionTokenTtlSeconds > 3600
   ) {
     invalid.push('SESSION_TOKEN_TTL_SECONDS');
+  }
+  if (
+    adminConfigured &&
+    (!env.ADMIN_TOKEN_SECRET || Buffer.byteLength(env.ADMIN_TOKEN_SECRET) < 32)
+  ) {
+    invalid.push('ADMIN_TOKEN_SECRET');
+  }
+  if (
+    adminConfigured &&
+    (!Number.isInteger(adminTokenTtlSeconds) ||
+      adminTokenTtlSeconds < 60 ||
+      adminTokenTtlSeconds > 86_400)
+  ) {
+    invalid.push('ADMIN_TOKEN_TTL_SECONDS');
   }
   if (
     !Number.isInteger(eventRetentionMaxEvents) ||
@@ -124,6 +142,14 @@ export function loadConfig(env: NodeJS.ProcessEnv): ServerConfig {
     databasePoolMax,
     sessionTokenSecret: env.SESSION_TOKEN_SECRET as string,
     sessionTokenTtlSeconds,
+    ...(adminConfigured
+      ? {
+          admin: {
+            tokenSecret: env.ADMIN_TOKEN_SECRET as string,
+            tokenTtlSeconds: adminTokenTtlSeconds,
+          },
+        }
+      : {}),
     eventRetentionMaxEvents,
     eventSubscriberBufferSize,
     connectorMode: connectorMode as ServerConfig['connectorMode'],

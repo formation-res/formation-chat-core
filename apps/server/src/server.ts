@@ -2,6 +2,9 @@ import { randomUUID } from 'node:crypto';
 
 import Fastify, { type FastifyServerOptions } from 'fastify';
 
+import { registerAdminRoutes } from './admin/route.js';
+import type { AdminQueryService } from './admin/service.js';
+import type { AdminTokenService } from './admin/token.js';
 import { registerConversationRoutes } from './conversation/route.js';
 import type { ConversationService } from './conversation/service.js';
 import { registerEventRoutes } from './event/route.js';
@@ -24,6 +27,8 @@ export interface BuildServerOptions {
   runService?: RunService;
   structuredInputService?: StructuredInputService;
   sessionTokens?: SessionTokenService;
+  adminService?: AdminQueryService;
+  adminTokens?: AdminTokenService;
   logger?: FastifyServerOptions['logger'];
 }
 
@@ -79,6 +84,9 @@ export function buildServer(options: BuildServerOptions) {
   }
   if (options.structuredInputService && options.sessionTokens) {
     registerStructuredInputRoutes(server, options.structuredInputService, options.sessionTokens);
+  }
+  if (options.adminService && options.adminTokens) {
+    registerAdminRoutes(server, options.adminService, options.adminTokens);
   }
 
   return server;

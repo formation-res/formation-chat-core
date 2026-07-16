@@ -13,6 +13,8 @@ describe('loadConfig', () => {
         DB_POOL_MAX: '5',
         SESSION_TOKEN_SECRET: '0123456789abcdef0123456789abcdef',
         SESSION_TOKEN_TTL_SECONDS: '600',
+        ADMIN_TOKEN_SECRET: 'admin-secret-0123456789abcdef0123456789abcdef',
+        ADMIN_TOKEN_TTL_SECONDS: '1200',
         EVENT_RETENTION_MAX_EVENTS: '250',
         EVENT_SUBSCRIBER_BUFFER_SIZE: '32',
         CONNECTOR_MODE: 'mock',
@@ -28,6 +30,10 @@ describe('loadConfig', () => {
       databasePoolMax: 5,
       sessionTokenSecret: '0123456789abcdef0123456789abcdef',
       sessionTokenTtlSeconds: 600,
+      admin: {
+        tokenSecret: 'admin-secret-0123456789abcdef0123456789abcdef',
+        tokenTtlSeconds: 1200,
+      },
       eventRetentionMaxEvents: 250,
       eventSubscriberBufferSize: 32,
       connectorMode: 'mock',
@@ -74,6 +80,23 @@ describe('loadConfig', () => {
         SESSION_TOKEN_TTL_SECONDS: '7200',
       }),
     ).toThrow('Invalid configuration: SESSION_TOKEN_SECRET, SESSION_TOKEN_TTL_SECONDS');
+  });
+
+  it('keeps admin APIs disabled unless a strong separate secret is configured', () => {
+    expect(
+      loadConfig({
+        DATABASE_URL: 'postgres://localhost/chat',
+        SESSION_TOKEN_SECRET: '0123456789abcdef0123456789abcdef',
+      }).admin,
+    ).toBeUndefined();
+    expect(() =>
+      loadConfig({
+        DATABASE_URL: 'postgres://localhost/chat',
+        SESSION_TOKEN_SECRET: '0123456789abcdef0123456789abcdef',
+        ADMIN_TOKEN_SECRET: 'too-short',
+        ADMIN_TOKEN_TTL_SECONDS: '30',
+      }),
+    ).toThrow('Invalid configuration: ADMIN_TOKEN_SECRET, ADMIN_TOKEN_TTL_SECONDS');
   });
 
   it('rejects invalid event retention and subscriber buffer limits', () => {

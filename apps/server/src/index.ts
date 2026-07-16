@@ -1,4 +1,6 @@
 import { loadConfig } from './config.js';
+import { AdminQueryService } from './admin/service.js';
+import { AdminTokenService } from './admin/token.js';
 import { ConversationService } from './conversation/service.js';
 import { checkDatabase, createDatabase } from './database/database.js';
 import { migrateDatabase } from './database/migrate.js';
@@ -32,6 +34,9 @@ async function main(): Promise<void> {
   const cancellation = new RunCancellationCoordinator();
   const runs = new RunService(database, cancellation);
   const structuredInputs = new StructuredInputService(database);
+  const adminTokens = config.admin
+    ? new AdminTokenService(config.admin.tokenSecret, config.admin.tokenTtlSeconds)
+    : undefined;
   const events = new EventService(
     new EventStore(database, { retentionMaxEvents: config.eventRetentionMaxEvents }),
     new EventBroker({ subscriberBufferSize: config.eventSubscriberBufferSize }),
@@ -57,6 +62,7 @@ async function main(): Promise<void> {
     runService: runs,
     structuredInputService: structuredInputs,
     sessionTokens,
+    ...(adminTokens ? { adminService: new AdminQueryService(database), adminTokens } : {}),
     closeDatabase: async () => {
       workerAbort.abort();
       await workerPromise?.catch(() => undefined);
