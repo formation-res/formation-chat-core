@@ -616,6 +616,20 @@ end-to-end tests
 
 **Estimated scope:** Break into security, operations, documentation, and release tasks
 
+**Completed:** 2026-07-16 in `1247289` and `ac23d0a`. The release runtime now enforces configurable
+body, timeout, proxy-trust, and bounded bootstrap/public/admin rate limits; emits defensive API
+headers; writes payload-free tenant/site-aware audit events; sanitizes request logs; exposes
+low-cardinality metrics behind a separate credential; and supports bounded previous signing keys
+for zero-downtime session/admin rotation. A scheduled, bounded retention worker redacts submitted
+contact values and removes expired anonymous transcripts and principals in scoped transactions.
+Authenticated-principal retention is configured for the identity-exchange path but remains dormant
+until that v1 host-auth boundary is implemented. PostgreSQL backup/restore scripts, threat and
+retention guidance, observability/rollback checklists, five deployment quick starts, and CI gates
+complete the operations slice. Unit/workspace suites, 50 PostgreSQL integration tests, the current
+Haystack contract, Cloudflare workerd streaming, generated-contract checks, type checking, linting,
+production builds, a zero-vulnerability production dependency audit, Gitleaks, and a representative
+16-table/8-migration backup-and-restore drill pass.
+
 ### Release checkpoint
 
 - Contract artifacts have no drift from runtime behavior.
