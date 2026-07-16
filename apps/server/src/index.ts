@@ -1,5 +1,3 @@
-import { MockConnector } from '@formation-chat-core/mock-connector';
-
 import { loadConfig } from './config.js';
 import { ConversationService } from './conversation/service.js';
 import { checkDatabase, createDatabase } from './database/database.js';
@@ -9,6 +7,7 @@ import { EventService } from './event/service.js';
 import { EventStore } from './event/store.js';
 import { MessageService } from './message/service.js';
 import { RunCancellationCoordinator } from './run/cancellation.js';
+import { createConnectorResolver } from './run/connectors.js';
 import { RunService } from './run/service.js';
 import { RunWorker } from './run/worker.js';
 import { buildServer } from './server.js';
@@ -36,15 +35,15 @@ async function main(): Promise<void> {
     new EventBroker({ subscriberBufferSize: config.eventSubscriberBufferSize }),
   );
   const worker =
-    config.connectorMode === 'mock'
-      ? new RunWorker(
+    config.connectorMode === 'disabled'
+      ? undefined
+      : new RunWorker(
           database,
           events,
-          () => new MockConnector(),
+          createConnectorResolver(config),
           { leaseMs: config.runLeaseMs, maxAttempts: config.runMaxAttempts },
           cancellation,
-        )
-      : undefined;
+        );
   const workerAbort = new AbortController();
   let workerPromise: Promise<void> | undefined;
   const server = buildServer({

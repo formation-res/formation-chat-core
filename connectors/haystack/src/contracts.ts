@@ -21,6 +21,13 @@ export const HaystackConnectorConfigSchema = Type.Object(
 );
 export type HaystackConnectorConfig = Static<typeof HaystackConnectorConfigSchema>;
 
+export const HaystackConnectorMapSchema = Type.Record(
+  Type.String({ pattern: '^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$' }),
+  HaystackConnectorConfigSchema,
+  { minProperties: 1, maxProperties: 100 },
+);
+export type HaystackConnectorMap = Static<typeof HaystackConnectorMapSchema>;
+
 export const HaystackAgentRequestSchema = Type.Object(
   {
     channel: Type.Literal('web'),
@@ -123,6 +130,13 @@ export function parseHaystackConfig(value: HaystackConnectorConfig): HaystackCon
     throw invalidConfig();
   }
   return { ...value, baseUrl: url.origin };
+}
+
+export function parseHaystackConnectorMap(value: unknown): HaystackConnectorMap {
+  if (!Value.Check(HaystackConnectorMapSchema, value)) throw invalidConfig();
+  return Object.fromEntries(
+    Object.entries(value).map(([agentRef, config]) => [agentRef, parseHaystackConfig(config)]),
+  );
 }
 
 export function isHaystackAgentResponse(value: unknown): value is HaystackAgentResponse {

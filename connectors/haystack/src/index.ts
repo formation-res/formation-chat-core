@@ -5,11 +5,14 @@ import {
   type HaystackAgentRequest,
   type HaystackAgentResponse,
   type HaystackConnectorConfig,
+  type HaystackConnectorMap,
   HaystackAgentRequestSchema,
   HaystackAgentResponseSchema,
   HaystackConnectorConfigSchema,
+  HaystackConnectorMapSchema,
   isHaystackAgentResponse,
   parseHaystackConfig,
+  parseHaystackConnectorMap,
 } from './contracts.js';
 import { completedEvents } from './translate.js';
 
@@ -17,9 +20,12 @@ export {
   type HaystackAgentRequest,
   type HaystackAgentResponse,
   type HaystackConnectorConfig,
+  type HaystackConnectorMap,
   HaystackAgentRequestSchema,
   HaystackAgentResponseSchema,
   HaystackConnectorConfigSchema,
+  HaystackConnectorMapSchema,
+  parseHaystackConnectorMap,
 };
 
 const RESPONSE_LIMIT_BYTES = 1_048_576;

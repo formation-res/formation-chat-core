@@ -1,3 +1,8 @@
+import {
+  type HaystackConnectorMap,
+  parseHaystackConnectorMap,
+} from '@formation-chat-core/haystack-connector';
+
 export type LogLevel = 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace' | 'silent';
 
 export interface ServerConfig {
@@ -10,7 +15,8 @@ export interface ServerConfig {
   sessionTokenTtlSeconds: number;
   eventRetentionMaxEvents: number;
   eventSubscriberBufferSize: number;
-  connectorMode: 'disabled' | 'mock';
+  connectorMode: 'disabled' | 'mock' | 'haystack';
+  haystackConnectors: HaystackConnectorMap;
   runWorkerPollIntervalMs: number;
   runLeaseMs: number;
   runMaxAttempts: number;
@@ -49,6 +55,7 @@ export function loadConfig(env: NodeJS.ProcessEnv): ServerConfig {
   const eventRetentionMaxEvents = parseInteger(env.EVENT_RETENTION_MAX_EVENTS, 1000);
   const eventSubscriberBufferSize = parseInteger(env.EVENT_SUBSCRIBER_BUFFER_SIZE, 100);
   const connectorMode = env.CONNECTOR_MODE ?? 'disabled';
+  let haystackConnectors: HaystackConnectorMap = {};
   const runWorkerPollIntervalMs = parseInteger(env.RUN_WORKER_POLL_INTERVAL_MS, 250);
   const runLeaseMs = parseInteger(env.RUN_LEASE_MS, 30_000);
   const runMaxAttempts = parseInteger(env.RUN_MAX_ATTEMPTS, 3);
@@ -84,7 +91,16 @@ export function loadConfig(env: NodeJS.ProcessEnv): ServerConfig {
   ) {
     invalid.push('EVENT_SUBSCRIBER_BUFFER_SIZE');
   }
-  if (connectorMode !== 'disabled' && connectorMode !== 'mock') invalid.push('CONNECTOR_MODE');
+  if (connectorMode !== 'disabled' && connectorMode !== 'mock' && connectorMode !== 'haystack') {
+    invalid.push('CONNECTOR_MODE');
+  }
+  if (connectorMode === 'haystack') {
+    try {
+      haystackConnectors = parseHaystackConnectorMap(JSON.parse(env.HAYSTACK_CONNECTORS ?? ''));
+    } catch {
+      invalid.push('HAYSTACK_CONNECTORS');
+    }
+  }
   if (
     !Number.isInteger(runWorkerPollIntervalMs) ||
     runWorkerPollIntervalMs < 10 ||
@@ -111,6 +127,7 @@ export function loadConfig(env: NodeJS.ProcessEnv): ServerConfig {
     eventRetentionMaxEvents,
     eventSubscriberBufferSize,
     connectorMode: connectorMode as ServerConfig['connectorMode'],
+    haystackConnectors,
     runWorkerPollIntervalMs,
     runLeaseMs,
     runMaxAttempts,

@@ -9,6 +9,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "lint": "eslint src test --no-error-on-unmatched-pattern",
+    "pretest": "npm run build --workspace @formation-chat-core/haystack-connector",
     "start": "node dist/index.js",
     "test": "vitest run --config test/vitest.config.ts",
     "test:integration": "vitest run --config test/vitest.integration.config.ts",
@@ -18,6 +19,7 @@
     "@types/pg": "8.20.0"
   },
   "dependencies": {
+    "@formation-chat-core/haystack-connector": "0.0.0",
     "@formation-chat-core/mock-connector": "0.0.0",
     "@formation-chat-core/protocol": "0.0.0",
     "@formation-chat-core/server-sdk": "0.0.0",

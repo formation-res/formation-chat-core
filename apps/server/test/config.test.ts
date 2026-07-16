@@ -31,6 +31,7 @@ describe('loadConfig', () => {
       eventRetentionMaxEvents: 250,
       eventSubscriberBufferSize: 32,
       connectorMode: 'mock',
+      haystackConnectors: {},
       runWorkerPollIntervalMs: 100,
       runLeaseMs: 45000,
       runMaxAttempts: 5,
@@ -91,7 +92,7 @@ describe('loadConfig', () => {
       loadConfig({
         DATABASE_URL: 'postgres://localhost/chat',
         SESSION_TOKEN_SECRET: '0123456789abcdef0123456789abcdef',
-        CONNECTOR_MODE: 'haystack',
+        CONNECTOR_MODE: 'unknown',
         RUN_WORKER_POLL_INTERVAL_MS: '0',
         RUN_LEASE_MS: '999',
         RUN_MAX_ATTEMPTS: '0',
@@ -99,5 +100,46 @@ describe('loadConfig', () => {
     ).toThrow(
       'Invalid configuration: CONNECTOR_MODE, RUN_WORKER_POLL_INTERVAL_MS, RUN_LEASE_MS, RUN_MAX_ATTEMPTS',
     );
+  });
+
+  it('parses trusted Haystack bindings by agent reference', () => {
+    expect(
+      loadConfig({
+        DATABASE_URL: 'postgres://localhost/chat',
+        SESSION_TOKEN_SECRET: '0123456789abcdef0123456789abcdef',
+        CONNECTOR_MODE: 'haystack',
+        HAYSTACK_CONNECTORS: JSON.stringify({
+          'public-support': {
+            baseUrl: 'http://haystack:8080',
+            tenantKey: 'formationxyz_com',
+            agentSlug: 'support',
+            responseMode: 'info_chat',
+            timeoutMs: 45000,
+          },
+        }),
+      }),
+    ).toMatchObject({
+      connectorMode: 'haystack',
+      haystackConnectors: {
+        'public-support': {
+          baseUrl: 'http://haystack:8080',
+          tenantKey: 'formationxyz_com',
+          agentSlug: 'support',
+          responseMode: 'info_chat',
+          timeoutMs: 45000,
+        },
+      },
+    });
+  });
+
+  it('requires valid Haystack bindings without exposing their values', () => {
+    expect(() =>
+      loadConfig({
+        DATABASE_URL: 'postgres://localhost/chat',
+        SESSION_TOKEN_SECRET: '0123456789abcdef0123456789abcdef',
+        CONNECTOR_MODE: 'haystack',
+        HAYSTACK_CONNECTORS: '{"public-support":{"baseUrl":"not-a-url"}}',
+      }),
+    ).toThrow('Invalid configuration: HAYSTACK_CONNECTORS');
   });
 });
