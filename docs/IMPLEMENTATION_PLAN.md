@@ -551,6 +551,16 @@ integration tests
 
 **Estimated scope:** Medium, split conversation and run/handoff queries if needed
 
+**Completed:** 2026-07-16 in `2298791`, `061d6bd`, `7917446`, and `35bb9fc`. The separately signed
+admin JWT
+binds each operator to one tenant, an explicit site set, and operator or internal read visibility.
+The `/v1/admin` namespace cursor-pages canonical conversations, messages, retained event timelines,
+connector runs, failures, and handoffs with site, agent, status, and date filters; tenant filtering
+is mandatory in token claims. Database queries enforce scope before resource lookup, failure output
+contains only stable codes, and handoff output excludes contact values. Composite indexes support
+the new access paths. Contract, authorization, visibility, pagination, filter, redaction, and
+cross-tenant/site integration tests pass.
+
 ### Task 17: Build the read-only operations dashboard
 
 **Description:** Build a separate UI over the admin API for transcript inspection, run timelines,

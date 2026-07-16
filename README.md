@@ -9,12 +9,12 @@ to support other agent systems and message sources without changing the chat mod
 
 ## Project status
 
-Tasks 1 through 13 are complete. The repository now has the TypeScript toolchain, language-neutral
+Tasks 1 through 16 are complete. The repository now has the TypeScript toolchain, language-neutral
 contracts, PostgreSQL-backed sessions and conversations, idempotent user messages, ordered event
 storage, reconnectable SSE delivery, durable connector jobs, and a deterministic mock agent. Task
-11 adds the React reference UI, Task 12 adds the Cloudflare gateway example, and Task 13 adds the
-synchronous Haystack compatibility connector. Haystack integration remains an adapter outside the
-core.
+11 adds the React reference UI, Task 12 adds the Cloudflare gateway example, Tasks 13 and 14 add
+Haystack connector paths, Task 15 completes email handoff, and Task 16 adds separately authenticated
+read-only admin APIs. Haystack integration remains an adapter outside the core.
 
 ## Start here
 
