@@ -1,0 +1,57 @@
+{
+  "$id": "formation-chat-core/haystack-connector-config",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "baseUrl",
+    "tenantKey",
+    "agentSlug"
+  ],
+  "properties": {
+    "baseUrl": {
+      "minLength": 1,
+      "maxLength": 2048,
+      "pattern": "^https?://",
+      "type": "string"
+    },
+    "tenantKey": {
+      "minLength": 1,
+      "maxLength": 200,
+      "type": "string"
+    },
+    "agentSlug": {
+      "minLength": 1,
+      "maxLength": 200,
+      "type": "string"
+    },
+    "responseMode": {
+      "anyOf": [
+        {
+          "const": "email_support",
+          "type": "string"
+        },
+        {
+          "const": "email_newsletter",
+          "type": "string"
+        },
+        {
+          "const": "support_chat",
+          "type": "string"
+        },
+        {
+          "const": "info_chat",
+          "type": "string"
+        },
+        {
+          "const": "internal_chat",
+          "type": "string"
+        }
+      ]
+    },
+    "timeoutMs": {
+      "minimum": 1,
+      "maximum": 300000,
+      "type": "integer"
+    }
+  }
+}

@@ -44,3 +44,6 @@ Worker settings:
 Active connectors in the same process receive an aborted signal and a `cancel()` call. The durable
 status also lets another worker observe the request. Cancellation is best effort because an
 external runtime may finish before it handles the signal.
+
+The synchronous Formation Haystack adapter and its temporary duplicate-history behavior are
+documented in [Haystack compatibility integration](haystack-compatibility.md).

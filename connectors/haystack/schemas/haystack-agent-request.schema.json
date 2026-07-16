@@ -1,0 +1,115 @@
+{
+  "$id": "formation-chat-core/haystack-agent-request",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "channel",
+    "tenant_key",
+    "agent_slug",
+    "user_id",
+    "thread_id",
+    "text",
+    "metadata"
+  ],
+  "properties": {
+    "channel": {
+      "const": "web",
+      "type": "string"
+    },
+    "tenant_key": {
+      "minLength": 1,
+      "maxLength": 200,
+      "type": "string"
+    },
+    "agent_slug": {
+      "minLength": 1,
+      "maxLength": 200,
+      "type": "string"
+    },
+    "user_id": {
+      "minLength": 1,
+      "maxLength": 2000,
+      "type": "string"
+    },
+    "thread_id": {
+      "minLength": 1,
+      "maxLength": 2000,
+      "type": "string"
+    },
+    "text": {
+      "minLength": 1,
+      "maxLength": 100000,
+      "type": "string"
+    },
+    "response_mode": {
+      "anyOf": [
+        {
+          "const": "email_support",
+          "type": "string"
+        },
+        {
+          "const": "email_newsletter",
+          "type": "string"
+        },
+        {
+          "const": "support_chat",
+          "type": "string"
+        },
+        {
+          "const": "info_chat",
+          "type": "string"
+        },
+        {
+          "const": "internal_chat",
+          "type": "string"
+        }
+      ]
+    },
+    "metadata": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "chat_core"
+      ],
+      "properties": {
+        "chat_core": {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "compatibility_mode",
+            "run_id",
+            "message_id",
+            "assistant_message_id",
+            "conversation_id",
+            "agent_ref"
+          ],
+          "properties": {
+            "compatibility_mode": {
+              "const": "duplicate_history",
+              "type": "string"
+            },
+            "run_id": {
+              "type": "string"
+            },
+            "message_id": {
+              "type": "string"
+            },
+            "assistant_message_id": {
+              "type": "string"
+            },
+            "conversation_id": {
+              "type": "string"
+            },
+            "agent_ref": {
+              "type": "string"
+            },
+            "origin": {
+              "maxLength": 2000,
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

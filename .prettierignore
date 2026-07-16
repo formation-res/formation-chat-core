@@ -3,4 +3,5 @@ dist/
 coverage/
 package-lock.json
 packages/protocol/schemas/
+connectors/haystack/schemas/
 examples/cloudflare-worker/worker-configuration.d.ts

@@ -1,0 +1,140 @@
+{
+  "$id": "formation-chat-core/haystack-agent-response",
+  "additionalProperties": true,
+  "type": "object",
+  "required": [
+    "request_id",
+    "tenant_key",
+    "agent_slug",
+    "channel",
+    "thread_id",
+    "text"
+  ],
+  "properties": {
+    "request_id": {
+      "minLength": 1,
+      "maxLength": 2000,
+      "type": "string"
+    },
+    "tenant_key": {
+      "minLength": 1,
+      "maxLength": 200,
+      "type": "string"
+    },
+    "agent_slug": {
+      "minLength": 1,
+      "maxLength": 200,
+      "type": "string"
+    },
+    "channel": {
+      "minLength": 1,
+      "maxLength": 64,
+      "type": "string"
+    },
+    "thread_id": {
+      "minLength": 1,
+      "maxLength": 2000,
+      "type": "string"
+    },
+    "text": {
+      "minLength": 1,
+      "maxLength": 100000,
+      "type": "string"
+    },
+    "subject": {
+      "anyOf": [
+        {
+          "maxLength": 2000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "status": {
+      "anyOf": [
+        {
+          "const": "completed",
+          "type": "string"
+        },
+        {
+          "const": "failed",
+          "type": "string"
+        },
+        {
+          "const": "rejected",
+          "type": "string"
+        },
+        {
+          "const": "ignored",
+          "type": "string"
+        }
+      ]
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "type": "object",
+      "properties": {
+        "used_tools": {
+          "maxItems": 100,
+          "type": "array",
+          "items": {
+            "minLength": 1,
+            "maxLength": 500,
+            "type": "string"
+          }
+        },
+        "rag_sources": {
+          "maxItems": 100,
+          "type": "array",
+          "items": {
+            "additionalProperties": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              "title": {
+                "maxLength": 500,
+                "type": "string"
+              },
+              "content": {
+                "maxLength": 100000,
+                "type": "string"
+              },
+              "source_path": {
+                "maxLength": 2048,
+                "type": "string"
+              }
+            }
+          }
+        },
+        "handoff": {
+          "additionalProperties": true,
+          "type": "object",
+          "required": [
+            "requested"
+          ],
+          "properties": {
+            "requested": {
+              "type": "boolean"
+            },
+            "reason": {
+              "anyOf": [
+                {
+                  "maxLength": 2000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

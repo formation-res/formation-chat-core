@@ -14,12 +14,15 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "schemas"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "check:generated": "npm run build && node scripts/generate-schemas.mjs --check",
+    "generate": "npm run build && node scripts/generate-schemas.mjs",
     "lint": "eslint src test scripts --no-error-on-unmatched-pattern",
-    "test": "vitest run",
+    "test": "vitest run && npm run check:generated",
     "test:contract": "node scripts/check-current-api-contract.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p test/tsconfig.json"
   },
