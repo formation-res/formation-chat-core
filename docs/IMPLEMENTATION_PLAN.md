@@ -438,6 +438,17 @@ Haystack integration guide
 
 **Estimated scope:** Medium
 
+**Completed:** 2026-07-16 in `a4fd3f7`, `b562eb3`, `da64c30`, and `536c282`. The synchronous
+connector maps trusted agent bindings to Haystack tenant and agent fields, principal and
+conversation IDs to user and thread fields, and core correlation IDs into request metadata. It
+validates bounded requests and responses before starting an assistant message, translates text,
+tools, citations, and handoff requests into generic events, and exposes the temporary
+duplicate-history mode in stored Haystack metadata. Eight connector tests cover success, timeout,
+malformed and invalid responses, rejected runs, aggregate request bounds, handoff, and
+configuration safety. Generated JSON Schemas are drift-checked, the reference server resolves only
+explicit agent bindings, and the cross-repository check passes against the current
+`haystack-mailagent` FastAPI OpenAPI contract.
+
 ### Task 14: Add the native streaming connector endpoint to Haystack
 
 **Description:** In the separate `haystack-mailagent` repository, add a versioned endpoint that
