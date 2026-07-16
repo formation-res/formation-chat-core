@@ -81,8 +81,10 @@ async function runBrowserSmoke() {
           `Dashboard did not load. Body: ${await page.locator('body').innerText()} Console: ${browserMessages.join(' | ')}`,
         );
       });
-  assert.match(
-    await page.locator('body').evaluate((element) => globalThis.getComputedStyle(element).fontFamily),
+    assert.match(
+      await page
+        .locator('body')
+        .evaluate((element) => globalThis.getComputedStyle(element).fontFamily),
       /Inter/,
     );
     await page.getByRole('button', { name: /Support agent conversation/ }).click();
