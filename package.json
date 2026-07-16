@@ -10,10 +10,15 @@
     "npm": ">=11.6 <12"
   },
   "workspaces": [
-    "apps/*",
-    "packages/*",
-    "connectors/*",
-    "examples/*"
+    "packages/protocol",
+    "packages/server-sdk",
+    "packages/browser-client",
+    "connectors/haystack",
+    "connectors/mock",
+    "apps/server",
+    "packages/ui-react",
+    "apps/dashboard",
+    "examples/cloudflare-worker"
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",

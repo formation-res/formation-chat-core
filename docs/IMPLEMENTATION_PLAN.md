@@ -630,6 +630,10 @@ Haystack contract, Cloudflare workerd streaming, generated-contract checks, type
 production builds, a zero-vulnerability production dependency audit, Gitleaks, and a representative
 16-table/8-migration backup-and-restore drill pass.
 
+**CI follow-up:** 2026-07-16. Workspace execution now follows package dependency order, and CI
+builds workspace entry points before importing them in tests. A clean-tree build followed by all
+workspace tests, type checking, linting, and formatting passes.
+
 ### Release checkpoint
 
 - Contract artifacts have no drift from runtime behavior.
