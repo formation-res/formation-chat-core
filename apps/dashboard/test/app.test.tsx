@@ -46,7 +46,7 @@ describe('operations dashboard', () => {
       await settle();
     });
 
-    expect(createClient).toHaveBeenCalledWith('http://localhost:8080', 'test-admin-token');
+    expect(createClient).toHaveBeenCalledWith(window.location.origin, 'test-admin-token');
     expect(container?.textContent).toContain('Operations');
     expect(container?.textContent).toContain('Support agent conversation');
     expect(container?.querySelector('input[name="token"]')).toBeNull();

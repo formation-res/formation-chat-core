@@ -2,9 +2,11 @@
 
 ## Local mock
 
-Follow [the Local Chat example](../examples/local-chat/README.md) for a browser UI, automatic local
-tenant/site provisioning, and a same-origin streaming proxy. It supports both the deterministic
-mock connector and a configured Haystack agent.
+Run `npm run dev:local`, then open the visitor UI on port 4173 and the operations dashboard on port 4174. The command starts and supervises PostgreSQL, Chat Core, both same-origin proxies, local site
+provisioning, and a scoped dashboard token. Stop it with Ctrl+C or `npm run dev:local:stop`.
+
+Follow [the Local Chat example](../examples/local-chat/README.md) for Haystack configuration and
+advanced overrides.
 
 `docker compose up --build` starts PostgreSQL, the core, durable mock connector execution,
 retention, audit storage, and the separately authenticated admin surface. Replace every example

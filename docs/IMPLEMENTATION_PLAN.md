@@ -639,6 +639,11 @@ UI through a loopback-only, same-origin streaming proxy with validated configura
 local tenant/site provisioning. It documents mock and Haystack runs. The integration guide covers
 manual implementation and reviewed Codex or Claude workflows for another app or website.
 
+The follow-up now also includes a supervised `dev:local` stack: it owns PostgreSQL only when it
+starts it, builds and runs Chat Core, provisions the example, serves the visitor UI and an
+admin-route-only dashboard proxy, and prints a scoped in-memory dashboard token. Ctrl+C and
+`dev:local:stop` shut down owned processes without removing local database data.
+
 ### Release checkpoint
 
 - Contract artifacts have no drift from runtime behavior.

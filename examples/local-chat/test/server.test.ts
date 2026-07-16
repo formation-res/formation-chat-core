@@ -71,6 +71,31 @@ describe('createLocalChatServer', () => {
     expect(receivedOrigin).toBe(baseUrl);
     expect(receivedTenantHeader).toBeUndefined();
   });
+
+  it('can serve the dashboard with an admin-only API proxy and no site configuration', async () => {
+    const paths: string[] = [];
+    const upstream = createServer((request, response) => {
+      paths.push(request.url ?? '');
+      response.writeHead(200, { 'content-type': 'application/json' });
+      response.end('{}');
+    });
+    servers.push(upstream);
+    const upstreamUrl = await listen(upstream);
+    const directory = await mkdtemp(join(tmpdir(), 'local-dashboard-proxy-'));
+    await writeFile(join(directory, 'index.html'), '<h1>Dashboard</h1>');
+    const server = createLocalChatServer({
+      apiPathPrefixes: ['/v1/admin/'],
+      coreBaseUrl: new URL(upstreamUrl),
+      rootDirectory: directory,
+    });
+    servers.push(server);
+    const baseUrl = await listen(server);
+
+    expect((await fetch(`${baseUrl}/v1/admin/conversations`)).status).toBe(200);
+    expect((await fetch(`${baseUrl}/v1/sessions/anonymous`, { method: 'POST' })).status).toBe(404);
+    expect((await fetch(`${baseUrl}/local-chat-config.js`)).status).toBe(404);
+    expect(paths).toEqual(['/v1/admin/conversations']);
+  });
 });
 
 async function listen(server: ReturnType<typeof createServer>): Promise<string> {

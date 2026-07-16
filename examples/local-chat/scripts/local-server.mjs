@@ -33,7 +33,7 @@ const FORWARDED_RESPONSE_HEADERS = [
 ];
 
 /**
- * @param {{ coreBaseUrl: URL, rootDirectory: string, siteKey: string }} options
+ * @param {{ apiPathPrefixes?: string[], coreBaseUrl: URL, rootDirectory: string, siteKey?: string }} options
  */
 export function createLocalChatServer(options) {
   return createServer((request, response) => {
@@ -48,15 +48,21 @@ export function createLocalChatServer(options) {
 /**
  * @param {import('node:http').IncomingMessage} request
  * @param {import('node:http').ServerResponse} response
- * @param {{ coreBaseUrl: URL, rootDirectory: string, siteKey: string }} options
+ * @param {{ apiPathPrefixes?: string[], coreBaseUrl: URL, rootDirectory: string, siteKey?: string }} options
  */
 async function handleRequest(request, response, options) {
   const url = new URL(request.url ?? '/', 'http://local-chat.invalid');
-  if (url.pathname.startsWith('/v1/')) {
+  const apiPathPrefixes = options.apiPathPrefixes ?? ['/v1/'];
+  if (apiPathPrefixes.some((prefix) => url.pathname.startsWith(prefix))) {
     proxyRequest(request, response, options.coreBaseUrl);
     return;
   }
-  if (url.pathname === '/local-chat-config.js') {
+  if (url.pathname.startsWith('/v1/')) {
+    response.writeHead(404, securityHeaders('text/plain; charset=utf-8'));
+    response.end('Not found.');
+    return;
+  }
+  if (url.pathname === '/local-chat-config.js' && options.siteKey !== undefined) {
     response.writeHead(200, securityHeaders('text/javascript; charset=utf-8'));
     response.end(
       `window.__FORMATION_CHAT_LOCAL_CONFIG__=${JSON.stringify({ siteKey: options.siteKey })};`,

@@ -34,6 +34,8 @@ and the manual and agent-assisted website guide is in
 The temporary Haystack integration is documented in
 [docs/connectors/haystack-compatibility.md](docs/connectors/haystack-compatibility.md).
 The read-only operations UI is documented in [apps/dashboard](apps/dashboard/README.md).
+For the quickest full local trial, run `npm run dev:local`; it prints the visitor/dashboard URLs
+and the scoped local dashboard token. Stop it with `npm run dev:local:stop`.
 Deployment paths are summarized in [the quick starts](docs/quickstarts.md); production operators
 should also review [security and retention](docs/operations/security-and-retention.md),
 [backup and restore](docs/operations/backup-and-restore.md), and the

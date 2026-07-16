@@ -42,7 +42,7 @@ function ConnectionScreen({
   theme: 'light' | 'dark';
   onToggleTheme(): void;
 }) {
-  const [baseUrl, setBaseUrl] = useState('http://localhost:8080');
+  const [baseUrl, setBaseUrl] = useState(window.location.origin);
   const [token, setToken] = useState('');
   const [error, setError] = useState('');
   const submit = (event: React.FormEvent) => {

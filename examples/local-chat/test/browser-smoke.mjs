@@ -6,6 +6,8 @@ import { URL } from 'node:url';
 import axe from 'axe-core';
 import { chromium } from 'playwright-core';
 
+import { AdminTokenService } from '../../../apps/server/dist/admin/token.js';
+
 const baseUrl = process.env.LOCAL_CHAT_BROWSER_URL ?? 'http://127.0.0.1:4173';
 const executablePath =
   process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
@@ -58,8 +60,40 @@ try {
     path: join(tmpdir(), 'formation-local-chat-narrow.png'),
     fullPage: true,
   });
+
+  if (process.env.LOCAL_CHAT_DASHBOARD_URL) {
+    const { token } = await new AdminTokenService(
+      'local-development-admin-secret-1234567890',
+      300,
+    ).issue({
+      adminId: 'browser-smoke',
+      tenantId: 'local-tenant',
+      siteIds: ['local-site'],
+      scopes: ['admin:read', 'admin:internal'],
+    });
+    const dashboard = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+    const dashboardProblems = [];
+    dashboard.on('console', (message) => {
+      if (message.type() === 'error' || message.type() === 'warning') {
+        dashboardProblems.push(`${message.type()}: ${message.text()}`);
+      }
+    });
+    dashboard.on('pageerror', (error) => dashboardProblems.push(`pageerror: ${error.message}`));
+    await dashboard.goto(process.env.LOCAL_CHAT_DASHBOARD_URL, { waitUntil: 'networkidle' });
+    assert.equal(
+      await dashboard.getByLabel('Chat Core URL').inputValue(),
+      process.env.LOCAL_CHAT_DASHBOARD_URL,
+    );
+    await dashboard.getByLabel('Admin token').fill(token);
+    await dashboard.getByRole('button', { name: 'Open dashboard' }).click();
+    await dashboard.getByRole('heading', { name: 'Conversations' }).waitFor();
+    await dashboard.locator('[data-conversation-id]').first().click();
+    await dashboard.getByText('How does this work?').waitFor();
+    assert.deepEqual(dashboardProblems, []);
+    await dashboard.close();
+  }
   process.stdout.write(
-    `Local Chat browser smoke passed with ${apiResponses.length} successful API responses.\n`,
+    `Local Chat browser smoke passed with ${apiResponses.length} successful API responses${process.env.LOCAL_CHAT_DASHBOARD_URL ? ' and the live dashboard' : ''}.\n`,
   );
 } finally {
   await browser.close();

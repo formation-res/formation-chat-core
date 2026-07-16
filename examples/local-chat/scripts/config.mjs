@@ -5,6 +5,8 @@ const OPAQUE_ID = /^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$/;
 const defaults = {
   agentRef: 'public-support',
   coreBaseUrl: 'http://127.0.0.1:3000',
+  connectorMode: 'mock',
+  dashboardPort: 4174,
   databaseUrl: 'postgresql://chat_core:chat_core@127.0.0.1:5432/chat_core',
   host: '127.0.0.1',
   port: 4173,
@@ -15,12 +17,24 @@ const defaults = {
 
 /** @param {NodeJS.ProcessEnv | Record<string, string | undefined>} env */
 export function loadLocalChatConfig(env) {
-  const port = parsePort(env.LOCAL_CHAT_PORT);
+  const port = parsePort('LOCAL_CHAT_PORT', env.LOCAL_CHAT_PORT, defaults.port);
+  const dashboardPort = parsePort(
+    'LOCAL_CHAT_DASHBOARD_PORT',
+    env.LOCAL_CHAT_DASHBOARD_PORT,
+    defaults.dashboardPort,
+  );
   const coreBaseUrl = parseBaseUrl(env.LOCAL_CHAT_CORE_URL ?? defaults.coreBaseUrl);
   const siteKey = parseId('LOCAL_CHAT_SITE_KEY', env.LOCAL_CHAT_SITE_KEY ?? defaults.siteKey);
+  const connectorMode = env.LOCAL_CHAT_CONNECTOR_MODE ?? defaults.connectorMode;
+  if (connectorMode !== 'mock' && connectorMode !== 'haystack') {
+    throw new Error('LOCAL_CHAT_CONNECTOR_MODE must be mock or haystack.');
+  }
   return {
     agentRef: parseId('LOCAL_CHAT_AGENT_REF', env.LOCAL_CHAT_AGENT_REF ?? defaults.agentRef),
     coreBaseUrl,
+    connectorMode,
+    dashboardOrigin: `http://${defaults.host}:${dashboardPort}`,
+    dashboardPort,
     databaseUrl: env.DATABASE_URL ?? defaults.databaseUrl,
     host: defaults.host,
     origin: `http://${defaults.host}:${port}`,
@@ -32,11 +46,12 @@ export function loadLocalChatConfig(env) {
 }
 
 /** @param {string | undefined} value */
-function parsePort(value) {
-  if (value === undefined) return defaults.port;
+/** @param {string} name @param {string | undefined} value @param {number} fallback */
+function parsePort(name, value, fallback) {
+  if (value === undefined) return fallback;
   const port = Number(value);
   if (!Number.isInteger(port) || port < 1 || port > 65_535) {
-    throw new Error('LOCAL_CHAT_PORT must be an integer between 1 and 65535.');
+    throw new Error(`${name} must be an integer between 1 and 65535.`);
   }
   return port;
 }

@@ -6,15 +6,16 @@ handoff state. It neither configures Haystack nor reads an agent runtime databas
 
 ## Run locally
 
-From the repository root:
+The easiest path from the repository root starts the entire local stack:
 
 ```sh
-npm install
-npm run dev --workspace @formation-chat-core/dashboard
+npm ci
+npm run dev:local
 ```
 
-Open `http://127.0.0.1:4174`, then enter the Chat Core base URL and a short-lived admin JWT. The
-development server serves dashboard assets only; the API must be reachable by the browser.
+Open `http://127.0.0.1:4174`, leave its same-origin Chat Core URL in place, and paste the short-lived
+admin JWT printed in the terminal. The local server proxies only `/v1/admin/*`. See the
+[Local Chat guide](../../examples/local-chat/README.md) for start, stop, and Haystack commands.
 
 Useful commands:
 
