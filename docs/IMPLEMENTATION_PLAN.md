@@ -634,6 +634,11 @@ production builds, a zero-vulnerability production dependency audit, Gitleaks, a
 builds workspace entry points before importing them in tests. A clean-tree build followed by all
 workspace tests, type checking, linting, and formatting passes.
 
+**Local integration follow-up:** 2026-07-16. `examples/local-chat` now provides the React reference
+UI through a loopback-only, same-origin streaming proxy with validated configuration and automatic
+local tenant/site provisioning. It documents mock and Haystack runs. The integration guide covers
+manual implementation and reviewed Codex or Claude workflows for another app or website.
+
 ### Release checkpoint
 
 - Contract artifacts have no drift from runtime behavior.

@@ -2,16 +2,22 @@
 
 ## Local mock
 
-Run `docker compose up --build`, then provision a tenant/site with an allowed local origin. Compose
-starts PostgreSQL, the core, durable mock connector execution, retention, audit storage, and the
-separately authenticated admin surface. Replace every example secret outside local development.
+Follow [the Local Chat example](../examples/local-chat/README.md) for a browser UI, automatic local
+tenant/site provisioning, and a same-origin streaming proxy. It supports both the deterministic
+mock connector and a configured Haystack agent.
+
+`docker compose up --build` starts PostgreSQL, the core, durable mock connector execution,
+retention, audit storage, and the separately authenticated admin surface. Replace every example
+secret outside local development.
 
 ## Direct website
 
-Serve the Web Component or React package from the website, configure that exact HTTPS origin on its
-site record, and point the browser transport at the core HTTPS origin. Keep `TRUST_PROXY=false`
-unless a trusted ingress overwrites forwarding headers. Direct mode is best for private or tightly
-controlled sites; public sites should use the gateway below.
+Serve the React package from the website, configure that exact HTTPS origin on its site record, and
+proxy `/v1/*` to Chat Core through the host backend so the browser uses the website origin. Keep
+`TRUST_PROXY=false` unless a trusted ingress overwrites forwarding headers. This host-backend mode
+is best for private or tightly controlled sites; public static sites should use the gateway below.
+
+See [the integration guide](integrating-chat-core.md) for manual steps and Codex or Claude prompts.
 
 ## Cloudflare website gateway
 

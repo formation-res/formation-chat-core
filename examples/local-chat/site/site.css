@@ -1,0 +1,150 @@
+:root {
+  color: #17211b;
+  background: #e9eee9;
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+  font-synthesis: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 20rem;
+  min-height: 100vh;
+}
+
+.local-shell {
+  display: grid;
+  min-height: 100vh;
+  grid-template-rows: auto 1fr;
+}
+
+.local-header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 2rem clamp(1rem, 4vw, 4rem);
+  color: #f5f7f3;
+  background: #163126;
+  border-bottom: 0.25rem solid #9fc66b;
+}
+
+.local-header h1 {
+  max-width: 18ch;
+  margin: 0.25rem 0 0.5rem;
+  font-size: clamp(1.75rem, 4vw, 3.25rem);
+  line-height: 1;
+  letter-spacing: -0.035em;
+}
+
+.local-header p {
+  max-width: 42rem;
+  margin: 0;
+  color: #d4dfd5;
+  line-height: 1.5;
+}
+
+.local-header .local-eyebrow {
+  color: #b9db8a;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.local-details {
+  display: grid;
+  flex: 0 0 auto;
+  grid-template-columns: repeat(2, minmax(7rem, 1fr));
+  gap: 1px;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid #52685c;
+  border-radius: 0.5rem;
+  background: #52685c;
+}
+
+.local-details div {
+  padding: 0.75rem 1rem;
+  background: #1e3a2f;
+}
+
+.local-details dt {
+  margin-bottom: 0.25rem;
+  color: #b9c8bd;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.local-details dd {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.75rem;
+}
+
+.local-chat {
+  display: grid;
+  align-items: stretch;
+  width: min(100%, 64rem);
+  min-height: 0;
+  margin: 0 auto;
+  padding: clamp(1rem, 4vw, 3rem);
+}
+
+.local-chat > * {
+  min-height: 34rem;
+  border: 1px solid #c5cec6;
+  box-shadow: 0 1rem 2.5rem rgb(22 49 38 / 10%);
+  --fcc-color-accent: #275e46;
+  --fcc-color-surface: #ffffff;
+  --fcc-color-text: #17211b;
+  --fcc-font: inherit;
+  --fcc-radius: 0.5rem;
+}
+
+@media (max-width: 47.99rem) {
+  .local-header {
+    display: grid;
+    align-items: start;
+    gap: 1.25rem;
+    padding-block: 1.5rem;
+  }
+
+  .local-details {
+    width: 100%;
+  }
+
+  .local-chat {
+    padding: 0;
+  }
+
+  .local-chat > * {
+    min-height: calc(100vh - 17rem);
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

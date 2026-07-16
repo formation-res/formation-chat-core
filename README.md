@@ -28,6 +28,9 @@ operations guidance.
 
 The implemented API behavior is documented under [docs/api](docs/api/). The deployable static-site
 gateway is documented in [examples/cloudflare-worker](examples/cloudflare-worker/README.md).
+The runnable local React UI is documented in [examples/local-chat](examples/local-chat/README.md),
+and the manual and agent-assisted website guide is in
+[integrating Chat Core](docs/integrating-chat-core.md).
 The temporary Haystack integration is documented in
 [docs/connectors/haystack-compatibility.md](docs/connectors/haystack-compatibility.md).
 The read-only operations UI is documented in [apps/dashboard](apps/dashboard/README.md).

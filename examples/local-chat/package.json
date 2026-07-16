@@ -1,0 +1,31 @@
+{
+  "name": "@formation-chat-core/local-chat-example",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Local same-origin React chat example for mock and Haystack connectors.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "dev": "node scripts/dev.mjs",
+    "lint": "eslint site scripts test --no-error-on-unmatched-pattern",
+    "provision": "node scripts/provision-command.mjs",
+    "test": "vitest run",
+    "test:browser": "node test/browser-smoke.mjs",
+    "typecheck": "tsc -p site/tsconfig.json --noEmit && tsc -p test/tsconfig.json"
+  },
+  "dependencies": {
+    "@formation-chat-core/browser-client": "0.0.0",
+    "@formation-chat-core/ui-react": "0.0.0",
+    "pg": "8.22.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@types/pg": "8.20.0",
+    "@types/react": "19.2.10",
+    "@types/react-dom": "19.2.3",
+    "axe-core": "4.11.1",
+    "esbuild": "0.28.1"
+  }
+}
