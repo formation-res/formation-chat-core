@@ -2,9 +2,9 @@
   "openapi": "3.1.1",
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "info": {
-    "title": "Formation Chat Core Public API",
+    "title": "Formation Chat Core API",
     "version": "0.1.0",
-    "description": "Public session and conversation API. Writes are ordinary HTTP requests; conversation events stream over SSE."
+    "description": "Public chat and separately authenticated read-only administration APIs. Writes are ordinary HTTP requests; public conversation events stream over SSE."
   },
   "servers": [{ "url": "/" }],
   "security": [{ "sessionToken": [] }],
@@ -245,14 +245,206 @@
           "default": { "$ref": "#/components/responses/Error" }
         }
       }
+    },
+    "/v1/admin/conversations": {
+      "get": {
+        "operationId": "adminListConversations",
+        "security": [{ "adminToken": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/SiteId" },
+          { "$ref": "#/components/parameters/AgentRef" },
+          { "$ref": "#/components/parameters/CreatedAfter" },
+          { "$ref": "#/components/parameters/CreatedBefore" },
+          { "$ref": "#/components/parameters/Cursor" },
+          { "$ref": "#/components/parameters/Limit" },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["active", "completed", "cancelled"] }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Admin-scoped conversations",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "../schemas/admin/conversation-list.schema.json" }
+              }
+            }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/admin/conversations/{conversationId}": {
+      "parameters": [{ "$ref": "#/components/parameters/ConversationId" }],
+      "get": {
+        "operationId": "adminGetConversation",
+        "security": [{ "adminToken": [] }],
+        "responses": {
+          "200": {
+            "description": "Admin-scoped conversation",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "../schemas/chat/conversation.schema.json" }
+              }
+            }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/admin/conversations/{conversationId}/messages": {
+      "parameters": [{ "$ref": "#/components/parameters/ConversationId" }],
+      "get": {
+        "operationId": "adminListMessages",
+        "security": [{ "adminToken": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/Cursor" },
+          { "$ref": "#/components/parameters/Limit" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Admin-scoped canonical messages",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "../schemas/admin/message-list.schema.json" }
+              }
+            }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/admin/conversations/{conversationId}/events": {
+      "parameters": [{ "$ref": "#/components/parameters/ConversationId" }],
+      "get": {
+        "operationId": "adminListEvents",
+        "security": [{ "adminToken": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/Cursor" },
+          { "$ref": "#/components/parameters/Limit" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Event timeline filtered by admin visibility scope",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "../schemas/admin/event-list.schema.json" }
+              }
+            }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/admin/runs": {
+      "get": {
+        "operationId": "adminListRuns",
+        "security": [{ "adminToken": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/SiteId" },
+          { "$ref": "#/components/parameters/AgentRef" },
+          { "$ref": "#/components/parameters/CreatedAfter" },
+          { "$ref": "#/components/parameters/CreatedBefore" },
+          { "$ref": "#/components/parameters/Cursor" },
+          { "$ref": "#/components/parameters/Limit" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Admin-scoped connector runs",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "../schemas/admin/run-list.schema.json" }
+              }
+            }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/admin/failures": {
+      "get": {
+        "operationId": "adminListFailures",
+        "security": [{ "adminToken": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/SiteId" },
+          { "$ref": "#/components/parameters/AgentRef" },
+          { "$ref": "#/components/parameters/CreatedAfter" },
+          { "$ref": "#/components/parameters/CreatedBefore" },
+          { "$ref": "#/components/parameters/Cursor" },
+          { "$ref": "#/components/parameters/Limit" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Failed connector runs with safe error codes",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "../schemas/admin/failure-list.schema.json" }
+              }
+            }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/admin/handoffs": {
+      "get": {
+        "operationId": "adminListHandoffs",
+        "security": [{ "adminToken": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/SiteId" },
+          { "$ref": "#/components/parameters/CreatedAfter" },
+          { "$ref": "#/components/parameters/CreatedBefore" },
+          { "$ref": "#/components/parameters/Cursor" },
+          { "$ref": "#/components/parameters/Limit" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Admin-scoped handoffs",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "../schemas/admin/handoff-list.schema.json" }
+              }
+            }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
     }
   },
   "components": {
     "securitySchemes": {
       "sessionToken": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT" },
+      "adminToken": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Separately signed tenant- and site-bound admin token"
+      },
       "serviceCredential": { "type": "apiKey", "in": "header", "name": "X-Formation-Service-Key" }
     },
     "parameters": {
+      "SiteId": {
+        "name": "siteId",
+        "in": "query",
+        "schema": { "$ref": "../schemas/common/opaque-id.schema.json" }
+      },
+      "AgentRef": {
+        "name": "agentRef",
+        "in": "query",
+        "schema": { "$ref": "../schemas/common/opaque-id.schema.json" }
+      },
+      "CreatedAfter": {
+        "name": "createdAfter",
+        "in": "query",
+        "schema": { "$ref": "../schemas/common/timestamp.schema.json" }
+      },
+      "CreatedBefore": {
+        "name": "createdBefore",
+        "in": "query",
+        "schema": { "$ref": "../schemas/common/timestamp.schema.json" }
+      },
       "ConversationId": {
         "name": "conversationId",
         "in": "path",

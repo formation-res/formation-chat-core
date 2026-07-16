@@ -1,0 +1,31 @@
+import {
+  AdminAgentRunSchema,
+  AdminConversationFilterSchema,
+  AdminConversationListSchema,
+  AdminEventListSchema,
+  AdminFailureListSchema,
+  AdminFailureSchema,
+  AdminHandoffFilterSchema,
+  AdminHandoffListSchema,
+  AdminHandoffSchema,
+  AdminMessageListSchema,
+  AdminRunFilterSchema,
+  AdminRunListSchema,
+  AdminTokenClaimsSchema,
+} from './schemas.js';
+
+export const adminSchemaArtifacts = {
+  'agent-run': AdminAgentRunSchema,
+  'conversation-filter': AdminConversationFilterSchema,
+  'conversation-list': AdminConversationListSchema,
+  'event-list': AdminEventListSchema,
+  failure: AdminFailureSchema,
+  'failure-list': AdminFailureListSchema,
+  'handoff-filter': AdminHandoffFilterSchema,
+  handoff: AdminHandoffSchema,
+  'handoff-list': AdminHandoffListSchema,
+  'message-list': AdminMessageListSchema,
+  'run-filter': AdminRunFilterSchema,
+  'run-list': AdminRunListSchema,
+  'token-claims': AdminTokenClaimsSchema,
+} as const;

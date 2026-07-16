@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "type": "object",
+  "properties": {
+    "siteId": {
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+      "type": "string"
+    },
+    "agentRef": {
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+      "type": "string"
+    },
+    "createdAfter": {
+      "format": "date-time",
+      "pattern": "Z$",
+      "type": "string"
+    },
+    "createdBefore": {
+      "format": "date-time",
+      "pattern": "Z$",
+      "type": "string"
+    },
+    "cursor": {
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": "^[A-Za-z0-9_-]+$",
+      "type": "string"
+    },
+    "limit": {
+      "minimum": 1,
+      "maximum": 100,
+      "default": 20,
+      "type": "integer"
+    },
+    "status": {
+      "anyOf": [
+        {
+          "const": "requested",
+          "type": "string"
+        },
+        {
+          "const": "awaiting_contact",
+          "type": "string"
+        },
+        {
+          "const": "delivering",
+          "type": "string"
+        },
+        {
+          "const": "completed",
+          "type": "string"
+        },
+        {
+          "const": "failed",
+          "type": "string"
+        }
+      ]
+    }
+  }
+}
