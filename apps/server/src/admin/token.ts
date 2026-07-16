@@ -30,6 +30,7 @@ export class AdminTokenService {
     subject: AdminTokenSubject,
     now = new Date(),
   ): Promise<{ token: string; claims: AdminTokenClaims }> {
+    if (!isValidSubject(subject)) throw new Error('Invalid admin token subject.');
     const issuedAtSeconds = Math.floor(now.getTime() / 1000);
     const expiresAtSeconds = issuedAtSeconds + this.ttlSeconds;
     const claims: AdminTokenClaims = {
@@ -65,20 +66,32 @@ export class AdminTokenService {
       expiresAt: payload.expiresAt as string,
     };
     if (
-      typeof claims.adminId !== 'string' ||
-      typeof claims.tenantId !== 'string' ||
-      !Array.isArray(claims.siteIds) ||
-      claims.siteIds.length === 0 ||
-      claims.siteIds.some((siteId) => typeof siteId !== 'string') ||
-      new Set(claims.siteIds).size !== claims.siteIds.length ||
-      !Array.isArray(claims.scopes) ||
-      claims.scopes.length === 0 ||
-      claims.scopes.some((scope) => scope !== 'admin:read' && scope !== 'admin:internal') ||
+      !isValidSubject(claims) ||
       typeof claims.issuedAt !== 'string' ||
-      typeof claims.expiresAt !== 'string'
+      !Number.isFinite(Date.parse(claims.issuedAt)) ||
+      typeof claims.expiresAt !== 'string' ||
+      !Number.isFinite(Date.parse(claims.expiresAt))
     ) {
       throw new Error('Invalid admin token.');
     }
     return claims;
   }
+}
+
+const opaqueId = /^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$/;
+
+function isValidSubject(subject: AdminTokenSubject): boolean {
+  return (
+    opaqueId.test(subject.adminId) &&
+    opaqueId.test(subject.tenantId) &&
+    Array.isArray(subject.siteIds) &&
+    subject.siteIds.length >= 1 &&
+    subject.siteIds.length <= 100 &&
+    subject.siteIds.every((siteId) => opaqueId.test(siteId)) &&
+    new Set(subject.siteIds).size === subject.siteIds.length &&
+    Array.isArray(subject.scopes) &&
+    subject.scopes.length >= 1 &&
+    subject.scopes.every((scope) => scope === 'admin:read' || scope === 'admin:internal') &&
+    new Set(subject.scopes).size === subject.scopes.length
+  );
 }
