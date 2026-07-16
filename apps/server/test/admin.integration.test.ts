@@ -126,6 +126,71 @@ describe('admin query API', () => {
       internal.json().data.map(({ visibility }: { visibility: string }) => visibility),
     ).toEqual(['public', 'operator', 'internal']);
   });
+
+  it('cursor-pages and filters connector runs', async () => {
+    const first = await request('/v1/admin/runs?limit=1', readToken);
+    const second = await request(
+      `/v1/admin/runs?limit=1&cursor=${first.json().pagination.nextCursor}`,
+      readToken,
+    );
+    const billing = await request('/v1/admin/runs?agentRef=billing', readToken);
+    const recent = await request('/v1/admin/runs?createdAfter=2026-07-16T11:15:00.000Z', readToken);
+    const wrongCursorKind = await request(
+      `/v1/admin/runs?cursor=${
+        (await request('/v1/admin/conversations?limit=1', readToken)).json().pagination.nextCursor
+      }`,
+      readToken,
+    );
+
+    expect(first.json().data.map(({ runId }: { runId: string }) => runId)).toEqual([
+      'run-a1-failed',
+    ]);
+    expect(second.json().data.map(({ runId }: { runId: string }) => runId)).toEqual([
+      'run-a1-completed',
+    ]);
+    expect(billing.json().data.map(({ runId }: { runId: string }) => runId)).toEqual([
+      'run-a1-completed',
+    ]);
+    expect(recent.json().data.map(({ runId }: { runId: string }) => runId)).toEqual([
+      'run-a1-failed',
+    ]);
+    expect(wrongCursorKind.statusCode).toBe(400);
+  });
+
+  it('lists failures separately with safe error codes and no hidden-site records', async () => {
+    const failures = await request('/v1/admin/failures', readToken);
+    const invalidRange = await request(
+      '/v1/admin/failures?createdAfter=2026-07-16T12:00:00.000Z&createdBefore=2026-07-16T11:00:00.000Z',
+      readToken,
+    );
+
+    expect(failures.statusCode).toBe(200);
+    expect(failures.json().data).toEqual([
+      expect.objectContaining({
+        runId: 'run-a1-failed',
+        status: 'failed',
+        errorCode: 'CONNECTOR_TIMEOUT',
+      }),
+    ]);
+    expect(JSON.stringify(failures.json())).not.toContain('run-a2-failed');
+    expect(JSON.stringify(failures.json())).not.toContain('run-b1-failed');
+    expect(invalidRange.statusCode).toBe(400);
+  });
+
+  it('lists and filters handoffs without exposing structured contact values', async () => {
+    const failed = await request('/v1/admin/handoffs?status=failed', readToken);
+    const all = await request('/v1/admin/handoffs', readToken);
+
+    expect(failed.json().data).toEqual([
+      expect.objectContaining({ handoffId: 'handoff-a1-failed', status: 'failed' }),
+    ]);
+    expect(all.json().data.map(({ handoffId }: { handoffId: string }) => handoffId)).toEqual([
+      'handoff-a1-failed',
+      'handoff-a1-completed',
+    ]);
+    expect(JSON.stringify(all.json())).not.toContain('visitor@example.com');
+    expect(JSON.stringify(all.json())).not.toContain('handoff-a2');
+  });
 });
 
 function request(url: string, token: string) {
@@ -178,6 +243,7 @@ async function seedAdminData(): Promise<void> {
     'site-admin-a1',
     'principal-a1',
     new Date('2026-07-16T10:00:00Z'),
+    'billing',
   );
   await insertConversation(
     'conversation-a1-new',
@@ -206,6 +272,27 @@ async function seedAdminData(): Promise<void> {
     .values([
       message('message-a1-user', 1, 'participant-conversation-a1-new-user', 'user', 'Hello'),
       message('message-a1-agent', 2, 'participant-conversation-a1-new-agent', 'assistant', 'Hi'),
+      scopedMessage(
+        'message-a1-old',
+        'tenant-admin-a',
+        'site-admin-a1',
+        'conversation-a1-old',
+        'participant-conversation-a1-old-user',
+      ),
+      scopedMessage(
+        'message-a2',
+        'tenant-admin-a',
+        'site-admin-a2',
+        'conversation-a2',
+        'participant-conversation-a2-user',
+      ),
+      scopedMessage(
+        'message-b1',
+        'tenant-admin-b',
+        'site-admin-b1',
+        'conversation-b1',
+        'participant-conversation-b1-user',
+      ),
     ])
     .execute();
   await database
@@ -214,6 +301,86 @@ async function seedAdminData(): Promise<void> {
       event('event-public', 1, 'public'),
       event('event-operator', 2, 'operator'),
       event('event-internal', 3, 'internal'),
+    ])
+    .execute();
+  await database
+    .insertInto('agent_runs')
+    .values([
+      run(
+        'run-a1-failed',
+        'tenant-admin-a',
+        'site-admin-a1',
+        'conversation-a1-new',
+        'message-a1-user',
+        'support',
+        'failed',
+        new Date('2026-07-16T11:20:00Z'),
+        'CONNECTOR_TIMEOUT',
+      ),
+      run(
+        'run-a1-completed',
+        'tenant-admin-a',
+        'site-admin-a1',
+        'conversation-a1-old',
+        'message-a1-old',
+        'billing',
+        'completed',
+        new Date('2026-07-16T11:10:00Z'),
+      ),
+      run(
+        'run-a2-failed',
+        'tenant-admin-a',
+        'site-admin-a2',
+        'conversation-a2',
+        'message-a2',
+        'support',
+        'failed',
+        new Date('2026-07-16T12:20:00Z'),
+        'PRIVATE_SITE_FAILURE',
+      ),
+      run(
+        'run-b1-failed',
+        'tenant-admin-b',
+        'site-admin-b1',
+        'conversation-b1',
+        'message-b1',
+        'support',
+        'failed',
+        new Date('2026-07-16T13:20:00Z'),
+        'PRIVATE_TENANT_FAILURE',
+      ),
+    ])
+    .execute();
+  await database
+    .insertInto('handoffs')
+    .values([
+      handoff(
+        'handoff-a1-failed',
+        'run-a1-failed',
+        'tenant-admin-a',
+        'site-admin-a1',
+        'conversation-a1-new',
+        'failed',
+        new Date('2026-07-16T11:22:00Z'),
+      ),
+      handoff(
+        'handoff-a1-completed',
+        'run-a1-completed',
+        'tenant-admin-a',
+        'site-admin-a1',
+        'conversation-a1-old',
+        'completed',
+        new Date('2026-07-16T11:12:00Z'),
+      ),
+      handoff(
+        'handoff-a2',
+        'run-a2-failed',
+        'tenant-admin-a',
+        'site-admin-a2',
+        'conversation-a2',
+        'failed',
+        new Date('2026-07-16T12:22:00Z'),
+      ),
     ])
     .execute();
 }
@@ -241,6 +408,7 @@ async function insertConversation(
   siteId: string,
   principalId: string,
   createdAt: Date,
+  agentRef = 'support',
 ): Promise<void> {
   await database
     .insertInto('conversations')
@@ -249,7 +417,7 @@ async function insertConversation(
       tenant_id: tenantId,
       site_id: siteId,
       principal_id: principalId,
-      agent_ref: 'support',
+      agent_ref: agentRef,
       status: 'active',
       created_at: createdAt,
       updated_at: createdAt,
@@ -274,7 +442,7 @@ async function insertConversation(
         conversation_id: conversationId,
         kind: 'agent',
         principal_id: null,
-        agent_ref: 'support',
+        agent_ref: agentRef,
       },
     ])
     .execute();
@@ -316,4 +484,73 @@ const event = (
   message_id: null,
   data: JSON.stringify({ agentRef: 'support' }),
   occurred_at: new Date(`2026-07-16T11:1${sequence}:00Z`),
+});
+
+const scopedMessage = (
+  messageId: string,
+  tenantId: string,
+  siteId: string,
+  conversationId: string,
+  participantId: string,
+) => ({
+  message_id: messageId,
+  tenant_id: tenantId,
+  site_id: siteId,
+  conversation_id: conversationId,
+  sequence: 1,
+  participant_id: participantId,
+  role: 'user' as const,
+  status: 'completed' as const,
+  parts: JSON.stringify([{ type: 'text', text: 'Seed' }]),
+  created_at: new Date('2026-07-16T10:00:00Z'),
+  completed_at: new Date('2026-07-16T10:00:00Z'),
+});
+
+const run = (
+  runId: string,
+  tenantId: string,
+  siteId: string,
+  conversationId: string,
+  triggerMessageId: string,
+  agentRef: string,
+  status: 'completed' | 'failed',
+  createdAt: Date,
+  errorCode: string | null = null,
+) => ({
+  run_id: runId,
+  tenant_id: tenantId,
+  site_id: siteId,
+  conversation_id: conversationId,
+  trigger_message_id: triggerMessageId,
+  assistant_message_id: `assistant-${runId}`,
+  agent_ref: agentRef,
+  status,
+  attempt: status === 'failed' ? 2 : 1,
+  available_at: createdAt,
+  claimed_at: createdAt,
+  lease_expires_at: null,
+  cancel_requested_at: null,
+  error_code: errorCode,
+  created_at: createdAt,
+  updated_at: createdAt,
+  completed_at: createdAt,
+});
+
+const handoff = (
+  handoffId: string,
+  runId: string,
+  tenantId: string,
+  siteId: string,
+  conversationId: string,
+  status: 'completed' | 'failed',
+  createdAt: Date,
+) => ({
+  handoff_id: handoffId,
+  run_id: runId,
+  tenant_id: tenantId,
+  site_id: siteId,
+  conversation_id: conversationId,
+  status,
+  created_at: createdAt,
+  updated_at: createdAt,
 });

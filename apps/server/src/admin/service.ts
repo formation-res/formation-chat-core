@@ -2,7 +2,12 @@ import type {
   AdminConversationFilter,
   AdminConversationList,
   AdminEventList,
+  AdminFailureList,
+  AdminHandoffFilter,
+  AdminHandoffList,
   AdminMessageList,
+  AdminRunFilter,
+  AdminRunList,
   AdminTokenClaims,
   Conversation,
   ConversationEvent,
@@ -15,6 +20,8 @@ import type {
   ConversationEventTable,
   ConversationParticipantTable,
   ConversationTable,
+  AgentRunTable,
+  HandoffTable,
   MessageTable,
 } from '../database/types.js';
 import {
@@ -165,7 +172,160 @@ export class AdminQueryService {
     };
   }
 
-  private validateFilter(scope: AdminScope, filter: AdminConversationFilter): void {
+  async listRuns(
+    scope: AdminScope,
+    filter: AdminRunFilter & { limit: number },
+  ): Promise<AdminRunList> {
+    this.validateFilter(scope, filter);
+    const cursor = filter.cursor ? decodeTimeCursor('run', filter.cursor) : undefined;
+    if (filter.cursor && !cursor) throw this.invalidCursor();
+    let query = this.database
+      .selectFrom('agent_runs')
+      .selectAll()
+      .where('tenant_id', '=', scope.tenantId)
+      .where('site_id', 'in', scope.siteIds);
+    if (filter.siteId) query = query.where('site_id', '=', filter.siteId);
+    if (filter.agentRef) query = query.where('agent_ref', '=', filter.agentRef);
+    if (filter.status) query = query.where('status', '=', filter.status);
+    if (filter.createdAfter) query = query.where('created_at', '>=', new Date(filter.createdAfter));
+    if (filter.createdBefore)
+      query = query.where('created_at', '<', new Date(filter.createdBefore));
+    if (cursor) {
+      const timestamp = new Date(cursor.timestamp);
+      query = query.where((expression) =>
+        expression.or([
+          expression('created_at', '<', timestamp),
+          expression.and([
+            expression('created_at', '=', timestamp),
+            expression('run_id', '<', cursor.id),
+          ]),
+        ]),
+      );
+    }
+    const rows = await query
+      .orderBy('created_at', 'desc')
+      .orderBy('run_id', 'desc')
+      .limit(filter.limit + 1)
+      .execute();
+    const page = rows.slice(0, filter.limit);
+    const tail = page.at(-1);
+    return {
+      data: page.map(mapRun),
+      pagination:
+        rows.length > filter.limit && tail
+          ? { hasMore: true, nextCursor: encodeTimeCursor('run', tail.created_at, tail.run_id) }
+          : { hasMore: false },
+    };
+  }
+
+  async listFailures(
+    scope: AdminScope,
+    filter: Omit<AdminRunFilter, 'status'> & { limit: number },
+  ): Promise<AdminFailureList> {
+    this.validateFilter(scope, filter);
+    const cursor = filter.cursor ? decodeTimeCursor('failure', filter.cursor) : undefined;
+    if (filter.cursor && !cursor) throw this.invalidCursor();
+    let query = this.database
+      .selectFrom('agent_runs')
+      .selectAll()
+      .where('tenant_id', '=', scope.tenantId)
+      .where('site_id', 'in', scope.siteIds)
+      .where('status', '=', 'failed');
+    if (filter.siteId) query = query.where('site_id', '=', filter.siteId);
+    if (filter.agentRef) query = query.where('agent_ref', '=', filter.agentRef);
+    if (filter.createdAfter) query = query.where('created_at', '>=', new Date(filter.createdAfter));
+    if (filter.createdBefore)
+      query = query.where('created_at', '<', new Date(filter.createdBefore));
+    if (cursor) {
+      const timestamp = new Date(cursor.timestamp);
+      query = query.where((expression) =>
+        expression.or([
+          expression('created_at', '<', timestamp),
+          expression.and([
+            expression('created_at', '=', timestamp),
+            expression('run_id', '<', cursor.id),
+          ]),
+        ]),
+      );
+    }
+    const rows = await query
+      .orderBy('created_at', 'desc')
+      .orderBy('run_id', 'desc')
+      .limit(filter.limit + 1)
+      .execute();
+    const page = rows.slice(0, filter.limit);
+    const tail = page.at(-1);
+    return {
+      data: page.map((row) => ({
+        ...mapRun(row),
+        status: 'failed',
+        errorCode: row.error_code ?? 'RUN_FAILED',
+      })),
+      pagination:
+        rows.length > filter.limit && tail
+          ? {
+              hasMore: true,
+              nextCursor: encodeTimeCursor('failure', tail.created_at, tail.run_id),
+            }
+          : { hasMore: false },
+    };
+  }
+
+  async listHandoffs(
+    scope: AdminScope,
+    filter: AdminHandoffFilter & { limit: number },
+  ): Promise<AdminHandoffList> {
+    this.validateFilter(scope, filter);
+    const cursor = filter.cursor ? decodeTimeCursor('handoff', filter.cursor) : undefined;
+    if (filter.cursor && !cursor) throw this.invalidCursor();
+    let query = this.database
+      .selectFrom('handoffs as handoff')
+      .innerJoin('agent_runs as run', 'run.run_id', 'handoff.run_id')
+      .selectAll('handoff')
+      .where('handoff.tenant_id', '=', scope.tenantId)
+      .where('handoff.site_id', 'in', scope.siteIds);
+    if (filter.siteId) query = query.where('handoff.site_id', '=', filter.siteId);
+    if (filter.agentRef) query = query.where('run.agent_ref', '=', filter.agentRef);
+    if (filter.status) query = query.where('handoff.status', '=', filter.status);
+    if (filter.createdAfter)
+      query = query.where('handoff.created_at', '>=', new Date(filter.createdAfter));
+    if (filter.createdBefore)
+      query = query.where('handoff.created_at', '<', new Date(filter.createdBefore));
+    if (cursor) {
+      const timestamp = new Date(cursor.timestamp);
+      query = query.where((expression) =>
+        expression.or([
+          expression('handoff.created_at', '<', timestamp),
+          expression.and([
+            expression('handoff.created_at', '=', timestamp),
+            expression('handoff.handoff_id', '<', cursor.id),
+          ]),
+        ]),
+      );
+    }
+    const rows = await query
+      .orderBy('handoff.created_at', 'desc')
+      .orderBy('handoff.handoff_id', 'desc')
+      .limit(filter.limit + 1)
+      .execute();
+    const page = rows.slice(0, filter.limit);
+    const tail = page.at(-1);
+    return {
+      data: page.map(mapHandoff),
+      pagination:
+        rows.length > filter.limit && tail
+          ? {
+              hasMore: true,
+              nextCursor: encodeTimeCursor('handoff', tail.created_at, tail.handoff_id),
+            }
+          : { hasMore: false },
+    };
+  }
+
+  private validateFilter(
+    scope: AdminScope,
+    filter: Pick<AdminConversationFilter, 'siteId' | 'createdAfter' | 'createdBefore'>,
+  ): void {
     if (filter.siteId && !scope.siteIds.includes(filter.siteId)) {
       throw new AdminApiError('FORBIDDEN_SITE', 403, 'The token does not allow this site.');
     }
@@ -273,4 +433,35 @@ function mapEvent(row: Selectable<ConversationEventTable>): ConversationEvent {
     ...(row.message_id ? { messageId: row.message_id } : {}),
     data: row.data,
   } as ConversationEvent;
+}
+
+function mapRun(row: Selectable<AgentRunTable>) {
+  return {
+    runId: row.run_id,
+    tenantId: row.tenant_id,
+    siteId: row.site_id,
+    conversationId: row.conversation_id,
+    userMessageId: row.trigger_message_id,
+    assistantMessageId: row.assistant_message_id,
+    agentRef: row.agent_ref,
+    status: row.status,
+    attempt: row.attempt,
+    ...(row.error_code ? { errorCode: row.error_code } : {}),
+    createdAt: row.created_at.toISOString(),
+    updatedAt: row.updated_at.toISOString(),
+    ...(row.completed_at ? { completedAt: row.completed_at.toISOString() } : {}),
+  };
+}
+
+function mapHandoff(row: Selectable<HandoffTable>) {
+  return {
+    handoffId: row.handoff_id,
+    tenantId: row.tenant_id,
+    siteId: row.site_id,
+    conversationId: row.conversation_id,
+    runId: row.run_id,
+    status: row.status,
+    createdAt: row.created_at.toISOString(),
+    updatedAt: row.updated_at.toISOString(),
+  };
 }

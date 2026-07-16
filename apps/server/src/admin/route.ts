@@ -1,6 +1,10 @@
 import {
   AdminConversationFilterSchema,
   type AdminConversationFilter,
+  AdminHandoffFilterSchema,
+  type AdminHandoffFilter,
+  AdminRunFilterSchema,
+  type AdminRunFilter,
 } from '@formation-chat-core/protocol';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 
@@ -92,6 +96,51 @@ export function registerAdminRoutes(
       },
     );
   }
+
+  server.get<{ Querystring: AdminRunFilter }>(
+    '/v1/admin/runs',
+    { schema: { querystring: AdminRunFilterSchema } },
+    async (request, reply) => {
+      try {
+        return await service.listRuns(await authenticateAdmin(request, tokens), {
+          ...request.query,
+          limit: request.query.limit ?? 20,
+        });
+      } catch (error) {
+        return sendError(error, request, reply);
+      }
+    },
+  );
+
+  server.get<{ Querystring: Omit<AdminRunFilter, 'status'> }>(
+    '/v1/admin/failures',
+    { schema: { querystring: failureFilterSchema } },
+    async (request, reply) => {
+      try {
+        return await service.listFailures(await authenticateAdmin(request, tokens), {
+          ...request.query,
+          limit: request.query.limit ?? 20,
+        });
+      } catch (error) {
+        return sendError(error, request, reply);
+      }
+    },
+  );
+
+  server.get<{ Querystring: AdminHandoffFilter }>(
+    '/v1/admin/handoffs',
+    { schema: { querystring: AdminHandoffFilterSchema } },
+    async (request, reply) => {
+      try {
+        return await service.listHandoffs(await authenticateAdmin(request, tokens), {
+          ...request.query,
+          limit: request.query.limit ?? 20,
+        });
+      } catch (error) {
+        return sendError(error, request, reply);
+      }
+    },
+  );
 }
 
 const idParams = {
@@ -99,6 +148,18 @@ const idParams = {
   additionalProperties: false,
   required: ['conversationId'],
   properties: { conversationId: opaqueId },
+} as const;
+
+const failureFilterSchema = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    siteId: opaqueId,
+    agentRef: opaqueId,
+    createdAfter: { type: 'string', format: 'date-time', pattern: 'Z$' },
+    createdBefore: { type: 'string', format: 'date-time', pattern: 'Z$' },
+    ...pageQuery.properties,
+  },
 } as const;
 
 async function authenticateAdmin(request: FastifyRequest, tokens: AdminTokenService) {

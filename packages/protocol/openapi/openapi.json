@@ -348,7 +348,23 @@
           { "$ref": "#/components/parameters/CreatedAfter" },
           { "$ref": "#/components/parameters/CreatedBefore" },
           { "$ref": "#/components/parameters/Cursor" },
-          { "$ref": "#/components/parameters/Limit" }
+          { "$ref": "#/components/parameters/Limit" },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "queued",
+                "running",
+                "waiting_for_input",
+                "completed",
+                "failed",
+                "cancel_requested",
+                "cancelled"
+              ]
+            }
+          }
         ],
         "responses": {
           "200": {
@@ -394,10 +410,19 @@
         "security": [{ "adminToken": [] }],
         "parameters": [
           { "$ref": "#/components/parameters/SiteId" },
+          { "$ref": "#/components/parameters/AgentRef" },
           { "$ref": "#/components/parameters/CreatedAfter" },
           { "$ref": "#/components/parameters/CreatedBefore" },
           { "$ref": "#/components/parameters/Cursor" },
-          { "$ref": "#/components/parameters/Limit" }
+          { "$ref": "#/components/parameters/Limit" },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["requested", "awaiting_contact", "delivering", "completed", "failed"]
+            }
+          }
         ],
         "responses": {
           "200": {

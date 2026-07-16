@@ -6,6 +6,7 @@ import * as createConversationsAndMessages from './migrations/003_create_convers
 import * as createConversationEvents from './migrations/004_create_conversation_events.js';
 import * as createAgentRuns from './migrations/005_create_agent_runs.js';
 import * as createHandoffsAndStructuredInputs from './migrations/006_create_handoffs_and_structured_inputs.js';
+import * as createAdminQueryIndexes from './migrations/007_create_admin_query_indexes.js';
 import type { Database } from './database.js';
 
 const migrations: Record<string, Migration> = {
@@ -15,6 +16,7 @@ const migrations: Record<string, Migration> = {
   '004_create_conversation_events': createConversationEvents,
   '005_create_agent_runs': createAgentRuns,
   '006_create_handoffs_and_structured_inputs': createHandoffsAndStructuredInputs,
+  '007_create_admin_query_indexes': createAdminQueryIndexes,
 };
 
 export class DatabaseMigrationError extends Error {
