@@ -473,6 +473,17 @@ disconnect test, and backward-compatibility tests for the old endpoint.
 
 **Estimated scope:** Medium in the Haystack repository, delivered through its own branch and review
 
+**Completed:** 2026-07-16 on Haystack branch `codex/task-14-haystack-streaming` in `733ca8b`,
+`0811739`, `41151d6`, and `a02cc82`, with chat-core contract support in `4ca52eb` and `8a9d1b8`.
+The token-authenticated `POST /api/connectors/v1/runs` endpoint accepts the published execution
+envelope, runs solely from normalized supplied history, and streams bounded public SSE connector
+events with stable core correlation IDs. Tool, citation, completion, failure, and handoff output is
+validated against chat-core's generated JSON Schema; citation credentials and provider failures are
+kept out of public output. Haystack's 137 tests pass, including disconnect propagation and the old
+synchronous endpoint, along with Ruff lint, changed-file formatting, package build, and the live
+cross-repository fixture gate. Repository-wide Ruff formatting still reports 26 pre-existing
+unformatted files outside this task.
+
 ### Task 15: Implement structured contact collection and email handoff
 
 **Description:** Add the generic contact-request lifecycle in the core and extend Haystack's
