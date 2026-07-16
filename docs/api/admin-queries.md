@@ -46,3 +46,14 @@ exclusive. `createdAfter` must be earlier than `createdBefore`.
 
 Failure records contain only stable `errorCode` values. Handoff records contain lifecycle status
 and correlation IDs, not the submitted email address or provider response.
+
+## Operations dashboard
+
+The reference dashboard in `apps/dashboard` consumes only these endpoints. It does not read
+Haystack storage or configure agents. For production, serve its static build behind the same
+trusted admin origin as the API (or a narrowly configured reverse proxy) so browsers do not need
+broad cross-origin access.
+
+Operators enter a short-lived admin JWT when connecting. The dashboard keeps the token in memory,
+never local storage, and clears it on disconnect or tab close. Theme preference is the only value
+stored in local storage. See `apps/dashboard/README.md` for local commands and deployment guidance.

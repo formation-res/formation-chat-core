@@ -582,6 +582,16 @@ mobile and desktop visual review.
 
 **Estimated scope:** Multiple medium vertical slices, starting with conversation inspection
 
+**Completed:** 2026-07-16 in `9d9fe27` and `d43201b`. The standalone React dashboard uses only the
+scoped admin API and keeps operator bearer tokens in memory. It provides searchable conversation inspection,
+public transcript and visibility-labelled event timelines, expandable run/failure/handoff lists,
+and navigable conversation, message, run, handoff, principal, and event correlations. The core run
+ID is the cross-system trace key supplied to connectors; when no separate connector trace ID is
+present, the UI states that explicitly. Cursor continuation handles large transcript histories.
+Light and dark themes, reduced-motion support, responsive desktop/mobile layouts, skeletons,
+disabled/loading/error/empty states, and WCAG contrast are covered by component and real-browser
+tests with realistic fixtures.
+
 ### Task 18: Harden and document the first release
 
 **Description:** Complete rate limits, request limits, audit events, PII retention, deletion,
