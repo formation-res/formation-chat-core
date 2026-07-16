@@ -8,6 +8,7 @@ import {
 } from '@formation-chat-core/protocol';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 
+import { setAuditActor } from '../security/audit.js';
 import { AdminApiError, AdminQueryService } from './service.js';
 import { AdminTokenService } from './token.js';
 
@@ -170,6 +171,12 @@ async function authenticateAdmin(request: FastifyRequest, tokens: AdminTokenServ
     if (!claims.scopes.some((scope) => scope === 'admin:read' || scope === 'admin:internal')) {
       throw new AdminAuthorizationError(403);
     }
+    setAuditActor(request, {
+      actorKind: 'admin',
+      actorId: claims.adminId,
+      tenantId: claims.tenantId,
+      ...(claims.siteIds.length === 1 ? { siteId: claims.siteIds[0] } : {}),
+    });
     return claims;
   } catch (error) {
     if (error instanceof AdminAuthorizationError) throw error;

@@ -2,6 +2,7 @@ import type { AccessScope, SessionTokenClaims } from '@formation-chat-core/proto
 import type { FastifyRequest } from 'fastify';
 
 import { SessionTokenService } from '../session/token.js';
+import { setAuditActor } from '../security/audit.js';
 
 export class AuthorizationError extends Error {
   constructor(readonly statusCode: 401 | 403) {
@@ -21,6 +22,12 @@ export async function authenticate(
   try {
     const claims = await tokens.verify(authorization.slice(7));
     if (!claims.scopes.includes(scope)) throw new AuthorizationError(403);
+    setAuditActor(request, {
+      actorKind: 'anonymous',
+      actorId: claims.principalId,
+      tenantId: claims.tenantId,
+      siteId: claims.siteId,
+    });
     return claims;
   } catch (error) {
     if (error instanceof AuthorizationError) throw error;

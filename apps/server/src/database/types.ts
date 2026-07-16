@@ -162,6 +162,19 @@ export interface StructuredInputRequestTable {
   updated_at: Generated<Date>;
 }
 
+export interface AuditEventTable {
+  audit_event_id: Generated<string>;
+  correlation_id: string;
+  actor_kind: 'anonymous' | 'admin' | 'system';
+  actor_id: string | null;
+  tenant_id: string | null;
+  site_id: string | null;
+  action: string;
+  outcome: 'success' | 'denied' | 'failure';
+  status_code: number;
+  occurred_at: Generated<Date>;
+}
+
 export interface DatabaseSchema {
   tenants: TenantTable;
   sites: SiteTable;
@@ -176,4 +189,5 @@ export interface DatabaseSchema {
   agent_runs: AgentRunTable;
   handoffs: HandoffTable;
   structured_input_requests: StructuredInputRequestTable;
+  audit_events: AuditEventTable;
 }

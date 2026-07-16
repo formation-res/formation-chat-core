@@ -19,13 +19,17 @@ export interface TokenSubject {
 }
 
 export class SessionTokenService {
-  readonly #key: Uint8Array;
+  readonly #keys: Uint8Array[];
 
   constructor(
-    secret: string,
+    secrets: string | [string, ...string[]],
     private readonly ttlSeconds: number,
   ) {
-    this.#key = new TextEncoder().encode(secret);
+    const values = typeof secrets === 'string' ? [secrets] : secrets;
+    if (values.some((secret) => Buffer.byteLength(secret) < 32)) {
+      throw new Error('Session token secret is too short.');
+    }
+    this.#keys = values.map((secret) => new TextEncoder().encode(secret));
   }
 
   async issue(
@@ -47,7 +51,7 @@ export class SessionTokenService {
       .setSubject(subject.principalId)
       .setIssuedAt(issuedAtSeconds)
       .setExpirationTime(expiresAtSeconds)
-      .sign(this.#key);
+      .sign(this.#keys[0] as Uint8Array);
     return { token, claims };
   }
 
@@ -55,12 +59,26 @@ export class SessionTokenService {
     token: string,
     expected?: Pick<TokenSubject, 'tenantId' | 'siteId'>,
   ): Promise<SessionTokenClaims> {
-    const { payload } = await jwtVerify(token, this.#key, {
-      algorithms: [algorithm],
-      audience,
-      issuer,
-    });
-    const claims = payload as unknown as SessionTokenClaims;
+    let payload: Awaited<ReturnType<typeof jwtVerify>>['payload'] | undefined;
+    for (const key of this.#keys) {
+      try {
+        payload = (await jwtVerify(token, key, { algorithms: [algorithm], audience, issuer }))
+          .payload;
+        break;
+      } catch {
+        // Continue through the bounded rotation key ring.
+      }
+    }
+    if (!payload) throw new Error('Invalid session token.');
+    const claims: SessionTokenClaims = {
+      tenantId: payload.tenantId as string,
+      siteId: payload.siteId as string,
+      principalId: payload.principalId as string,
+      sessionId: payload.sessionId as string,
+      scopes: payload.scopes as AccessScope[],
+      issuedAt: payload.issuedAt as string,
+      expiresAt: payload.expiresAt as string,
+    };
     if (
       typeof claims.tenantId !== 'string' ||
       typeof claims.siteId !== 'string' ||

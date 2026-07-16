@@ -13,17 +13,20 @@ export interface AdminTokenSubject {
 }
 
 export class AdminTokenService {
-  readonly #key: Uint8Array;
+  readonly #keys: Uint8Array[];
 
   constructor(
-    secret: string,
+    secrets: string | [string, ...string[]],
     private readonly ttlSeconds: number,
   ) {
-    if (Buffer.byteLength(secret) < 32) throw new Error('Admin token secret is too short.');
+    const values = typeof secrets === 'string' ? [secrets] : secrets;
+    if (values.some((secret) => Buffer.byteLength(secret) < 32)) {
+      throw new Error('Admin token secret is too short.');
+    }
     if (!Number.isSafeInteger(ttlSeconds) || ttlSeconds < 60 || ttlSeconds > 86_400) {
       throw new Error('Admin token TTL is invalid.');
     }
-    this.#key = new TextEncoder().encode(secret);
+    this.#keys = values.map((secret) => new TextEncoder().encode(secret));
   }
 
   async issue(
@@ -47,16 +50,22 @@ export class AdminTokenService {
       .setSubject(subject.adminId)
       .setIssuedAt(issuedAtSeconds)
       .setExpirationTime(expiresAtSeconds)
-      .sign(this.#key);
+      .sign(this.#keys[0] as Uint8Array);
     return { token, claims };
   }
 
   async verify(token: string): Promise<AdminTokenClaims> {
-    const { payload } = await jwtVerify(token, this.#key, {
-      algorithms: [algorithm],
-      audience,
-      issuer,
-    });
+    let payload: Awaited<ReturnType<typeof jwtVerify>>['payload'] | undefined;
+    for (const key of this.#keys) {
+      try {
+        payload = (await jwtVerify(token, key, { algorithms: [algorithm], audience, issuer }))
+          .payload;
+        break;
+      } catch {
+        // Continue through the bounded rotation key ring.
+      }
+    }
+    if (!payload) throw new Error('Invalid admin token.');
     const claims: AdminTokenClaims = {
       adminId: payload.adminId as string,
       tenantId: payload.tenantId as string,

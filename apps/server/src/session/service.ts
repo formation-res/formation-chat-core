@@ -49,10 +49,10 @@ export class SessionService {
 
   constructor(
     private readonly database: Database,
-    secret: string,
+    secrets: string | [string, ...string[]],
     private readonly ttlSeconds: number,
   ) {
-    this.#tokens = new SessionTokenService(secret, ttlSeconds);
+    this.#tokens = new SessionTokenService(secrets, ttlSeconds);
   }
 
   async bootstrapAnonymous(

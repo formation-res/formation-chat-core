@@ -9,6 +9,7 @@ import { EventBroker } from '../src/event/broker.js';
 import { EventService } from '../src/event/service.js';
 import { EventStore } from '../src/event/store.js';
 import { MessageService } from '../src/message/service.js';
+import { RetentionService } from '../src/privacy/retention.js';
 import { RunWorker } from '../src/run/worker.js';
 import { buildServer } from '../src/server.js';
 import { SessionTokenService } from '../src/session/token.js';
@@ -270,6 +271,41 @@ describe('structured contact lifecycle', () => {
     expect(
       (await database.selectFrom('agent_runs').select('status').executeTakeFirstOrThrow()).status,
     ).toBe('queued');
+  });
+
+  it('redacts contact values and deletes expired anonymous transcripts within scope', async () => {
+    const { conversationId, requestId } = await createPausedHandoff();
+    await submitInput(conversationId, requestId, {
+      value: 'retained-visitor@example.com',
+      consent: true,
+    });
+    const old = new Date('2024-01-01T00:00:00Z');
+    await database
+      .updateTable('structured_input_requests')
+      .set({ updated_at: old })
+      .where('request_id', '=', requestId)
+      .execute();
+    await database
+      .updateTable('conversations')
+      .set({ updated_at: old })
+      .where('conversation_id', '=', conversationId)
+      .execute();
+    const retention = new RetentionService(database, {
+      anonymousDays: 30,
+      authenticatedDays: 365,
+      contactValueHours: 24,
+    });
+
+    const result = await retention.runOnce(new Date('2026-01-01T00:00:00Z'));
+
+    expect(result).toMatchObject({ conversationsDeleted: 1, contactValuesRedacted: 1 });
+    expect(
+      await database
+        .selectFrom('conversations')
+        .select('conversation_id')
+        .where('conversation_id', '=', conversationId)
+        .executeTakeFirst(),
+    ).toBeUndefined();
   });
 });
 

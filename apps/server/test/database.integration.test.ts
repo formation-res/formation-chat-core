@@ -2,6 +2,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 
 import { createDatabase } from '../src/database/database.js';
 import { migrateDatabase } from '../src/database/migrate.js';
+import { DatabaseAuditSink } from '../src/security/audit.js';
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) throw new Error('DATABASE_URL is required for database integration tests.');
@@ -34,11 +35,13 @@ describe('PostgreSQL persistence base', () => {
             'command_idempotency',
             'conversation_events',
             'agent_runs',
+            'audit_events',
           ].includes(name),
         )
         .sort(),
     ).toEqual([
       'agent_runs',
+      'audit_events',
       'browser_sessions',
       'command_idempotency',
       'conversation_events',
@@ -53,6 +56,7 @@ describe('PostgreSQL persistence base', () => {
   });
 
   it('stores tenant-scoped sites', async () => {
+    await database.deleteFrom('audit_events').execute();
     await database.deleteFrom('conversation_events').execute();
     await database.deleteFrom('command_idempotency').execute();
     await database.deleteFrom('agent_runs').execute();
@@ -91,5 +95,46 @@ describe('PostgreSQL persistence base', () => {
       tenant_id: 'tenant-test',
       allowed_origins: ['https://example.test'],
     });
+  });
+
+  it('persists only the bounded audit event fields', async () => {
+    await database.deleteFrom('audit_events').execute();
+    const audit = new DatabaseAuditSink(database);
+
+    await audit.record({
+      correlationId: 'correlation-test',
+      actorKind: 'admin',
+      actorId: 'operator-test',
+      tenantId: 'tenant-test',
+      siteId: 'site-test',
+      action: 'GET /v1/admin/conversations',
+      outcome: 'success',
+      statusCode: 200,
+    });
+
+    const event = await database
+      .selectFrom('audit_events')
+      .select([
+        'correlation_id',
+        'actor_kind',
+        'actor_id',
+        'tenant_id',
+        'site_id',
+        'action',
+        'outcome',
+        'status_code',
+      ])
+      .executeTakeFirstOrThrow();
+    expect(event).toEqual({
+      correlation_id: 'correlation-test',
+      actor_kind: 'admin',
+      actor_id: 'operator-test',
+      tenant_id: 'tenant-test',
+      site_id: 'site-test',
+      action: 'GET /v1/admin/conversations',
+      outcome: 'success',
+      status_code: 200,
+    });
+    expect(JSON.stringify(event)).not.toMatch(/authorization|email|payload/i);
   });
 });

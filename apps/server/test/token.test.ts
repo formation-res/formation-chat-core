@@ -11,6 +11,17 @@ const subject = {
 };
 
 describe('SessionTokenService', () => {
+  it('verifies tokens issued by the immediately previous rotation key', async () => {
+    const previousSecret = 'previous-secret-0123456789abcdef0123456789abcdef';
+    const currentSecret = 'current-secret-0123456789abcdef0123456789abcdef';
+    const previous = new SessionTokenService(previousSecret, 600);
+    const rotated = new SessionTokenService([currentSecret, previousSecret], 600);
+    const issued = await previous.issue(subject);
+
+    await expect(rotated.verify(issued.token)).resolves.toEqual(issued.claims);
+    const fresh = await rotated.issue(subject);
+    await expect(previous.verify(fresh.token)).rejects.toThrow();
+  });
   it('issues and verifies scoped short-lived tokens', async () => {
     const tokens = new SessionTokenService(secret, 600);
     const issued = await tokens.issue(subject);

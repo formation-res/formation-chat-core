@@ -71,4 +71,88 @@ describe('server health and correlation', () => {
     expect(response.headers['x-correlation-id']).not.toBe('caller-controlled');
     await server.close();
   });
+
+  it('sets API security headers and rejects requests over the configured rate', async () => {
+    const server = buildServer({
+      checkDatabase: async () => undefined,
+      logger: false,
+      security: {
+        bodyLimitBytes: 16_384,
+        requestTimeoutMs: 30_000,
+        trustProxy: false,
+        rateLimitWindowMs: 60_000,
+        publicRateLimitMax: 1,
+        bootstrapRateLimitMax: 1,
+        adminRateLimitMax: 1,
+      },
+    });
+
+    const first = await server.inject({ method: 'GET', url: '/v1/missing' });
+    const limited = await server.inject({ method: 'GET', url: '/v1/missing' });
+
+    expect(first.headers).toMatchObject({
+      'x-content-type-options': 'nosniff',
+      'x-frame-options': 'DENY',
+      'referrer-policy': 'no-referrer',
+      'ratelimit-limit': '1',
+      'ratelimit-remaining': '0',
+    });
+    expect(limited.statusCode).toBe(429);
+    expect(limited.json()).toMatchObject({ error: { code: 'RATE_LIMITED' } });
+    expect(limited.body).not.toContain('127.0.0.1');
+    await server.close();
+  });
+
+  it('audits API outcomes without persisting query strings, headers, or bodies', async () => {
+    const record = vi.fn(async () => undefined);
+    const server = buildServer({
+      checkDatabase: async () => undefined,
+      logger: false,
+      audit: { record },
+    });
+
+    await server.inject({
+      method: 'POST',
+      url: '/v1/missing?email=visitor%40example.test',
+      headers: { authorization: 'Bearer secret-token' },
+      payload: { private: 'raw-private-value' },
+    });
+
+    expect(record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actorKind: 'system',
+        action: 'POST /v1/unmatched',
+        outcome: 'success',
+        statusCode: 404,
+      }),
+    );
+    expect(JSON.stringify(record.mock.calls)).not.toMatch(/visitor|secret-token|raw-private-value/);
+    await server.close();
+  });
+
+  it('exposes low-cardinality metrics only with the configured bearer credential', async () => {
+    const token = 'metrics-secret-0123456789abcdef0123456789abcdef';
+    const server = buildServer({
+      checkDatabase: async () => undefined,
+      logger: false,
+      metricsBearerToken: token,
+    });
+    await server.inject({ method: 'GET', url: '/health/live' });
+
+    const denied = await server.inject({ method: 'GET', url: '/metrics' });
+    const allowed = await server.inject({
+      method: 'GET',
+      url: '/metrics',
+      headers: { authorization: `Bearer ${token}` },
+    });
+
+    expect(denied.statusCode).toBe(401);
+    expect(denied.body).not.toContain(token);
+    expect(allowed.statusCode).toBe(200);
+    expect(allowed.body).toContain(
+      'chat_core_http_requests_total{method="GET",status_group="2xx"}',
+    );
+    expect(allowed.body).not.toMatch(/token|authorization|path=/i);
+    await server.close();
+  });
 });
