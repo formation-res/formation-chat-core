@@ -177,6 +177,9 @@ and agent before changing production DNS or traffic.
 
 ## Agentic integration with Codex or Claude
 
+For a more complete task breakdown, including Cloudflare platform setup, multi-site provisioning,
+and reusable frontend prompts, see [Agentic Cloudflare integration plan](agentic-cloudflare-integration-plan.md).
+
 ### Prepare the session
 
 1. Put the target app and `formation-chat-core` in sibling folders or one workspace.
