@@ -4,6 +4,7 @@ import {
   AdminFailureListSchema,
   AdminHandoffListSchema,
   AdminMessageListSchema,
+  AdminOverviewSchema,
   AdminRunListSchema,
   ConversationSchema,
   type AdminConversationFilter,
@@ -13,6 +14,7 @@ import {
   type AdminHandoffFilter,
   type AdminHandoffList,
   type AdminMessageList,
+  type AdminOverview,
   type AdminRunFilter,
   type AdminRunList,
   type Conversation,
@@ -39,6 +41,7 @@ if (!FormatRegistry.Has('uri')) {
 }
 
 export interface AdminApi {
+  getOverview(signal?: AbortSignal): Promise<AdminOverview>;
   listConversations(
     filters: AdminConversationFilter,
     signal?: AbortSignal,
@@ -85,6 +88,10 @@ export class AdminClient implements AdminApi {
       throw new Error('Use an HTTP or HTTPS Chat Core URL without embedded credentials.');
     }
     this.#baseUrl = url.origin;
+  }
+
+  getOverview(signal?: AbortSignal) {
+    return this.#get<AdminOverview>('/v1/admin/overview', AdminOverviewSchema, {}, signal);
   }
 
   listConversations(filters: AdminConversationFilter, signal?: AbortSignal) {

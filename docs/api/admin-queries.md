@@ -31,6 +31,7 @@ token rather than caller-selectable.
 - `GET /v1/admin/conversations/{conversationId}`
 - `GET /v1/admin/conversations/{conversationId}/messages`
 - `GET /v1/admin/conversations/{conversationId}/events`
+- `GET /v1/admin/overview`
 - `GET /v1/admin/runs`
 - `GET /v1/admin/failures`
 - `GET /v1/admin/handoffs`
@@ -47,12 +48,17 @@ exclusive. `createdAfter` must be earlier than `createdBefore`.
 Failure records contain only stable `errorCode` values. Handoff records contain lifecycle status
 and correlation IDs, not the submitted email address or provider response.
 
+`GET /v1/admin/overview` returns the token's tenant, the authorized site/domain cards, aggregate
+counts, and each site's most recent activity timestamp. It is tenant-scoped by the admin token and
+never lists sites outside the token's `siteIds`.
+
 ## Operations dashboard
 
-The reference dashboard in `apps/dashboard` consumes only these endpoints. It does not read
-Haystack storage or configure agents. For production, serve its static build behind the same
-trusted admin origin as the API (or a narrowly configured reverse proxy) so browsers do not need
-broad cross-origin access.
+The reference dashboard in `apps/dashboard` consumes only these endpoints. Its home page shows the
+token's tenant overview, and selecting a domain applies that site's `siteId` to conversations,
+runs, failures, and handoffs. It does not read Haystack storage or configure agents. For
+production, serve its static build behind the same trusted admin origin as the API (or a narrowly
+configured reverse proxy) so browsers do not need broad cross-origin access.
 
 Operators enter a short-lived admin JWT when connecting. The dashboard keeps the token in memory,
 never local storage, and clears it on disconnect or tab close. Theme preference is the only value

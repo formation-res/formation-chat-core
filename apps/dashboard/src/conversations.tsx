@@ -23,6 +23,7 @@ import { useResource } from './use-resource.js';
 
 interface ConversationViewProps {
   api: AdminApi;
+  selectedSiteId: string;
   refreshVersion: number;
   requestedConversationId: string | undefined;
   onOpenRun(runId: string): void;
@@ -30,6 +31,7 @@ interface ConversationViewProps {
 
 export function ConversationView({
   api,
+  selectedSiteId,
   refreshVersion,
   requestedConversationId,
   onOpenRun,
@@ -40,18 +42,25 @@ export function ConversationView({
   useEffect(() => {
     if (requestedConversationId) setSelectedId(requestedConversationId);
   }, [requestedConversationId]);
+  useEffect(() => {
+    setSelectedId(undefined);
+  }, [selectedSiteId]);
   const loader = useCallback(
     (signal: AbortSignal) =>
       api.listConversations(
         {
           limit: 100,
+          siteId: selectedSiteId,
           ...(status ? { status: status as 'active' | 'completed' | 'cancelled' } : {}),
         },
         signal,
       ),
-    [api, status],
+    [api, selectedSiteId, status],
   );
-  const conversations = useResource(loader, `conversations:${status}:${refreshVersion}`);
+  const conversations = useResource(
+    loader,
+    `conversations:${selectedSiteId}:${status}:${refreshVersion}`,
+  );
   const visible = useMemo(() => {
     const query = search.trim().toLowerCase();
     if (!query) return conversations.data?.data ?? [];

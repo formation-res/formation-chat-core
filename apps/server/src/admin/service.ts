@@ -6,6 +6,7 @@ import type {
   AdminHandoffFilter,
   AdminHandoffList,
   AdminMessageList,
+  AdminOverview,
   AdminRunFilter,
   AdminRunList,
   AdminTokenClaims,
@@ -23,6 +24,7 @@ import type {
   AgentRunTable,
   HandoffTable,
   MessageTable,
+  SiteTable,
 } from '../database/types.js';
 import {
   decodeSequenceCursor,
@@ -46,6 +48,42 @@ export class AdminApiError extends Error {
 
 export class AdminQueryService {
   constructor(private readonly database: Database) {}
+
+  async getOverview(scope: AdminScope): Promise<AdminOverview> {
+    const tenant = await this.database
+      .selectFrom('tenants')
+      .select(['tenant_id', 'display_name'])
+      .where('tenant_id', '=', scope.tenantId)
+      .executeTakeFirst();
+    if (!tenant) throw new AdminApiError('NOT_FOUND', 404, 'The resource was not found.');
+
+    const siteRows = await this.database
+      .selectFrom('sites')
+      .selectAll()
+      .where('tenant_id', '=', scope.tenantId)
+      .where('site_id', 'in', scope.siteIds)
+      .orderBy('display_name')
+      .orderBy('site_id')
+      .execute();
+
+    const sites = await Promise.all(siteRows.map((site) => this.siteOverview(scope, site)));
+    const totals = sites.reduce(
+      (sum, site) => ({
+        conversations: sum.conversations + site.stats.conversations,
+        activeConversations: sum.activeConversations + site.stats.activeConversations,
+        runs: sum.runs + site.stats.runs,
+        failures: sum.failures + site.stats.failures,
+        handoffs: sum.handoffs + site.stats.handoffs,
+      }),
+      { conversations: 0, activeConversations: 0, runs: 0, failures: 0, handoffs: 0 },
+    );
+
+    return {
+      tenant: { tenantId: tenant.tenant_id, displayName: tenant.display_name },
+      sites,
+      totals,
+    };
+  }
 
   async listConversations(
     scope: AdminScope,
@@ -354,6 +392,85 @@ export class AdminQueryService {
     return row;
   }
 
+  private async siteOverview(scope: AdminScope, site: Selectable<SiteTable>) {
+    const [conversations, activeConversations, runs, failures, handoffs] = await Promise.all([
+      this.countRows('conversations', scope, site.site_id),
+      this.countActiveConversations(scope, site.site_id),
+      this.countRows('agent_runs', scope, site.site_id),
+      this.countFailedRuns(scope, site.site_id),
+      this.countRows('handoffs', scope, site.site_id),
+    ]);
+    const recentDates = await Promise.all([
+      this.latestDate('conversations', scope, site.site_id, 'updated_at'),
+      this.latestDate('agent_runs', scope, site.site_id, 'updated_at'),
+      this.latestDate('handoffs', scope, site.site_id, 'updated_at'),
+    ]);
+    const recentActivity = recentDates
+      .filter((value): value is Date => value instanceof Date)
+      .sort((left, right) => right.getTime() - left.getTime())[0];
+
+    return {
+      siteId: site.site_id,
+      displayName: site.display_name,
+      siteKey: site.site_key,
+      allowedOrigins: normalizeOrigins(site.allowed_origins),
+      agentRef: site.agent_ref,
+      stats: { conversations, activeConversations, runs, failures, handoffs },
+      ...(recentActivity ? { recentActivityAt: recentActivity.toISOString() } : {}),
+    };
+  }
+
+  private async countRows(
+    table: 'conversations' | 'agent_runs' | 'handoffs',
+    scope: AdminScope,
+    siteId: string,
+  ): Promise<number> {
+    const row = await this.database
+      .selectFrom(table)
+      .select((expression) => expression.fn.countAll().as('count'))
+      .where('tenant_id', '=', scope.tenantId)
+      .where('site_id', '=', siteId)
+      .executeTakeFirstOrThrow();
+    return Number(row.count);
+  }
+
+  private async countActiveConversations(scope: AdminScope, siteId: string): Promise<number> {
+    const row = await this.database
+      .selectFrom('conversations')
+      .select((expression) => expression.fn.countAll().as('count'))
+      .where('tenant_id', '=', scope.tenantId)
+      .where('site_id', '=', siteId)
+      .where('status', '=', 'active')
+      .executeTakeFirstOrThrow();
+    return Number(row.count);
+  }
+
+  private async countFailedRuns(scope: AdminScope, siteId: string): Promise<number> {
+    const row = await this.database
+      .selectFrom('agent_runs')
+      .select((expression) => expression.fn.countAll().as('count'))
+      .where('tenant_id', '=', scope.tenantId)
+      .where('site_id', '=', siteId)
+      .where('status', '=', 'failed')
+      .executeTakeFirstOrThrow();
+    return Number(row.count);
+  }
+
+  private async latestDate(
+    table: 'conversations' | 'agent_runs' | 'handoffs',
+    scope: AdminScope,
+    siteId: string,
+    column: 'updated_at',
+  ): Promise<Date | undefined> {
+    const row = await this.database
+      .selectFrom(table)
+      .select((expression) => expression.fn.max<Date>(column).as('latest'))
+      .where('tenant_id', '=', scope.tenantId)
+      .where('site_id', '=', siteId)
+      .executeTakeFirst();
+    return row?.latest ?? undefined;
+  }
+
   private async participantsFor(scope: AdminScope, conversationIds: string[]) {
     const grouped = new Map<string, Selectable<ConversationParticipantTable>[]>();
     if (conversationIds.length === 0) return grouped;
@@ -376,6 +493,10 @@ export class AdminQueryService {
   private invalidCursor() {
     return new AdminApiError('INVALID_CURSOR', 400, 'The cursor is invalid.');
   }
+}
+
+function normalizeOrigins(value: string[] | string): string[] {
+  return Array.isArray(value) ? value : (JSON.parse(value) as string[]);
 }
 
 function mapConversation(

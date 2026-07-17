@@ -13,6 +13,7 @@ import {
   eventPage,
   handoffPage,
   messagePage,
+  overview,
   runPage,
 } from './fixtures.js';
 
@@ -48,12 +49,15 @@ describe('operations dashboard', () => {
 
     expect(createClient).toHaveBeenCalledWith(window.location.origin, 'test-admin-token');
     expect(container?.textContent).toContain('Operations');
-    expect(container?.textContent).toContain('Support agent conversation');
+    expect(container?.textContent).toContain('Tenant One');
+    expect(container?.textContent).toContain('Main website');
     expect(container?.querySelector('input[name="token"]')).toBeNull();
   });
 
   it('shows a detailed transcript and visibility-aware event timeline', async () => {
-    render(<App initialClient={fakeApi()} />);
+    const api = fakeApi();
+    render(<App initialClient={api} />);
+    await selectMainWebsite();
     await act(settle);
     await act(async () => {
       container
@@ -63,6 +67,10 @@ describe('operations dashboard', () => {
     });
 
     expect(container?.textContent).toContain('How can I change my plan?');
+    expect(api.listConversations).toHaveBeenCalledWith(
+      expect.objectContaining({ siteId: 'site-1' }),
+      expect.any(AbortSignal),
+    );
     expect(container?.textContent).toContain('Public transcript');
     await act(async () => {
       container?.querySelector<HTMLButtonElement>('[role="tab"][aria-selected="false"]')?.click();
@@ -78,6 +86,7 @@ describe('operations dashboard', () => {
     const api = fakeApi();
     api.listConversations = vi.fn(() => pending.promise);
     render(<App initialClient={api} />);
+    await selectMainWebsite();
 
     expect(container?.querySelector('[aria-busy="true"]')).not.toBeNull();
     pending.resolve({ data: [], pagination: { hasMore: false } });
@@ -92,6 +101,7 @@ describe('operations dashboard', () => {
 
   it('navigates from a handoff correlation to its agent run', async () => {
     render(<App initialClient={fakeApi()} />);
+    await selectMainWebsite();
     await act(async () => {
       [...(container?.querySelectorAll<HTMLButtonElement>('button') ?? [])]
         .find((button) => button.textContent === 'Handoffs')
@@ -106,6 +116,24 @@ describe('operations dashboard', () => {
       await settle();
     });
     expect(container?.textContent).toContain('Agent runs');
+  });
+
+  it('clears the selected domain when returning home', async () => {
+    render(<App initialClient={fakeApi()} />);
+    await selectMainWebsite();
+    expect(container?.querySelector<HTMLSelectElement>('.domain-selector select')?.value).toBe(
+      'site-1',
+    );
+
+    await act(async () => {
+      [...(container?.querySelectorAll<HTMLButtonElement>('button') ?? [])]
+        .find((button) => button.textContent === 'Home')
+        ?.click();
+      await settle();
+    });
+
+    expect(container?.querySelector<HTMLSelectElement>('.domain-selector select')?.value).toBe('');
+    expect(container?.textContent).toContain('Tenant overview');
   });
 });
 
@@ -126,6 +154,27 @@ async function settle(): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, 0));
 }
 
+async function selectMainWebsite(): Promise<void> {
+  await waitForText('Main website');
+  const button = [...(container?.querySelectorAll<HTMLButtonElement>('.tenant-card') ?? [])].find(
+    (candidate) => candidate.textContent?.includes('Main website'),
+  );
+  if (!button) throw new Error('Main website card was not rendered.');
+  await act(async () => {
+    button.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await settle();
+    await settle();
+  });
+}
+
+async function waitForText(text: string): Promise<void> {
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    await act(settle);
+    if (container?.textContent?.includes(text)) return;
+  }
+  throw new Error(`Timed out waiting for ${text}. Rendered: ${container?.textContent ?? ''}`);
+}
+
 function deferred<T>() {
   let resolve!: (value: T) => void;
   const promise = new Promise<T>((done) => {
@@ -136,6 +185,7 @@ function deferred<T>() {
 
 function fakeApi(): AdminApi {
   return {
+    getOverview: vi.fn(async () => overview),
     listConversations: vi.fn(async () => conversationPage),
     getConversation: vi.fn(async () => conversation),
     listMessages: vi.fn(async () => messagePage),

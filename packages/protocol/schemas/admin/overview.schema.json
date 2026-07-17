@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "tenant",
+    "sites",
+    "totals"
+  ],
+  "properties": {
+    "tenant": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "tenantId",
+        "displayName"
+      ],
+      "properties": {
+        "tenantId": {
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+          "type": "string"
+        },
+        "displayName": {
+          "minLength": 1,
+          "maxLength": 200,
+          "type": "string"
+        }
+      }
+    },
+    "sites": {
+      "maxItems": 100,
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "siteId",
+          "displayName",
+          "siteKey",
+          "allowedOrigins",
+          "agentRef",
+          "stats"
+        ],
+        "properties": {
+          "siteId": {
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+            "type": "string"
+          },
+          "displayName": {
+            "minLength": 1,
+            "maxLength": 200,
+            "type": "string"
+          },
+          "siteKey": {
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+            "type": "string"
+          },
+          "allowedOrigins": {
+            "minItems": 1,
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "format": "uri",
+              "type": "string"
+            }
+          },
+          "agentRef": {
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+            "type": "string"
+          },
+          "stats": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "conversations",
+              "activeConversations",
+              "runs",
+              "failures",
+              "handoffs"
+            ],
+            "properties": {
+              "conversations": {
+                "minimum": 0,
+                "maximum": 9007199254740991,
+                "type": "integer"
+              },
+              "activeConversations": {
+                "minimum": 0,
+                "maximum": 9007199254740991,
+                "type": "integer"
+              },
+              "runs": {
+                "minimum": 0,
+                "maximum": 9007199254740991,
+                "type": "integer"
+              },
+              "failures": {
+                "minimum": 0,
+                "maximum": 9007199254740991,
+                "type": "integer"
+              },
+              "handoffs": {
+                "minimum": 0,
+                "maximum": 9007199254740991,
+                "type": "integer"
+              }
+            }
+          },
+          "recentActivityAt": {
+            "format": "date-time",
+            "pattern": "Z$",
+            "type": "string"
+          }
+        }
+      }
+    },
+    "totals": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "conversations",
+        "activeConversations",
+        "runs",
+        "failures",
+        "handoffs"
+      ],
+      "properties": {
+        "conversations": {
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "type": "integer"
+        },
+        "activeConversations": {
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "type": "integer"
+        },
+        "runs": {
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "type": "integer"
+        },
+        "failures": {
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "type": "integer"
+        },
+        "handoffs": {
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "type": "integer"
+        }
+      }
+    }
+  }
+}

@@ -3,6 +3,7 @@ import type {
   AdminEventList,
   AdminHandoffList,
   AdminMessageList,
+  AdminOverview,
   AdminRunList,
   Conversation,
 } from '@formation-chat-core/protocol';
@@ -25,6 +26,49 @@ export const conversation: Conversation = {
 export const conversationPage: AdminConversationList = {
   data: [conversation],
   pagination: { hasMore: false },
+};
+
+export const overview: AdminOverview = {
+  tenant: { tenantId: 'tenant-1', displayName: 'Tenant One' },
+  totals: {
+    conversations: 3,
+    activeConversations: 2,
+    runs: 4,
+    failures: 1,
+    handoffs: 1,
+  },
+  sites: [
+    {
+      siteId: 'site-1',
+      displayName: 'Main website',
+      siteKey: 'site-1-key',
+      allowedOrigins: ['https://www.example.com'],
+      agentRef: 'support-agent',
+      stats: {
+        conversations: 1,
+        activeConversations: 1,
+        runs: 1,
+        failures: 0,
+        handoffs: 0,
+      },
+      recentActivityAt: '2026-07-16T10:02:00.000Z',
+    },
+    {
+      siteId: 'site-2',
+      displayName: 'Docs',
+      siteKey: 'site-2-key',
+      allowedOrigins: ['https://docs.example.com'],
+      agentRef: 'docs-agent',
+      stats: {
+        conversations: 2,
+        activeConversations: 1,
+        runs: 3,
+        failures: 1,
+        handoffs: 1,
+      },
+      recentActivityAt: '2026-07-16T09:30:00.000Z',
+    },
+  ],
 };
 
 export const messagePage: AdminMessageList = {

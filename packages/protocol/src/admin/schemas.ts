@@ -93,6 +93,54 @@ export const AdminHandoffSchema = Type.Object(
 );
 export type AdminHandoff = Static<typeof AdminHandoffSchema>;
 
+export const AdminSiteOverviewSchema = Type.Object(
+  {
+    siteId: OpaqueIdSchema,
+    displayName: Type.String({ minLength: 1, maxLength: 200 }),
+    siteKey: OpaqueIdSchema,
+    allowedOrigins: Type.Array(Type.String({ format: 'uri' }), { minItems: 1, maxItems: 20 }),
+    agentRef: OpaqueIdSchema,
+    stats: Type.Object(
+      {
+        conversations: Type.Integer({ minimum: 0, maximum: Number.MAX_SAFE_INTEGER }),
+        activeConversations: Type.Integer({ minimum: 0, maximum: Number.MAX_SAFE_INTEGER }),
+        runs: Type.Integer({ minimum: 0, maximum: Number.MAX_SAFE_INTEGER }),
+        failures: Type.Integer({ minimum: 0, maximum: Number.MAX_SAFE_INTEGER }),
+        handoffs: Type.Integer({ minimum: 0, maximum: Number.MAX_SAFE_INTEGER }),
+      },
+      { additionalProperties: false },
+    ),
+    recentActivityAt: Type.Optional(TimestampSchema),
+  },
+  { additionalProperties: false },
+);
+export type AdminSiteOverview = Static<typeof AdminSiteOverviewSchema>;
+
+export const AdminOverviewSchema = Type.Object(
+  {
+    tenant: Type.Object(
+      {
+        tenantId: OpaqueIdSchema,
+        displayName: Type.String({ minLength: 1, maxLength: 200 }),
+      },
+      { additionalProperties: false },
+    ),
+    sites: Type.Array(AdminSiteOverviewSchema, { maxItems: 100 }),
+    totals: Type.Object(
+      {
+        conversations: Type.Integer({ minimum: 0, maximum: Number.MAX_SAFE_INTEGER }),
+        activeConversations: Type.Integer({ minimum: 0, maximum: Number.MAX_SAFE_INTEGER }),
+        runs: Type.Integer({ minimum: 0, maximum: Number.MAX_SAFE_INTEGER }),
+        failures: Type.Integer({ minimum: 0, maximum: Number.MAX_SAFE_INTEGER }),
+        handoffs: Type.Integer({ minimum: 0, maximum: Number.MAX_SAFE_INTEGER }),
+      },
+      { additionalProperties: false },
+    ),
+  },
+  { additionalProperties: false },
+);
+export type AdminOverview = Static<typeof AdminOverviewSchema>;
+
 const listSchema = <T extends TSchema>(item: T) =>
   Type.Object(
     { data: Type.Array(item, { maxItems: 100 }), pagination: CursorPageSchema },

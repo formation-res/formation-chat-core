@@ -41,6 +41,14 @@ export function registerAdminRoutes(
   service: AdminQueryService,
   tokens: AdminTokenService,
 ): void {
+  server.get('/v1/admin/overview', async (request, reply) => {
+    try {
+      return await service.getOverview(await authenticateAdmin(request, tokens));
+    } catch (error) {
+      return sendError(error, request, reply);
+    }
+  });
+
   server.get<{ Querystring: AdminConversationFilter }>(
     '/v1/admin/conversations',
     {

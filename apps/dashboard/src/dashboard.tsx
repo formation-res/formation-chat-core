@@ -1,11 +1,14 @@
-import { startTransition, useState } from 'react';
+import { startTransition, useCallback, useMemo, useState } from 'react';
+import type { AdminSiteOverview } from '@formation-chat-core/protocol';
 
 import type { AdminApi } from './admin-client.js';
 import { ConversationView } from './conversations.js';
+import { DashboardHome } from './home.js';
 import { Icon, type IconName } from './icons.js';
 import { OperationsList, type OperationsView } from './operations.js';
+import { useResource } from './use-resource.js';
 
-type View = 'conversations' | OperationsView;
+type View = 'home' | 'conversations' | OperationsView;
 
 export function Dashboard({
   api,
@@ -18,12 +21,39 @@ export function Dashboard({
   onToggleTheme(): void;
   onDisconnect(): void;
 }) {
-  const [view, setView] = useState<View>('conversations');
+  const [view, setView] = useState<View>('home');
   const [refreshVersion, setRefreshVersion] = useState(0);
   const [requestedRunId, setRequestedRunId] = useState<string>();
   const [requestedConversationId, setRequestedConversationId] = useState<string>();
+  const [selectedSiteId, setSelectedSiteId] = useState<string>();
+  const overviewLoader = useCallback((signal: AbortSignal) => api.getOverview(signal), [api]);
+  const overview = useResource(overviewLoader, `overview:${refreshVersion}`);
+  const selectedSite = useMemo(
+    () => overview.data?.sites.find((site) => site.siteId === selectedSiteId),
+    [overview.data, selectedSiteId],
+  );
 
-  const navigate = (next: View) => startTransition(() => setView(next));
+  const selectSite = (siteId: string, next: View = 'conversations') =>
+    startTransition(() => {
+      setSelectedSiteId(siteId);
+      setRequestedConversationId(undefined);
+      setRequestedRunId(undefined);
+      setView(next);
+    });
+  const clearSite = () =>
+    startTransition(() => {
+      setSelectedSiteId(undefined);
+      setRequestedConversationId(undefined);
+      setRequestedRunId(undefined);
+      setView('home');
+    });
+  const navigate = (next: View) => {
+    if (next === 'home') {
+      clearSite();
+      return;
+    }
+    startTransition(() => setView(next));
+  };
   const openRun = (runId: string) =>
     startTransition(() => {
       setRequestedRunId(runId);
@@ -48,7 +78,7 @@ export function Dashboard({
           </span>
         </div>
         <nav aria-label="Primary operations views">
-          <NavItems view={view} navigate={navigate} />
+          <NavItems view={view} navigate={navigate} disabled={!selectedSiteId} />
         </nav>
         <div className="sidebar-footer">
           <span className="connection-state">
@@ -66,8 +96,27 @@ export function Dashboard({
             <span className="topbar-product">Operations</span>
             <span className="topbar-divider" />
             <span className="topbar-view">{labels[view]}</span>
+            {selectedSite ? <span className="topbar-site">{siteLabel(selectedSite)}</span> : null}
           </div>
           <div className="topbar-actions">
+            <label className="domain-selector">
+              <span className="sr-only">Select dashboard domain</span>
+              <select
+                value={selectedSiteId ?? ''}
+                onChange={(event) =>
+                  event.target.value
+                    ? selectSite(event.target.value, view === 'home' ? 'conversations' : view)
+                    : clearSite()
+                }
+              >
+                <option value="">Tenant home</option>
+                {(overview.data?.sites ?? []).map((site) => (
+                  <option key={site.siteId} value={site.siteId}>
+                    {siteLabel(site)}
+                  </option>
+                ))}
+              </select>
+            </label>
             <button
               className="icon-button"
               aria-label="Refresh current view"
@@ -87,9 +136,18 @@ export function Dashboard({
           </div>
         </header>
         <main>
-          {view === 'conversations' ? (
+          {view === 'home' || !selectedSiteId ? (
+            <DashboardHome
+              overview={overview.data}
+              loading={overview.loading}
+              error={overview.error}
+              retry={overview.reload}
+              onSelectSite={selectSite}
+            />
+          ) : view === 'conversations' ? (
             <ConversationView
               api={api}
+              selectedSiteId={selectedSiteId}
               refreshVersion={refreshVersion}
               requestedConversationId={requestedConversationId}
               onOpenRun={openRun}
@@ -98,6 +156,7 @@ export function Dashboard({
             <OperationsList
               api={api}
               view={view}
+              selectedSiteId={selectedSiteId}
               refreshVersion={refreshVersion}
               requestedRunId={requestedRunId}
               onOpenConversation={openConversation}
@@ -107,13 +166,21 @@ export function Dashboard({
         </main>
       </div>
       <nav className="mobile-nav" aria-label="Mobile operations views">
-        <NavItems view={view} navigate={navigate} />
+        <NavItems view={view} navigate={navigate} disabled={!selectedSiteId} />
       </nav>
     </div>
   );
 }
 
-function NavItems({ view, navigate }: { view: View; navigate(next: View): void }) {
+function NavItems({
+  view,
+  navigate,
+  disabled,
+}: {
+  view: View;
+  navigate(next: View): void;
+  disabled: boolean;
+}) {
   return (
     <>
       {navItems.map((item) => (
@@ -121,6 +188,7 @@ function NavItems({ view, navigate }: { view: View; navigate(next: View): void }
           className={view === item.id ? 'active' : ''}
           key={item.id}
           aria-current={view === item.id ? 'page' : undefined}
+          disabled={disabled && item.id !== 'home'}
           onClick={() => navigate(item.id)}
         >
           <Icon name={item.icon} />
@@ -135,6 +203,7 @@ function NavItems({ view, navigate }: { view: View; navigate(next: View): void }
 }
 
 const navItems: { id: View; label: string; icon: IconName }[] = [
+  { id: 'home', label: 'Home', icon: 'activity' },
   { id: 'conversations', label: 'Conversations', icon: 'conversation' },
   { id: 'runs', label: 'Runs', icon: 'runs' },
   { id: 'failures', label: 'Failures', icon: 'alert' },
@@ -142,8 +211,13 @@ const navItems: { id: View; label: string; icon: IconName }[] = [
 ];
 
 const labels: Record<View, string> = {
+  home: 'Tenant home',
   conversations: 'Conversation inspector',
   runs: 'Agent runs',
   failures: 'Connector failures',
   handoffs: 'Human handoffs',
 };
+
+function siteLabel(site: AdminSiteOverview): string {
+  return site.allowedOrigins[0]?.replace(/^https:\/\//, '') ?? site.displayName;
+}

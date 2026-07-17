@@ -55,6 +55,60 @@ afterAll(async () => {
 });
 
 describe('admin query API', () => {
+  it('returns tenant-scoped site overview cards with safe aggregate stats', async () => {
+    const multiSiteToken = (
+      await adminTokens.issue({
+        adminId: 'operator-multi-site',
+        tenantId: 'tenant-admin-a',
+        siteIds: ['site-admin-a1', 'site-admin-a2'],
+        scopes: ['admin:read'],
+      })
+    ).token;
+    const overview = await request('/v1/admin/overview', multiSiteToken);
+
+    expect(overview.statusCode).toBe(200);
+    expect(overview.json()).toMatchObject({
+      tenant: { tenantId: 'tenant-admin-a', displayName: 'Tenant A' },
+      totals: {
+        conversations: 3,
+        activeConversations: 3,
+        runs: 3,
+        failures: 2,
+        handoffs: 3,
+      },
+    });
+    expect(
+      overview.json().sites.map(({ siteId, stats }: { siteId: string; stats: unknown }) => ({
+        siteId,
+        stats,
+      })),
+    ).toEqual([
+      {
+        siteId: 'site-admin-a1',
+        stats: {
+          conversations: 2,
+          activeConversations: 2,
+          runs: 2,
+          failures: 1,
+          handoffs: 2,
+        },
+      },
+      {
+        siteId: 'site-admin-a2',
+        stats: {
+          conversations: 1,
+          activeConversations: 1,
+          runs: 1,
+          failures: 1,
+          handoffs: 1,
+        },
+      },
+    ]);
+    expect(overview.json().sites[0].recentActivityAt).toBe('2026-07-16T11:22:00.000Z');
+    expect(JSON.stringify(overview.json())).not.toContain('tenant-admin-b');
+    expect(JSON.stringify(overview.json())).not.toContain('PRIVATE_TENANT_FAILURE');
+  });
+
   it('uses separate authentication and applies tenant and site restrictions', async () => {
     const publicToken = (
       await sessionTokens.issue({

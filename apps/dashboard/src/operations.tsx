@@ -26,6 +26,7 @@ export type OperationsView = 'runs' | 'failures' | 'handoffs';
 interface OperationsListProps {
   api: AdminApi;
   view: OperationsView;
+  selectedSiteId: string;
   refreshVersion: number;
   requestedRunId: string | undefined;
   onOpenConversation(conversationId: string): void;
@@ -35,6 +36,7 @@ interface OperationsListProps {
 export function OperationsList({
   api,
   view,
+  selectedSiteId,
   refreshVersion,
   requestedRunId,
   onOpenConversation,
@@ -45,18 +47,29 @@ export function OperationsList({
     (signal: AbortSignal) => {
       if (view === 'runs')
         return api.listRuns(
-          { limit: 100, ...(status ? { status: status as AdminAgentRun['status'] } : {}) },
+          {
+            limit: 100,
+            siteId: selectedSiteId,
+            ...(status ? { status: status as AdminAgentRun['status'] } : {}),
+          },
           signal,
         );
-      if (view === 'failures') return api.listFailures({ limit: 100 }, signal);
+      if (view === 'failures') return api.listFailures({ limit: 100, siteId: selectedSiteId }, signal);
       return api.listHandoffs(
-        { limit: 100, ...(status ? { status: status as AdminHandoff['status'] } : {}) },
+        {
+          limit: 100,
+          siteId: selectedSiteId,
+          ...(status ? { status: status as AdminHandoff['status'] } : {}),
+        },
         signal,
       );
     },
-    [api, status, view],
+    [api, selectedSiteId, status, view],
   );
-  const resource = useResource<OperationPage>(loader, `${view}:${status}:${refreshVersion}`);
+  const resource = useResource<OperationPage>(
+    loader,
+    `${view}:${selectedSiteId}:${status}:${refreshVersion}`,
+  );
   const config = viewConfig[view];
   const data: unknown[] = resource.data?.data ?? [];
 

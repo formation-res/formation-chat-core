@@ -73,6 +73,7 @@ async function runBrowserSmoke() {
     await page.getByLabel('Chat Core URL').fill(baseUrl);
     await page.getByLabel('Admin token').fill('browser-admin-token');
     await page.getByRole('button', { name: 'Open dashboard' }).click();
+    await page.getByRole('button', { name: /Formation website/ }).click();
     await page
       .getByText('Support agent conversation')
       .waitFor({ timeout: 5_000 })
@@ -155,6 +156,7 @@ async function accessibilityViolations(page) {
 
 function apiResponse(path) {
   const pagination = { hasMore: false };
+  if (path === '/v1/admin/overview') return overview;
   if (path === '/v1/admin/conversations') return { data: [conversation], pagination };
   if (path === '/v1/admin/conversations/conversation-1') return conversation;
   if (path.endsWith('/messages')) return { data: messages, pagination };
@@ -165,6 +167,34 @@ function apiResponse(path) {
   if (path === '/v1/admin/handoffs') return { data: [handoff], pagination };
   return { data: [], pagination };
 }
+
+const overview = {
+  tenant: { tenantId: 'tenant-1', displayName: 'Formation' },
+  totals: {
+    conversations: 1,
+    activeConversations: 1,
+    runs: 1,
+    failures: 0,
+    handoffs: 1,
+  },
+  sites: [
+    {
+      siteId: 'formation-web',
+      displayName: 'Formation website',
+      siteKey: 'formation-web-key',
+      allowedOrigins: ['https://www.tryformation.com'],
+      agentRef: 'support-agent',
+      stats: {
+        conversations: 1,
+        activeConversations: 1,
+        runs: 1,
+        failures: 0,
+        handoffs: 1,
+      },
+      recentActivityAt: '2026-07-16T10:02:00.000Z',
+    },
+  ],
+};
 
 const conversation = {
   conversationId: 'conversation-1',
