@@ -1,70 +1,73 @@
 # Direct Cloudflare chat widget
 
-This is the deliberately small alternative to deploying Formation Chat Core. One Cloudflare
-Worker serves an embeddable Web Component and streams requests directly to one trusted Haystack
-agent. There is no database, canonical transcript, dashboard, connector job queue, or cross-device
-history.
+This is the deliberately small alternative to deploying Formation Chat Core. The same code can be
+deployed as one independently configured Cloudflare Worker per website and trusted Haystack agent.
+There is no database, canonical transcript, dashboard, connector job queue, or cross-device history.
+
+Website and agent values are not stored in this repository. Each Worker owns its configuration in
+Cloudflare, while `keep_vars` preserves those dashboard values when shared code is redeployed.
 
 ## Try it locally
 
 ```sh
 npm run build --workspace @formation-chat-core/direct-chat-widget-example
 cd examples/direct-chat-widget
+cp .dev.vars.example .dev.vars
 npx wrangler dev --port 8790
 ```
 
-Open `http://127.0.0.1:8790`. The default `BACKEND_MODE=mock` needs no credentials.
+Open `http://127.0.0.1:8790`. The example configuration uses mock mode and needs no credentials.
 
-Embed the built component on another page with:
+## Deploy one website Worker
+
+Create a Worker in the Formation Cloudflare account and give it a site-specific name, such as
+`formation-chat-example`. In **Settings → Variables and Secrets**, add these text variables:
+
+| Variable              | Value                                             |
+| --------------------- | ------------------------------------------------- |
+| `BACKEND_MODE`        | `haystack`                                        |
+| `ALLOWED_ORIGINS`     | JSON string such as `["https://www.example.com"]` |
+| `HAYSTACK_BASE_URL`   | Haystack HTTPS origin, without an API path        |
+| `HAYSTACK_AGENT_REF`  | Stable public label for this integration          |
+| `HAYSTACK_TENANT_KEY` | Trusted Haystack tenant key                       |
+| `HAYSTACK_AGENT_SLUG` | Exact configured Haystack agent slug              |
+
+Add `HAYSTACK_CONNECTOR_TOKEN` as a **Secret**, never as plaintext. Configure the desired
+`workers.dev` address, route, or custom domain in Cloudflare as part of that Worker.
+
+Build and deploy the shared code to the named Worker:
+
+```sh
+npm run build --workspace @formation-chat-core/direct-chat-widget-example
+cd examples/direct-chat-widget
+npm run deploy:site -- --name formation-chat-example
+```
+
+The deployment command keeps all dashboard-managed variables and secrets. Use the same command and
+Worker name for later code updates.
+
+To add another website with another agent, create another Worker, configure its own values, and run
+the same command with the new Worker name. One Worker may allow several origins only when all of
+them should use the same Haystack configuration.
+
+## Embed the configured Worker
 
 ```html
-<script type="module" src="https://YOUR-WIDGET-HOST/widget.js"></script>
+<script type="module" src="https://YOUR-WORKER-HOST/widget.js"></script>
 <formation-chat-widget
-  endpoint="https://YOUR-WIDGET-HOST/api/chat"
+  endpoint="https://YOUR-WORKER-HOST/api/chat"
   title="Ask us"
   welcome="Hi — what would you like to know?"
 ></formation-chat-widget>
 ```
 
-Add the website's exact HTTPS origin to `ALLOWED_ORIGINS`. The widget stores only its opaque visitor
-ID, conversation ID, and latest 30 messages in that website's local storage. It never receives the
-Haystack token, tenant key, agent slug, or raw private tool output.
+The Worker accepts only `POST /api/chat`, constrains browser input, fixes the tenant and agent from
+its own trusted bindings, and returns Haystack's SSE body without buffering.
 
 `widget.js` is intentionally public and cross-origin loadable. The `/api/chat` endpoint remains
-restricted to the exact origins configured in `ALLOWED_ORIGINS`.
-
-## Deploy a mock preview
-
-```sh
-npm run build --workspace @formation-chat-core/direct-chat-widget-example
-npx wrangler deploy --cwd examples/direct-chat-widget
-```
-
-The root configuration deploys to `workers.dev` in deterministic mock mode. It is safe for UI
-testing but is not connected to an agent.
-
-## Connect production to Haystack
-
-Edit the `env.production.vars` values in `wrangler.jsonc`:
-
-- `ALLOWED_ORIGINS`: exact website HTTPS origins;
-- `HAYSTACK_BASE_URL`: the protected Haystack HTTPS origin;
-- `HAYSTACK_AGENT_REF`: public opaque agent label;
-- `HAYSTACK_TENANT_KEY`: trusted Haystack tenant key;
-- `HAYSTACK_AGENT_SLUG`: trusted configured agent slug.
-
-Set the same bearer token configured as Haystack's `connector_api_token`; enter it interactively and
-do not paste it into Git or shell history:
-
-```sh
-cd examples/direct-chat-widget
-npx wrangler secret put HAYSTACK_CONNECTOR_TOKEN --env production
-npx wrangler deploy --env production
-```
-
-Before production, add the desired route or custom domain to `env.production`, keep Haystack behind
-HTTPS, and run the tests below. The Worker accepts only `POST /api/chat`, constrains browser input,
-fixes agent configuration server-side, and returns Haystack's SSE body without buffering.
+restricted to `ALLOWED_ORIGINS`. The widget stores only its opaque visitor ID, conversation ID, and
+latest 30 messages in that website's local storage. It never receives the Haystack token, tenant
+key, agent slug, or raw private tool output.
 
 ## Verify
 

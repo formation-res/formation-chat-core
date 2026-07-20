@@ -1,0 +1,6 @@
+BACKEND_MODE=mock
+ALLOWED_ORIGINS=[]
+HAYSTACK_BASE_URL=https://haystack.example.com
+HAYSTACK_AGENT_REF=preview
+HAYSTACK_TENANT_KEY=preview
+HAYSTACK_AGENT_SLUG=preview

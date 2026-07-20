@@ -3,16 +3,15 @@ const MAX_MESSAGES = 30;
 const MAX_MESSAGE_CHARS = 4_000;
 const OPAQUE_ID = /^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$/;
 
-export type WidgetEnv = Pick<
-  Env,
-  | 'BACKEND_MODE'
-  | 'ALLOWED_ORIGINS'
-  | 'HAYSTACK_BASE_URL'
-  | 'HAYSTACK_AGENT_REF'
-  | 'HAYSTACK_TENANT_KEY'
-  | 'HAYSTACK_AGENT_SLUG'
-  | 'HAYSTACK_CONNECTOR_TOKEN'
->;
+export interface WidgetEnv {
+  BACKEND_MODE: string;
+  ALLOWED_ORIGINS: string;
+  HAYSTACK_BASE_URL: string;
+  HAYSTACK_AGENT_REF: string;
+  HAYSTACK_TENANT_KEY: string;
+  HAYSTACK_AGENT_SLUG: string;
+  HAYSTACK_CONNECTOR_TOKEN?: string;
+}
 
 export interface WidgetDependencies {
   fetch(request: Request): Promise<Response>;
@@ -107,7 +106,7 @@ export default {
   fetch(request, env) {
     return handleWidgetRequest(request, env);
   },
-} satisfies ExportedHandler<Env>;
+} satisfies ExportedHandler<WidgetEnv>;
 
 interface WidgetConfiguration {
   mode: 'mock' | 'haystack';
