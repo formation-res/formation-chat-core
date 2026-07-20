@@ -1,6 +1,7 @@
 {
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "formation-direct-chat-widget",
+  "account_id": "4f675cce713b23aa5745c9f3a3c45d0b",
   "main": "src/index.ts",
   "compatibility_date": "2026-07-20",
   "compatibility_flags": ["nodejs_compat"],
