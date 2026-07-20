@@ -16,7 +16,7 @@
     "examples/*"
   ],
   "scripts": {
-    "build": "npm run build --workspace @formation-chat-core/protocol && npm run build --workspace @formation-chat-core/server-sdk && npm run build --workspace @formation-chat-core/browser-client && npm run build --workspace @formation-chat-core/haystack-connector && npm run build --workspace @formation-chat-core/mock-connector && npm run build --workspace @formation-chat-core/server && npm run build --workspace @formation-chat-core/ui-react && npm run build --workspace @formation-chat-core/dashboard && npm run build --workspace @formation-chat-core/cloudflare-worker-example && npm run build --workspace @formation-chat-core/local-chat-example",
+    "build": "npm run build --workspace @formation-chat-core/protocol && npm run build --workspace @formation-chat-core/server-sdk && npm run build --workspace @formation-chat-core/browser-client && npm run build --workspace @formation-chat-core/haystack-connector && npm run build --workspace @formation-chat-core/mock-connector && npm run build --workspace @formation-chat-core/server && npm run build --workspace @formation-chat-core/ui-react && npm run build --workspace @formation-chat-core/dashboard && npm run build --workspace @formation-chat-core/cloudflare-worker-example && npm run build --workspace @formation-chat-core/direct-chat-widget-example && npm run build --workspace @formation-chat-core/local-chat-example",
     "dev:local": "node examples/local-chat/scripts/stack.mjs",
     "dev:local:stop": "node examples/local-chat/scripts/stop-stack.mjs",
     "format:check": "prettier --check .",

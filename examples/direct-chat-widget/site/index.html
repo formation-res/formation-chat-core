@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>Formation chat widget preview</title>
+    <script type="module" src="/widget.js"></script>
+    <style>
+      body {
+        background: #f0efe8;
+        color: #181916;
+        font:
+          1rem/1.5 system-ui,
+          sans-serif;
+        margin: 0;
+      }
+      main {
+        margin: 12vh auto;
+        max-width: 42rem;
+        padding: 1.5rem;
+      }
+      h1 {
+        font-size: clamp(2rem, 7vw, 4rem);
+        letter-spacing: -0.04em;
+        line-height: 1;
+        max-width: 12ch;
+      }
+      p {
+        color: #5d6057;
+        max-width: 36rem;
+      }
+      code {
+        background: #e2e1d8;
+        border-radius: 0.2rem;
+        padding: 0.1rem 0.3rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p>Formation · direct agent preview</p>
+      <h1>A small chat widget, without a chat platform.</h1>
+      <p>
+        Open the widget in the lower-right corner. This preview uses the Worker’s deterministic mock
+        backend; production can stream directly from one trusted Haystack agent.
+      </p>
+    </main>
+    <formation-chat-widget
+      title="Ask Formation"
+      welcome="Hi — what would you like to know?"
+    ></formation-chat-widget>
+  </body>
+</html>

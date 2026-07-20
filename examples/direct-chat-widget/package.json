@@ -1,0 +1,20 @@
+{
+  "name": "@formation-chat-core/direct-chat-widget-example",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Minimal Cloudflare chat widget that streams directly from a trusted Haystack agent.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build-site.mjs && tsc -p tsconfig.json",
+    "lint": "eslint src site test scripts --no-error-on-unmatched-pattern",
+    "test": "vitest run test/*.test.ts",
+    "test:browser": "node test/browser-smoke.mjs",
+    "typecheck": "wrangler types --strict-vars=false --check && tsc -p tsconfig.json --noEmit && tsc -p site/tsconfig.json --noEmit && tsc -p test/tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "axe-core": "4.11.1",
+    "esbuild": "0.28.1",
+    "wrangler": "4.112.0"
+  }
+}

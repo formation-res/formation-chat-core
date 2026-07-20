@@ -405,6 +405,18 @@ integration test, generated-binding drift check, type checking, linting, build, 
 secret scan, and Wrangler deployment dry run pass. A deployed preview smoke test remains conditional
 on project credentials and a configured preview origin.
 
+**Direct-widget follow-up:** 2026-07-20. `examples/direct-chat-widget` provides a deliberately
+smaller pilot path for one trusted Haystack agent: a Cloudflare Worker, an embeddable accessible Web
+Component, same-browser local history, and no Chat Core or PostgreSQL deployment. Mock mode supports
+credential-free preview testing; production mode fixes the Haystack tenant and agent in Worker
+configuration, keeps the connector token in a required secret, and streams native connector SSE
+events without buffering. This is an optional pilot, not a replacement for the canonical-store
+architecture when durable transcripts, retries, admin queries, or handoffs are required.
+Unit, generated-type, lint, build, local workerd, axe, refresh-persistence, narrow-layout, Wrangler
+dry-run, startup, public HTTP, public SSE, and deployed-browser smoke checks pass. The credential-free
+mock preview is deployed on Cloudflare; production Haystack configuration remains intentionally
+unset until the first website and agent are selected.
+
 ### Checkpoint: Public website
 
 - A static website can embed the reference UI or browser client.
