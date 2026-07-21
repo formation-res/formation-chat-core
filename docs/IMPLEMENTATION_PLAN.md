@@ -418,6 +418,10 @@ dry-run, startup, public HTTP, public SSE, and deployed-browser smoke checks pas
 mock preview is deployed on Cloudflare; production Haystack configuration remains intentionally
 unset until the first website and agent are selected.
 
+**Runtime fix:** 2026-07-21. Outbound Haystack requests use manual redirect handling because the
+Cloudflare runtime rejects `redirect: "error"`; non-success redirects remain unavailable responses
+and are never followed with the connector bearer token. A regression assertion covers the runtime-safe mode.
+
 ### Checkpoint: Public website
 
 - A static website can embed the reference UI or browser client.

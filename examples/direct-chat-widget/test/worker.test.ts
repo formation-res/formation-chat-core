@@ -35,6 +35,7 @@ describe('direct chat widget Worker', () => {
     expect(response.status).toBe(200);
     expect(response.body).toBe(upstream);
     expect(upstreamRequest?.url).toBe('https://haystack.example.test/api/connectors/v1/runs');
+    expect(upstreamRequest?.redirect).toBe('manual');
     expect(upstreamRequest?.headers.get('authorization')).toBe('Bearer connector-secret');
     const body = (await upstreamRequest?.json()) as {
       request: { agentRef: string; trustedMetadata: Record<string, string> };

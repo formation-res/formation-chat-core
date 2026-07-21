@@ -79,7 +79,7 @@ export async function handleWidgetRequest(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(haystackExecution(input, configuration, origin)),
-    redirect: 'error',
+    redirect: 'manual',
   });
 
   let upstream: Response;
