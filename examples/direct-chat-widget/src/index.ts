@@ -31,7 +31,7 @@ interface ChatRequest {
 export async function handleWidgetRequest(
   request: Request,
   env: WidgetEnv,
-  dependencies: WidgetDependencies = { fetch: globalThis.fetch },
+  dependencies: WidgetDependencies = { fetch: (upstream) => globalThis.fetch(upstream) },
 ): Promise<Response> {
   const correlationId = crypto.randomUUID();
   const url = new URL(request.url);

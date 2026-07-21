@@ -13,6 +13,27 @@ const haystackEnv = {
 } satisfies WidgetEnv;
 
 describe('direct chat widget Worker', () => {
+  it('invokes the default fetch with the Worker global receiver', async () => {
+    const upstream = new Response(
+      'event: message.delta\ndata: {"data":{"delta":"Hi"}}\n\n',
+      { headers: { 'Content-Type': 'text/event-stream' } },
+    );
+    const fetchUpstream = vi.fn(function (this: unknown) {
+      expect(this).toBe(globalThis);
+      return Promise.resolve(upstream);
+    });
+    vi.stubGlobal('fetch', fetchUpstream);
+
+    try {
+      const response = await handleWidgetRequest(chatRequest(), haystackEnv);
+
+      expect(response.status).toBe(200);
+      expect(fetchUpstream).toHaveBeenCalledOnce();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('constructs a trusted Haystack execution request and keeps its secret server-side', async () => {
     let upstreamRequest: Request | undefined;
     const upstream = new ReadableStream({

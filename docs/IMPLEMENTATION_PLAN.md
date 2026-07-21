@@ -418,9 +418,10 @@ dry-run, startup, public HTTP, public SSE, and deployed-browser smoke checks pas
 mock preview is deployed on Cloudflare; production Haystack configuration remains intentionally
 unset until the first website and agent are selected.
 
-**Runtime fix:** 2026-07-21. Outbound Haystack requests use manual redirect handling because the
-Cloudflare runtime rejects `redirect: "error"`; non-success redirects remain unavailable responses
-and are never followed with the connector bearer token. A regression assertion covers the runtime-safe mode.
+**Runtime fix:** 2026-07-21. Outbound Haystack requests use manual redirect handling and invoke the
+native fetch function with the Worker global receiver. Non-success redirects remain unavailable
+responses and are never followed with the connector bearer token. Regression assertions cover both
+Cloudflare runtime requirements.
 
 ### Checkpoint: Public website
 
