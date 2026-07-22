@@ -439,8 +439,9 @@ launcher's click-to-open-chat behavior unchanged. A transparent hover bridge pre
 0.75rem launcher gap at both sizes while the popup's fixed bottom-right anchor makes expansion move
 only leftward and upward. The background-free maximize indicator remains keyboard accessible while
 pointer users can toggle the size by clicking anywhere on the artwork or caption. The bundled
-artwork retains the native 1110×740 crop at under 100 KB,
-providing at least two source pixels per expanded CSS pixel without generative redrawing.
+artwork retains the native 1110×740 crop at under 100 KB. The expanded card now reaches 44rem on
+roomy screens, retaining at least 1.5 source pixels per CSS pixel while exposing substantially more
+of the artwork detail without generative redrawing.
 
 **Tooltip palette refinement:** 2026-07-22. The centered statement uses a roomier pale-parchment
 panel with dark umber text, matching the artwork's earth tones while preserving readable contrast.

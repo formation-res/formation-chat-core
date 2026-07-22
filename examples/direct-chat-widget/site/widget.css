@@ -118,7 +118,7 @@ button {
 }
 .launcher-tooltip.is-expanded {
   cursor: zoom-out;
-  width: min(34rem, calc(100vw - var(--chat-launcher-size, 4rem) - 3rem));
+  width: min(44rem, calc(100vw - var(--chat-launcher-size, 4rem) - 3rem));
 }
 .launcher-tooltip-artwork-frame {
   aspect-ratio: 3 / 2;
