@@ -29,7 +29,7 @@ describe('embeddable widget asset', () => {
     expect(source).toContain("this.getAttribute('launcher-type') === 'button'");
     expect(source).toContain("this.getAttribute('launcher-image')");
     expect(source).toContain("this.getAttribute('launcher-tooltip')");
-    expect(source).toContain("Ceci n'est pas une chatbot.");
+    expect(source).toContain(`"Ceci n'est pas une chatbot."`);
     expect(source).toContain('Artwork - in respectful admiration, inspired by René Magritte');
     expect(source).toContain('class="launcher-tooltip-artwork"');
     expect(source).toContain('class="launcher-tooltip-expand"');

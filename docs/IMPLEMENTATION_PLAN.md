@@ -429,7 +429,7 @@ site-provided animated image through documented element attributes. Header actio
 sizing and hover feedback. The green launcher background remains stationary while only the roomier
 robot artwork animates. The launcher uses one accent-colored layer, reserves a visible gap below the
 open panel, and exposes configurable hover/focus tooltip copy. The default compact tooltip pairs a
-cropped, optimized robot-and-shadow artwork with the bold italic line `Ceci n'est pas une chatbot.`
+cropped, optimized robot-and-shadow artwork with the bold italic line `"Ceci n'est pas une chatbot."`
 and a smaller respectful René Magritte attribution. Artwork and copy form one gapless rounded card;
 the centered title sits alone on a pale-parchment copy area while the very small single-line
 attribution overlays the artwork's lower-right corner like an image source declaration. The popup
