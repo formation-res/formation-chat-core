@@ -48,7 +48,7 @@ try {
   const tooltipArtwork = tooltip.locator('.launcher-tooltip-artwork');
   assert.equal(
     await tooltip.locator('.launcher-tooltip-title').textContent(),
-    "Ceci n'est pas une chatbot.",
+    "\"Ceci n'est pas une chatbot.\"",
   );
   assert.equal(
     await tooltip.locator('.launcher-tooltip-credit').textContent(),
@@ -165,6 +165,13 @@ try {
     await expandArtworkButton.evaluate((element) => globalThis.getComputedStyle(element).opacity),
     '1',
   );
+  await expandArtworkButton.hover();
+  assert.equal(
+    await expandArtworkButton.evaluate(
+      (element) => globalThis.getComputedStyle(element).backgroundColor,
+    ),
+    'rgba(0, 0, 0, 0)',
+  );
   const expandButtonBox = await expandArtworkButton.boundingBox();
   if (!expandButtonBox) throw new Error('Artwork expand control geometry is unavailable.');
   assert.ok(expandButtonBox.x >= artworkFrameBox.x);
@@ -175,7 +182,7 @@ try {
   );
   const initialTooltipWidth = tooltipBox.width;
   const initialArtworkWidth = artworkBox.width;
-  await expandArtworkButton.click();
+  await tooltipArtwork.click();
   await page.waitForTimeout(350);
   const expandedTooltipBox = await tooltip.boundingBox();
   const expandedArtworkBox = await tooltipArtwork.boundingBox();
@@ -208,7 +215,7 @@ try {
     path: join(tmpdir(), 'formation-direct-widget-tooltip-expanded.png'),
     fullPage: true,
   });
-  await expandArtworkButton.click();
+  await tooltip.locator('.launcher-tooltip-copy').click();
   await page.waitForTimeout(350);
   assert.equal(await expandArtworkButton.getAttribute('aria-expanded'), 'false');
   assert.equal(await expandArtworkButton.getAttribute('aria-label'), 'Enlarge artwork');

@@ -35,7 +35,7 @@ class FormationChatWidget extends HTMLElement {
     const launcherType = this.getAttribute('launcher-type') === 'button' ? 'button' : 'agent';
     const launcherImage = this.getAttribute('launcher-image');
     const launcherTooltip = (
-      this.getAttribute('launcher-tooltip') ?? "Ceci n'est pas une chatbot."
+      this.getAttribute('launcher-tooltip') ?? "\"Ceci n'est pas une chatbot.\""
     ).trim();
     const launcherClass =
       launcherType === 'button' ? 'launcher-text-button' : 'launcher-agent-button';
@@ -103,8 +103,7 @@ class FormationChatWidget extends HTMLElement {
 
   private bind(): void {
     this.launcher.addEventListener('click', () => this.setOpen(!this.open));
-    this.tooltipExpandButton?.addEventListener('click', (event) => {
-      event.stopPropagation();
+    this.tooltip?.addEventListener('click', () => {
       this.setTooltipExpanded(!this.tooltipExpanded);
     });
     this.launcherShell.addEventListener('pointerleave', () => {

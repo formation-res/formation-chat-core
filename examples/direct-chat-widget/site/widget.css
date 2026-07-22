@@ -96,6 +96,7 @@ button {
   bottom: 0;
   box-shadow: 0 0.3rem 1rem rgb(0 0 0 / 12%);
   color: var(--chat-ink);
+  cursor: zoom-in;
   display: grid;
   gap: 0;
   opacity: 0;
@@ -115,6 +116,7 @@ button {
   width: min(15rem, calc(100vw - var(--chat-launcher-size, 4rem) - 3rem));
 }
 .launcher-tooltip.is-expanded {
+  cursor: zoom-out;
   width: min(34rem, calc(100vw - var(--chat-launcher-size, 4rem) - 3rem));
 }
 .launcher-tooltip-artwork-frame {
@@ -157,7 +159,7 @@ button {
 }
 .launcher-tooltip-expand {
   align-items: center;
-  background: rgb(255 255 255 / 86%);
+  background: transparent;
   border: 0;
   border-radius: 0.45rem;
   cursor: pointer;
@@ -171,15 +173,15 @@ button {
   top: 0.5rem;
   transform: scale(0.9);
   transition:
-    background-color 150ms ease,
     opacity 150ms ease,
     transform 150ms ease;
   width: 2rem;
 }
 .launcher-tooltip-expand:hover {
-  background: white;
+  background: transparent;
 }
 .launcher-tooltip-expand svg {
+  filter: drop-shadow(0 1px 1px rgb(255 255 255 / 85%));
   fill: none;
   height: 1rem;
   stroke: currentColor;
