@@ -108,25 +108,26 @@ try {
   assert.ok(creditBox.y >= artworkFrameBox.y);
   assert.ok(creditBox.x + creditBox.width <= artworkFrameBox.x + artworkFrameBox.width);
   assert.ok(creditBox.y + creditBox.height <= artworkFrameBox.y + artworkFrameBox.height);
-  assert.deepEqual(
-    await tooltip.locator('.launcher-tooltip-copy').evaluate((element) => {
-      const styles = globalThis.getComputedStyle(element);
-      return {
-        backgroundColor: styles.backgroundColor,
-        backgroundImage: styles.backgroundImage,
-        color: styles.color,
-        paddingBottom: Number.parseFloat(styles.paddingBottom),
-        paddingTop: Number.parseFloat(styles.paddingTop),
-      };
-    }),
-    {
-      backgroundColor: 'rgb(239, 225, 187)',
-      backgroundImage: 'none',
-      color: 'rgb(64, 53, 34)',
-      paddingBottom: 10.88,
-      paddingTop: 11.52,
-    },
+  const tooltipCopyStyles = await tooltip.locator('.launcher-tooltip-copy').evaluate((element) => {
+    const styles = globalThis.getComputedStyle(element);
+    return {
+      backgroundColor: styles.backgroundColor,
+      backgroundImage: styles.backgroundImage,
+      color: styles.color,
+      paddingBottom: Number.parseFloat(styles.paddingBottom),
+      paddingTop: Number.parseFloat(styles.paddingTop),
+    };
+  });
+  const chatInkColor = await widget.evaluate(
+    (element) => globalThis.getComputedStyle(element).color,
   );
+  assert.deepEqual(tooltipCopyStyles, {
+    backgroundColor: 'rgb(239, 225, 187)',
+    backgroundImage: 'none',
+    color: chatInkColor,
+    paddingBottom: 10.88,
+    paddingTop: 11.52,
+  });
   assert.equal(
     await tooltip
       .locator('.launcher-tooltip-title')
@@ -289,7 +290,25 @@ try {
   const clearButton = widget.locator('.clear');
   const closeButton = widget.locator('.close');
   const closeIcon = closeButton.locator('.close-icon');
+  const liveDot = widget.locator('.header-live-dot');
   const sendButton = widget.locator('.send');
+  assert.equal(await liveDot.getAttribute('aria-hidden'), 'true');
+  assert.equal(
+    await liveDot.evaluate((element) => globalThis.getComputedStyle(element).animationName),
+    'live-pulse',
+  );
+  assert.equal(
+    await widget
+      .locator('.panel')
+      .evaluate((element) => globalThis.getComputedStyle(element).borderWidth),
+    '1px',
+  );
+  assert.equal(
+    await widget
+      .locator('header')
+      .evaluate((element) => globalThis.getComputedStyle(element).borderBottomWidth),
+    '1px',
+  );
   assert.equal(await closeIcon.count(), 1);
   const closeBox = await closeButton.boundingBox();
   const closeIconBox = await closeIcon.boundingBox();

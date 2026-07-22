@@ -110,6 +110,9 @@ next pointer entry or a later keyboard refocus.
 The image is decorative because the enclosing button always has an accessible `Open chat` label.
 Its default size can be adjusted with `--chat-launcher-size` on the custom element.
 
+The open panel header uses a thin theme-colored outline and a pulsing dot beside the visible
+`Usually replies in moments` status. Reduced-motion preferences disable the pulse automatically.
+
 The Worker accepts only `POST /api/chat`, constrains browser input, fixes the tenant and agent from
 its own trusted bindings, and returns Haystack's SSE body without buffering.
 

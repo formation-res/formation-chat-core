@@ -67,6 +67,7 @@ describe('embeddable widget asset', () => {
     expect(source).toContain('class="launcher-tooltip-artwork"');
     expect(source).toContain('class="launcher-tooltip-expand"');
     expect(source).toContain('class="launcher-agent"');
+    expect(source).toContain('class="header-live-dot" aria-hidden="true"');
     expect(source).toContain("this.getAttribute('launcher-text') ?? 'Chat'");
     expect(styles).toContain('.launcher-agent-button');
     expect(styles).toContain('.launcher-text-button');
@@ -80,7 +81,11 @@ describe('embeddable widget asset', () => {
     expect(styles).toMatch(/header \{[\s\S]*?background: var\(--chat-accent\);/);
     expect(styles).toMatch(/\.message\.user \{[\s\S]*?background: var\(--chat-accent\);/);
     expect(styles).toMatch(/\.message\.assistant \{[\s\S]*?background: transparent;/);
-    expect(styles).toMatch(/\.panel \{[\s\S]*?border: 0;/);
+    expect(styles).toMatch(/\.panel \{[\s\S]*?border: 1px solid var\(--chat-line\);/);
+    expect(styles).toMatch(/header \{[\s\S]*?border-bottom: 1px solid var\(--chat-line\);/);
+    expect(styles).toMatch(
+      /\.header-live-dot \{[\s\S]*?animation: live-pulse 2\.8s ease-in-out infinite;/,
+    );
     expect(styles).toContain('.header-actions button:hover:not(:disabled)');
     expect(source).toContain('class="close-icon"');
     expect(styles).toContain('.close {');

@@ -2,8 +2,9 @@
   --chat-ink: #181916;
   --chat-paper: #fbfaf5;
   --chat-muted: #6a6d63;
-  --chat-line: #d9d9d0;
+  --chat-line: #d8c99e;
   --chat-accent: #efe1bb;
+  --chat-accent-strong: color-mix(in srgb, var(--chat-accent) 58%, var(--chat-ink));
   --chat-radius: 0.75rem;
   color: var(--chat-ink);
   font-family:
@@ -269,7 +270,7 @@ button {
 
 .panel {
   background: var(--chat-paper);
-  border: 0;
+  border: 1px solid var(--chat-line);
   border-radius: var(--chat-radius);
   bottom: 4.75rem;
   box-shadow: 0 1.25rem 4rem rgb(0 0 0 / 18%);
@@ -292,21 +293,48 @@ button {
 header {
   align-items: center;
   background: var(--chat-accent);
+  border-bottom: 1px solid var(--chat-line);
   color: var(--chat-ink);
   display: flex;
   justify-content: space-between;
   padding: 0.9rem 1rem;
 }
-header div:first-child {
+.header-copy {
+  align-items: center;
+  display: flex;
+  gap: 0.65rem;
+  min-width: 0;
+}
+.header-text {
   display: grid;
   gap: 0.15rem;
+  min-width: 0;
 }
-header strong {
+.header-text strong {
   font-size: 0.95rem;
 }
-header span {
+.header-text span {
   color: color-mix(in srgb, var(--chat-ink) 68%, var(--chat-accent));
   font-size: 0.75rem;
+}
+.header-live-dot {
+  animation: live-pulse 2.8s ease-in-out infinite;
+  background: var(--chat-accent-strong);
+  border: 2px solid var(--chat-paper);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--chat-accent-strong) 36%, transparent);
+  flex: 0 0 auto;
+  height: 0.9rem;
+  width: 0.9rem;
+}
+@keyframes live-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--chat-accent-strong) 36%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 0.4rem color-mix(in srgb, var(--chat-accent-strong) 12%, transparent);
+  }
 }
 .header-actions {
   align-items: center;
