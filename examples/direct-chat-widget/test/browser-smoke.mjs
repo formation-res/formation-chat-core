@@ -292,6 +292,7 @@ try {
   const closeIcon = closeButton.locator('.close-icon');
   const liveDot = widget.locator('.header-live-dot');
   const sendButton = widget.locator('.send');
+  assert.equal(await widget.getByText('Usually replies in moments').count(), 0);
   assert.equal(await liveDot.getAttribute('aria-hidden'), 'true');
   assert.equal(
     await liveDot.evaluate((element) => globalThis.getComputedStyle(element).animationName),
@@ -312,7 +313,13 @@ try {
   assert.equal(await closeIcon.count(), 1);
   const closeBox = await closeButton.boundingBox();
   const closeIconBox = await closeIcon.boundingBox();
-  if (!closeBox || !closeIconBox) throw new Error('Close button geometry is unavailable.');
+  const clearBox = await clearButton.boundingBox();
+  const headerBox = await widget.locator('header').boundingBox();
+  if (!closeBox || !closeIconBox || !clearBox || !headerBox) {
+    throw new Error('Header control geometry is unavailable.');
+  }
+  assert.ok(headerBox.height <= 52);
+  assert.ok(Math.abs(closeBox.height - clearBox.height) <= 1);
   assert.ok(
     Math.abs(closeBox.x + closeBox.width / 2 - (closeIconBox.x + closeIconBox.width / 2)) <= 0.5,
   );
@@ -333,13 +340,6 @@ try {
     await sendButton.evaluate((element) => globalThis.getComputedStyle(element).borderWidth),
     '0px',
   );
-  const clearFontSize = Number.parseFloat(
-    await clearButton.evaluate((element) => globalThis.getComputedStyle(element).fontSize),
-  );
-  const closeFontSize = Number.parseFloat(
-    await closeButton.evaluate((element) => globalThis.getComputedStyle(element).fontSize),
-  );
-  assert.ok(closeFontSize > clearFontSize);
   const clearBackground = await clearButton.evaluate(
     (element) => globalThis.getComputedStyle(element).backgroundColor,
   );

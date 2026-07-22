@@ -449,8 +449,9 @@ That same parchment beige now drives the widget accent token across the launcher
 messages, and Send action, replacing the previous green and keeping the experience cohesive.
 The panel reduces visual chrome with an accent header, a thin artwork-colored shell, and unboxed
 assistant replies instead of black background blocks. The header follows the AskMailFront section
-pattern with a matching bottom rule and a decorative 2.8-second pulsing live dot beside the visible
-response-time label. Text and panel controls share the panel corner radius;
+pattern with a matching bottom rule and a decorative 2.8-second pulsing live dot beside the title.
+The single-line header omits the response-time subtitle and gives Clear and Close the same compact
+control height. Text and panel controls share the panel corner radius;
 the close action uses a geometrically centered SVG icon and color-only hover feedback, and the
 borderless Send action uses a lighter accent hover state.
 

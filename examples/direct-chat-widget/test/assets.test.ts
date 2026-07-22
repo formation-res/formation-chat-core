@@ -68,6 +68,7 @@ describe('embeddable widget asset', () => {
     expect(source).toContain('class="launcher-tooltip-expand"');
     expect(source).toContain('class="launcher-agent"');
     expect(source).toContain('class="header-live-dot" aria-hidden="true"');
+    expect(source).not.toContain('Usually replies in moments');
     expect(source).toContain("this.getAttribute('launcher-text') ?? 'Chat'");
     expect(styles).toContain('.launcher-agent-button');
     expect(styles).toContain('.launcher-text-button');
@@ -91,6 +92,8 @@ describe('embeddable widget asset', () => {
     expect(styles).toContain('.close {');
     expect(styles).toMatch(/\.close \{[\s\S]*?display: grid;/);
     expect(styles).toMatch(/\.close \{[\s\S]*?place-items: center;/);
+    expect(styles).not.toContain('min-height: 2.5rem;');
+    expect(styles).not.toContain('min-width: 2.5rem;');
 
     const artwork = await stat(new URL('../site/agent-shadow-tooltip.webp', import.meta.url));
     expect(artwork.size).toBeLessThan(250_000);

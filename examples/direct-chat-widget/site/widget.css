@@ -297,7 +297,7 @@ header {
   color: var(--chat-ink);
   display: flex;
   justify-content: space-between;
-  padding: 0.9rem 1rem;
+  padding: 0.6rem 0.75rem;
 }
 .header-copy {
   align-items: center;
@@ -305,17 +305,8 @@ header {
   gap: 0.65rem;
   min-width: 0;
 }
-.header-text {
-  display: grid;
-  gap: 0.15rem;
-  min-width: 0;
-}
-.header-text strong {
+.header-copy strong {
   font-size: 0.95rem;
-}
-.header-text span {
-  color: color-mix(in srgb, var(--chat-ink) 68%, var(--chat-accent));
-  font-size: 0.75rem;
 }
 .header-live-dot {
   animation: live-pulse 2.8s ease-in-out infinite;
@@ -348,7 +339,8 @@ header {
   color: var(--chat-ink);
   cursor: pointer;
   border-radius: var(--chat-radius);
-  padding: 0.45rem;
+  height: 1.9rem;
+  padding: 0 0.45rem;
   transition:
     background-color 150ms ease,
     color 150ms ease;
@@ -357,19 +349,18 @@ header {
   font-size: 0.75rem;
 }
 .close {
+  aspect-ratio: 1;
   display: grid;
-  min-height: 2.5rem;
-  min-width: 2.5rem;
   place-items: center;
 }
 .close-icon {
   display: block;
   fill: none;
-  height: 1.4rem;
+  height: 0.9rem;
   stroke: currentColor;
   stroke-linecap: round;
   stroke-width: 2.5;
-  width: 1.4rem;
+  width: 0.9rem;
 }
 .header-actions button:hover:not(:disabled) {
   background: rgb(24 25 22 / 10%);
