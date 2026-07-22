@@ -29,7 +29,7 @@ button {
 .launcher {
   align-items: center;
   background: var(--chat-ink);
-  border: 0;
+  border: 2px solid rgb(255 255 255 / 80%);
   border-radius: 999px;
   bottom: 1rem;
   box-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 18%);
@@ -37,19 +37,97 @@ button {
   cursor: pointer;
   display: flex;
   font-weight: 700;
-  gap: 0.55rem;
-  min-height: 3rem;
-  padding: 0 1.1rem;
+  justify-content: center;
+  overflow: hidden;
   position: fixed;
   right: 1rem;
   z-index: 2147483647;
 }
 
-.pulse {
+.launcher-agent-button {
+  height: var(--chat-launcher-size, 4rem);
+  padding: 0;
+  width: var(--chat-launcher-size, 4rem);
+}
+.launcher-text-button {
+  min-height: 3rem;
+  padding: 0 1.1rem;
+}
+.launcher-agent,
+.launcher-image {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+.launcher-image {
+  object-fit: cover;
+}
+.launcher-agent {
+  animation: agent-float 3.2s ease-in-out infinite;
   background: var(--chat-accent);
-  border-radius: 50%;
-  height: 0.65rem;
-  width: 0.65rem;
+  padding: 0.35rem;
+}
+.launcher-agent svg {
+  display: block;
+  height: 100%;
+  overflow: visible;
+  width: 100%;
+}
+.agent-antenna,
+.agent-smile {
+  fill: none;
+  stroke: var(--chat-ink);
+  stroke-linecap: round;
+  stroke-width: 2.5;
+}
+.agent-signal,
+.agent-head {
+  fill: var(--chat-ink);
+}
+.agent-signal {
+  animation: agent-signal 1.8s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.agent-face {
+  fill: var(--chat-paper);
+}
+.agent-eye {
+  animation: agent-blink 4.5s ease-in-out infinite;
+  fill: var(--chat-ink);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+@keyframes agent-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-1deg);
+  }
+  50% {
+    transform: translateY(-0.15rem) rotate(1deg);
+  }
+}
+@keyframes agent-signal {
+  0%,
+  100% {
+    opacity: 0.75;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+@keyframes agent-blink {
+  0%,
+  45%,
+  50%,
+  100% {
+    transform: scaleY(1);
+  }
+  47.5% {
+    transform: scaleY(0.12);
+  }
 }
 
 .panel {
@@ -101,14 +179,28 @@ header span {
   border: 0;
   color: #e8e8e2;
   cursor: pointer;
+  border-radius: 0.35rem;
   padding: 0.45rem;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    transform 150ms ease;
 }
 .clear {
   font-size: 0.75rem;
 }
 .close {
-  font-size: 1.4rem;
+  font-size: 1.75rem;
   line-height: 1;
+  min-height: 2.5rem;
+  min-width: 2.5rem;
+}
+.header-actions button:hover:not(:disabled) {
+  background: rgb(255 255 255 / 12%);
+  color: white;
+}
+.close:hover:not(:disabled) {
+  transform: scale(1.08);
 }
 
 .messages {
@@ -221,6 +313,8 @@ small {
 
 @media (prefers-reduced-motion: reduce) {
   * {
+    animation: none !important;
     scroll-behavior: auto !important;
+    transition: none !important;
   }
 }

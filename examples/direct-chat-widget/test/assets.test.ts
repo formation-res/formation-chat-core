@@ -20,4 +20,19 @@ describe('embeddable widget asset', () => {
     expect(styles).toContain('box-shadow: inset 0 0 0 1px var(--chat-ink);');
     expect(styles).toContain('outline: none;');
   });
+
+  it('provides customizable launcher modes and distinct header actions', async () => {
+    const source = await readFile(new URL('../site/widget.ts', import.meta.url), 'utf8');
+    const styles = await readFile(new URL('../site/widget.css', import.meta.url), 'utf8');
+
+    expect(source).toContain("this.getAttribute('launcher-type') === 'button'");
+    expect(source).toContain("this.getAttribute('launcher-image')");
+    expect(source).toContain('class="launcher-agent"');
+    expect(source).toContain("this.getAttribute('launcher-text') ?? 'Chat'");
+    expect(styles).toContain('.launcher-agent-button');
+    expect(styles).toContain('.launcher-text-button');
+    expect(styles).toContain('.header-actions button:hover:not(:disabled)');
+    expect(styles).toContain('.close {');
+    expect(styles).toContain('font-size: 1.75rem;');
+  });
 });

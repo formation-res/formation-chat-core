@@ -423,6 +423,10 @@ native fetch function with the Worker global receiver. Non-success redirects rem
 responses and are never followed with the connector bearer token. Regression assertions cover both
 Cloudflare runtime requirements.
 
+**Launcher customization:** 2026-07-21. The direct widget defaults to an accessible animated agent
+launcher and supports either a conventional text launcher or a site-provided animated image through
+documented element attributes. Header actions have distinct sizing and hover feedback.
+
 ### Checkpoint: Public website
 
 - A static website can embed the reference UI or browser client.

@@ -29,10 +29,20 @@ class FormationChatWidget extends HTMLElement {
     ).href;
     this.storageKey = `formation-direct-chat:${this.endpoint}`;
     this.chat = this.loadChat();
+    const launcherType = this.getAttribute('launcher-type') === 'button' ? 'button' : 'agent';
+    const launcherImage = this.getAttribute('launcher-image');
+    const launcherClass =
+      launcherType === 'button' ? 'launcher-text-button' : 'launcher-agent-button';
+    const launcherContent =
+      launcherType === 'button'
+        ? `<span class="launcher-text">${escapeHtml(this.getAttribute('launcher-text') ?? 'Chat')}</span>`
+        : launcherImage
+          ? `<img class="launcher-image" src="${escapeAttribute(launcherImage)}" alt="">`
+          : defaultAgentLauncher();
     this.root.innerHTML = `
       <style>${styles}</style>
-      <button class="launcher" type="button" aria-expanded="false" aria-label="Open chat">
-        <span class="pulse" aria-hidden="true"></span><span>Chat</span>
+      <button class="launcher ${launcherClass}" type="button" aria-expanded="false" aria-label="Open chat">
+        ${launcherContent}
       </button>
       <section class="panel" aria-label="${escapeAttribute(this.getAttribute('title') ?? 'Ask us')}" hidden>
         <header>
@@ -238,6 +248,20 @@ class FormationChatWidget extends HTMLElement {
 
 function newChat(): StoredChat {
   return { conversationId: crypto.randomUUID(), visitorId: crypto.randomUUID(), messages: [] };
+}
+
+function defaultAgentLauncher(): string {
+  return `<span class="launcher-agent" aria-hidden="true">
+    <svg viewBox="0 0 64 64" focusable="false">
+      <path class="agent-antenna" d="M32 16V10"></path>
+      <circle class="agent-signal" cx="32" cy="7" r="3"></circle>
+      <rect class="agent-head" x="12" y="16" width="40" height="36" rx="15"></rect>
+      <path class="agent-face" d="M20 31c5-7 19-7 24 0v7c-5 7-19 7-24 0z"></path>
+      <circle class="agent-eye agent-eye-left" cx="27" cy="34" r="2.5"></circle>
+      <circle class="agent-eye agent-eye-right" cx="37" cy="34" r="2.5"></circle>
+      <path class="agent-smile" d="M27 41c3 2 7 2 10 0"></path>
+    </svg>
+  </span>`;
 }
 
 function isStoredChat(value: unknown): value is StoredChat {

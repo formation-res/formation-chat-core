@@ -20,7 +20,49 @@ try {
 
   await page.addInitScript({ content: axe.source });
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
+  const widget = page.locator('formation-chat-widget').first();
+  assert.equal(await widget.locator('.launcher-agent').count(), 1);
+  assert.equal((await widget.locator('.launcher').textContent())?.trim(), '');
+
+  await page.evaluate(() => {
+    const launchers = globalThis.document.createElement('div');
+    launchers.id = 'custom-launcher-fixtures';
+    launchers.innerHTML = `
+      <formation-chat-widget launcher-type="button" launcher-text="Ask us"></formation-chat-widget>
+      <formation-chat-widget launcher-image="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="></formation-chat-widget>`;
+    globalThis.document.body.append(launchers);
+  });
+  const textLauncher = page.locator('formation-chat-widget[launcher-type="button"]');
+  const imageLauncher = page.locator('formation-chat-widget[launcher-image]');
+  assert.equal(await textLauncher.locator('.launcher-text').textContent(), 'Ask us');
+  assert.equal(await imageLauncher.locator('.launcher-image').count(), 1);
+  await page.locator('#custom-launcher-fixtures').evaluate((element) => element.remove());
+
   await page.getByRole('button', { name: 'Open chat' }).click();
+  const clearButton = widget.locator('.clear');
+  const closeButton = widget.locator('.close');
+  const clearFontSize = Number.parseFloat(
+    await clearButton.evaluate((element) => globalThis.getComputedStyle(element).fontSize),
+  );
+  const closeFontSize = Number.parseFloat(
+    await closeButton.evaluate((element) => globalThis.getComputedStyle(element).fontSize),
+  );
+  assert.ok(closeFontSize > clearFontSize);
+  const clearBackground = await clearButton.evaluate(
+    (element) => globalThis.getComputedStyle(element).backgroundColor,
+  );
+  await clearButton.hover();
+  await page.waitForTimeout(200);
+  assert.notEqual(
+    await clearButton.evaluate((element) => globalThis.getComputedStyle(element).backgroundColor),
+    clearBackground,
+  );
+  await closeButton.hover();
+  await page.waitForTimeout(200);
+  assert.notEqual(
+    await closeButton.evaluate((element) => globalThis.getComputedStyle(element).transform),
+    'none',
+  );
   await page.getByRole('textbox', { name: 'Message' }).fill('Can I test this today?');
   await page.getByRole('textbox', { name: 'Message' }).press('Enter');
   await page.getByText(/This preview is working/).waitFor();
