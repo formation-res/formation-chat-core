@@ -83,7 +83,7 @@ export function OperationsList({
           <p>{config.description}</p>
         </div>
         <div className="heading-actions">
-          <span className="record-count">{resource.data?.data.length ?? '—'}</span>
+          <span className="record-count">{resource.data?.data.length ?? '-'}</span>
           {view !== 'failures' ? (
             <label className="select-field">
               <span className="sr-only">Filter by status</span>

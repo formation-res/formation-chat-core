@@ -84,7 +84,7 @@ export function ConversationView({
             <p className="eyebrow">Canonical store</p>
             <h1>Conversations</h1>
           </div>
-          <span className="record-count">{conversations.data?.data.length ?? '—'}</span>
+          <span className="record-count">{conversations.data?.data.length ?? '-'}</span>
         </div>
         <div className="filter-row">
           <label className="search-field">
@@ -278,10 +278,10 @@ function ConversationDetail({
           aria-selected={tab === 'transcript'}
           onClick={() => setTab('transcript')}
         >
-          Public transcript <span>{messages.data?.data.length ?? '—'}</span>
+          Public transcript <span>{messages.data?.data.length ?? '-'}</span>
         </button>
         <button role="tab" aria-selected={tab === 'events'} onClick={() => setTab('events')}>
-          Event timeline <span>{events.data?.data.length ?? '—'}</span>
+          Event timeline <span>{events.data?.data.length ?? '-'}</span>
         </button>
       </div>
       {tab === 'transcript' ? (
