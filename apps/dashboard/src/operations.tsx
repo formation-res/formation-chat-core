@@ -54,7 +54,8 @@ export function OperationsList({
           },
           signal,
         );
-      if (view === 'failures') return api.listFailures({ limit: 100, siteId: selectedSiteId }, signal);
+      if (view === 'failures')
+        return api.listFailures({ limit: 100, siteId: selectedSiteId }, signal);
       return api.listHandoffs(
         {
           limit: 100,

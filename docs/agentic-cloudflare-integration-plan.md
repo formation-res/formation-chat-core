@@ -530,4 +530,3 @@ Check for:
 Report actionable findings by severity with file and line references. If there are no findings,
 say that clearly and list residual risks or manual verification still needed.
 ```
-
