@@ -31,6 +31,7 @@ describe('embeddable widget asset', () => {
     expect(source).toContain("this.getAttribute('launcher-text') ?? 'Chat'");
     expect(styles).toContain('.launcher-agent-button');
     expect(styles).toContain('.launcher-text-button');
+    expect(styles).toMatch(/\.launcher \{[\s\S]*?border: 0;/);
     expect(styles).toContain('.header-actions button:hover:not(:disabled)');
     expect(styles).toContain('.close {');
     expect(styles).toContain('font-size: 1.75rem;');
