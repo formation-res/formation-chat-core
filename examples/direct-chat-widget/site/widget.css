@@ -242,10 +242,19 @@ header span {
   font-size: 0.75rem;
 }
 .close {
-  font-size: 1.75rem;
-  line-height: 1;
+  display: grid;
   min-height: 2.5rem;
   min-width: 2.5rem;
+  place-items: center;
+}
+.close-icon {
+  display: block;
+  fill: none;
+  height: 1.4rem;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 2.5;
+  width: 1.4rem;
 }
 .header-actions button:hover:not(:disabled) {
   background: rgb(24 25 22 / 10%);

@@ -57,7 +57,11 @@ class FormationChatWidget extends HTMLElement {
           <div><strong>${escapeHtml(this.getAttribute('title') ?? 'Ask us')}</strong><span>Usually replies in moments</span></div>
           <div class="header-actions">
             <button class="clear" type="button">Clear</button>
-            <button class="close" type="button" aria-label="Close chat">×</button>
+            <button class="close" type="button" aria-label="Close chat">
+              <svg class="close-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M5 5 19 19M19 5 5 19"></path>
+              </svg>
+            </button>
           </div>
         </header>
         <div class="messages" role="log" aria-live="polite" aria-relevant="additions text"></div>

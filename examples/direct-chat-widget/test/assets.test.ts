@@ -43,7 +43,9 @@ describe('embeddable widget asset', () => {
     expect(styles).toMatch(/\.message\.assistant \{[\s\S]*?background: transparent;/);
     expect(styles).toMatch(/\.panel \{[\s\S]*?border: 0;/);
     expect(styles).toContain('.header-actions button:hover:not(:disabled)');
+    expect(source).toContain('class="close-icon"');
     expect(styles).toContain('.close {');
-    expect(styles).toContain('font-size: 1.75rem;');
+    expect(styles).toMatch(/\.close \{[\s\S]*?display: grid;/);
+    expect(styles).toMatch(/\.close \{[\s\S]*?place-items: center;/);
   });
 });

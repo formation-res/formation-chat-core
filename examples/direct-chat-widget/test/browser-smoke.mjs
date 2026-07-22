@@ -91,7 +91,18 @@ try {
   assert.ok(panelBox.y + panelBox.height + 8 <= openLauncherBox.y);
   const clearButton = widget.locator('.clear');
   const closeButton = widget.locator('.close');
+  const closeIcon = closeButton.locator('.close-icon');
   const sendButton = widget.locator('.send');
+  assert.equal(await closeIcon.count(), 1);
+  const closeBox = await closeButton.boundingBox();
+  const closeIconBox = await closeIcon.boundingBox();
+  if (!closeBox || !closeIconBox) throw new Error('Close button geometry is unavailable.');
+  assert.ok(
+    Math.abs(closeBox.x + closeBox.width / 2 - (closeIconBox.x + closeIconBox.width / 2)) <= 0.5,
+  );
+  assert.ok(
+    Math.abs(closeBox.y + closeBox.height / 2 - (closeIconBox.y + closeIconBox.height / 2)) <= 0.5,
+  );
   const panelRadius = await widget
     .locator('.panel')
     .evaluate((element) => globalThis.getComputedStyle(element).borderRadius);
