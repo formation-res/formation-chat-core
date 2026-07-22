@@ -12,3 +12,27 @@
 /agent-shadow-tooltip.webp
   Access-Control-Allow-Origin: *
   Cross-Origin-Resource-Policy: cross-origin
+
+/agent-shadow-tooltip-earth.webp
+  Access-Control-Allow-Origin: *
+  Cross-Origin-Resource-Policy: cross-origin
+
+/agent-shadow-tooltip-blue.webp
+  Access-Control-Allow-Origin: *
+  Cross-Origin-Resource-Policy: cross-origin
+
+/agent-shadow-tooltip-dark-green.webp
+  Access-Control-Allow-Origin: *
+  Cross-Origin-Resource-Policy: cross-origin
+
+/agent-shadow-tooltip-rgb.webp
+  Access-Control-Allow-Origin: *
+  Cross-Origin-Resource-Policy: cross-origin
+
+/agent-shadow-tooltip-light.webp
+  Access-Control-Allow-Origin: *
+  Cross-Origin-Resource-Policy: cross-origin
+
+/agent-shadow-tooltip-rgb-neon.webp
+  Access-Control-Allow-Origin: *
+  Cross-Origin-Resource-Policy: cross-origin

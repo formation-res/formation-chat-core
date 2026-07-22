@@ -1,7 +1,15 @@
 import styles from './widget.css';
 import { readEventStream, type WidgetEvent } from './stream.js';
 
-const tooltipArtworkUrl = new URL('./agent-shadow-tooltip.webp', import.meta.url).href;
+const earthTooltipArtworkUrl = new URL('./agent-shadow-tooltip-earth.webp', import.meta.url).href;
+const tooltipArtworkUrls: ReadonlyMap<string, string> = new Map([
+  ['earth', earthTooltipArtworkUrl],
+  ['blue', new URL('./agent-shadow-tooltip-blue.webp', import.meta.url).href],
+  ['dark-green', new URL('./agent-shadow-tooltip-dark-green.webp', import.meta.url).href],
+  ['rgb', new URL('./agent-shadow-tooltip-rgb.webp', import.meta.url).href],
+  ['light', new URL('./agent-shadow-tooltip-light.webp', import.meta.url).href],
+  ['rgb-neon', new URL('./agent-shadow-tooltip-rgb-neon.webp', import.meta.url).href],
+] as const);
 
 interface Message {
   role: 'user' | 'assistant';
@@ -37,6 +45,8 @@ class FormationChatWidget extends HTMLElement {
     const launcherTooltip = (
       this.getAttribute('launcher-tooltip') ?? `"Ceci n'est pas une chatbot."`
     ).trim();
+    const artworkKey = this.getAttribute('artwork-key')?.trim().toLowerCase() ?? 'earth';
+    const tooltipArtworkUrl = tooltipArtworkUrls.get(artworkKey) ?? earthTooltipArtworkUrl;
     const launcherClass =
       launcherType === 'button' ? 'launcher-text-button' : 'launcher-agent-button';
     const launcherShellClass =

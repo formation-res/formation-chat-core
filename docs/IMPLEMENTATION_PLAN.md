@@ -451,6 +451,13 @@ replies instead of black background blocks. Text and panel controls share the pa
 the close action uses a geometrically centered SVG icon and color-only hover feedback, and the
 borderless Send action uses a lighter accent hover state.
 
+**Selectable artwork palettes:** 2026-07-22. The original tooltip artwork is retained alongside five
+high-resolution, composition-preserving palette variants. The additive `artwork-key` element
+attribute selects the color-based keys `earth`, `blue`, `dark-green`, `rgb`, `light`, or `rgb-neon`.
+Missing, empty, and unknown keys safely fall back to `earth`; browser input cannot select an
+arbitrary asset URL. The Worker build publishes each optimized WebP with cross-origin asset headers,
+and browser coverage verifies every key and the fallback.
+
 ### Checkpoint: Public website
 
 - A static website can embed the reference UI or browser client.

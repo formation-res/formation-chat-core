@@ -81,6 +81,25 @@ Magritte attribution on hover or keyboard focus. Set website-specific main copy 
 <formation-chat-widget launcher-tooltip="Ask MailFront anything"></formation-chat-widget>
 ```
 
+Select a bundled artwork palette with the optional `artwork-key` attribute:
+
+```html
+<formation-chat-widget artwork-key="blue"></formation-chat-widget>
+```
+
+Supported keys are `earth`, `blue`, `dark-green`, `rgb`, `light`, and `rgb-neon`. An omitted, empty,
+or unknown key safely falls back to `earth`; the attribute selects only bundled artwork and never
+resolves an arbitrary browser-provided asset path.
+
+| Key          | Color treatment                    |
+| ------------ | ---------------------------------- |
+| `earth`      | Warm beige and charcoal (original) |
+| `blue`       | Blue, cyan, and pale ice blue      |
+| `dark-green` | Near-black with bright green       |
+| `rgb`        | Balanced red, green, and blue      |
+| `light`      | White, ivory, and soft gray        |
+| `rgb-neon`   | Dark with spectral RGB neon        |
+
 The popup remains open while the pointer moves from the launcher onto the artwork. Hovering the
 popup reveals a transparent top-left enlarge indicator. Click anywhere on the artwork or caption to
 smoothly expand or reduce the complete card; the indicator remains keyboard accessible. Leaving the
