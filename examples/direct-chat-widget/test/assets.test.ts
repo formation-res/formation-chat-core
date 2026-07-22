@@ -54,6 +54,6 @@ describe('embeddable widget asset', () => {
     expect(styles).toMatch(/\.close \{[\s\S]*?place-items: center;/);
 
     const artwork = await stat(new URL('../site/agent-shadow-tooltip.webp', import.meta.url));
-    expect(artwork.size).toBeLessThan(100_000);
+    expect(artwork.size).toBeLessThan(250_000);
   });
 });

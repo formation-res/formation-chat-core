@@ -56,14 +56,16 @@ try {
   );
   assert.equal(await tooltip.locator('.launcher-tooltip-copy .launcher-tooltip-credit').count(), 0);
   assert.equal(await tooltip.locator('.launcher-tooltip-copy > *').count(), 1);
-  assert.deepEqual(
-    await tooltipArtwork.evaluate((image) => ({
-      complete: image.complete,
-      naturalHeight: image.naturalHeight,
-      naturalWidth: image.naturalWidth,
-    })),
-    { complete: true, naturalHeight: 320, naturalWidth: 480 },
-  );
+  const tooltipArtworkSource = await tooltipArtwork.evaluate((image) => ({
+    complete: image.complete,
+    naturalHeight: image.naturalHeight,
+    naturalWidth: image.naturalWidth,
+  }));
+  assert.deepEqual(tooltipArtworkSource, {
+    complete: true,
+    naturalHeight: 740,
+    naturalWidth: 1110,
+  });
   assert.equal(
     await launcher.evaluate((element) => globalThis.getComputedStyle(element).backgroundColor),
     await widget
@@ -172,6 +174,7 @@ try {
   assert.equal(await expandArtworkButton.getAttribute('aria-label'), 'Reduce artwork');
   assert.ok(expandedTooltipBox.width > initialTooltipWidth * 1.8);
   assert.ok(expandedArtworkBox.width > initialArtworkWidth * 1.8);
+  assert.ok(tooltipArtworkSource.naturalWidth >= expandedArtworkBox.width * 2);
   assert.ok(expandedTooltipBox.x < tooltipBox.x);
   assert.ok(expandedTooltipBox.y < tooltipBox.y);
   assert.ok(Math.abs(expandedTooltipBox.x + expandedTooltipBox.width - initialTooltipRight) <= 1);

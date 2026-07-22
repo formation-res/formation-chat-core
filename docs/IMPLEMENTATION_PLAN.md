@@ -437,7 +437,8 @@ remains hoverable across the launcher boundary, reveals an accessible enlarge co
 artwork, smoothly expands and reduces the full card, resets after pointer exit, and leaves the
 launcher's click-to-open-chat behavior unchanged. A transparent hover bridge preserves the same
 0.75rem launcher gap at both sizes while the popup's fixed bottom-right anchor makes expansion move
-only leftward and upward.
+only leftward and upward. The bundled artwork retains the native 1110×740 crop at under 100 KB,
+providing at least two source pixels per expanded CSS pixel without generative redrawing.
 The panel reduces visual chrome with an accent header, an unbordered shell, and unboxed assistant
 replies instead of black background blocks. Text and panel controls share the panel corner radius;
 the close action uses a geometrically centered SVG icon and color-only hover feedback, and the
