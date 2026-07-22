@@ -3,7 +3,7 @@
   --chat-paper: #fbfaf5;
   --chat-muted: #6a6d63;
   --chat-line: #d9d9d0;
-  --chat-accent: #c7d58a;
+  --chat-accent: #efe1bb;
   --chat-radius: 0.75rem;
   color: var(--chat-ink);
   font-family:
@@ -131,7 +131,7 @@ button {
   width: 100%;
 }
 .launcher-tooltip-copy {
-  background: #efe1bb;
+  background: var(--chat-accent);
   color: #403522;
   display: grid;
   gap: 0.2rem;

@@ -426,7 +426,7 @@ Cloudflare runtime requirements.
 **Launcher customization:** 2026-07-21, refined 2026-07-22. The direct widget defaults to an
 accessible animated agent launcher and supports either a conventional text launcher or a
 site-provided animated image through documented element attributes. Header actions have distinct
-sizing and hover feedback. The green launcher background remains stationary while only the roomier
+sizing and hover feedback. The artwork-matched beige launcher background remains stationary while only the roomier
 robot artwork animates. The launcher uses one accent-colored layer, reserves a visible gap below the
 open panel, and exposes configurable hover/focus tooltip copy. The default compact tooltip pairs a
 cropped, optimized robot-and-shadow artwork with the bold italic line `"Ceci n'est pas une chatbot."`
@@ -444,6 +444,8 @@ providing at least two source pixels per expanded CSS pixel without generative r
 
 **Tooltip palette refinement:** 2026-07-22. The centered statement uses a roomier pale-parchment
 panel with dark umber text, matching the artwork's earth tones while preserving readable contrast.
+That same parchment beige now drives the widget accent token across the launcher, header, user
+messages, and Send action, replacing the previous green and keeping the experience cohesive.
 The panel reduces visual chrome with an accent header, an unbordered shell, and unboxed assistant
 replies instead of black background blocks. Text and panel controls share the panel corner radius;
 the close action uses a geometrically centered SVG icon and color-only hover feedback, and the
