@@ -430,7 +430,9 @@ sizing and hover feedback. The green launcher background remains stationary whil
 robot artwork animates. The launcher uses one accent-colored layer, reserves a visible gap below the
 open panel, and exposes configurable hover/focus speech-bubble copy.
 The panel reduces visual chrome with an accent header, an unbordered shell, and unboxed assistant
-replies instead of black background blocks.
+replies instead of black background blocks. Text and panel controls share the panel corner radius;
+the close action uses color-only hover feedback, and the borderless Send action uses a lighter
+accent hover state.
 
 ### Checkpoint: Public website
 

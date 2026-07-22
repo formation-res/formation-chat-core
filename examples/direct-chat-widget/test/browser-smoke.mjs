@@ -78,6 +78,9 @@ try {
   const imageLauncher = page.locator('formation-chat-widget[launcher-image]');
   assert.equal(await textLauncher.locator('.launcher-text').textContent(), 'Ask us');
   assert.equal(await textLauncher.locator('.launcher-tooltip').textContent(), 'Custom prompt');
+  const textLauncherRadius = await textLauncher
+    .locator('.launcher')
+    .evaluate((element) => globalThis.getComputedStyle(element).borderRadius);
   assert.equal(await imageLauncher.locator('.launcher-image').count(), 1);
   await page.locator('#custom-launcher-fixtures').evaluate((element) => element.remove());
 
@@ -88,6 +91,21 @@ try {
   assert.ok(panelBox.y + panelBox.height + 8 <= openLauncherBox.y);
   const clearButton = widget.locator('.clear');
   const closeButton = widget.locator('.close');
+  const sendButton = widget.locator('.send');
+  const panelRadius = await widget
+    .locator('.panel')
+    .evaluate((element) => globalThis.getComputedStyle(element).borderRadius);
+  assert.equal(textLauncherRadius, panelRadius);
+  for (const button of [clearButton, closeButton, sendButton]) {
+    assert.equal(
+      await button.evaluate((element) => globalThis.getComputedStyle(element).borderRadius),
+      panelRadius,
+    );
+  }
+  assert.equal(
+    await sendButton.evaluate((element) => globalThis.getComputedStyle(element).borderWidth),
+    '0px',
+  );
   const clearFontSize = Number.parseFloat(
     await clearButton.evaluate((element) => globalThis.getComputedStyle(element).fontSize),
   );
@@ -104,11 +122,36 @@ try {
     await clearButton.evaluate((element) => globalThis.getComputedStyle(element).backgroundColor),
     clearBackground,
   );
+  const closeBackground = await closeButton.evaluate(
+    (element) => globalThis.getComputedStyle(element).backgroundColor,
+  );
   await closeButton.hover();
   await page.waitForTimeout(200);
   assert.notEqual(
+    await closeButton.evaluate((element) => globalThis.getComputedStyle(element).backgroundColor),
+    closeBackground,
+  );
+  assert.equal(
     await closeButton.evaluate((element) => globalThis.getComputedStyle(element).transform),
     'none',
+  );
+  const readBackgroundChannels = (element) => {
+    const canvas = globalThis.document.createElement('canvas');
+    canvas.width = 1;
+    canvas.height = 1;
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('Canvas is unavailable.');
+    context.fillStyle = globalThis.getComputedStyle(element).backgroundColor;
+    context.fillRect(0, 0, 1, 1);
+    return [...context.getImageData(0, 0, 1, 1).data.slice(0, 3)];
+  };
+  const sendBackground = await sendButton.evaluate(readBackgroundChannels);
+  await sendButton.hover();
+  await page.waitForTimeout(200);
+  const sendHoverBackground = await sendButton.evaluate(readBackgroundChannels);
+  assert.ok(
+    sendHoverBackground.reduce((total, channel) => total + channel, 0) >
+      sendBackground.reduce((total, channel) => total + channel, 0),
   );
   await page.getByRole('textbox', { name: 'Message' }).fill('Can I test this today?');
   await page.getByRole('textbox', { name: 'Message' }).press('Enter');

@@ -4,6 +4,7 @@
   --chat-muted: #6a6d63;
   --chat-line: #d9d9d0;
   --chat-accent: #c7d58a;
+  --chat-radius: 0.75rem;
   color: var(--chat-ink);
   font-family:
     Inter,
@@ -50,6 +51,7 @@ button {
   width: var(--chat-launcher-size, 4rem);
 }
 .launcher-text-button {
+  border-radius: var(--chat-radius);
   min-height: 3rem;
   padding: 0 1.1rem;
 }
@@ -181,7 +183,7 @@ button {
 .panel {
   background: var(--chat-paper);
   border: 0;
-  border-radius: 0.75rem;
+  border-radius: var(--chat-radius);
   bottom: 4.75rem;
   box-shadow: 0 1.25rem 4rem rgb(0 0 0 / 18%);
   display: grid;
@@ -230,12 +232,11 @@ header span {
   border: 0;
   color: var(--chat-ink);
   cursor: pointer;
-  border-radius: 0.35rem;
+  border-radius: var(--chat-radius);
   padding: 0.45rem;
   transition:
     background-color 150ms ease,
-    color 150ms ease,
-    transform 150ms ease;
+    color 150ms ease;
 }
 .clear {
   font-size: 0.75rem;
@@ -250,10 +251,6 @@ header span {
   background: rgb(24 25 22 / 10%);
   color: var(--chat-ink);
 }
-.close:hover:not(:disabled) {
-  transform: scale(1.08);
-}
-
 .messages {
   display: flex;
   flex-direction: column;
@@ -321,12 +318,16 @@ textarea {
 }
 .send {
   background: var(--chat-accent);
-  border: 1px solid color-mix(in srgb, var(--chat-accent) 72%, var(--chat-ink));
-  border-radius: 0.5rem;
+  border: 0;
+  border-radius: var(--chat-radius);
   cursor: pointer;
   font-weight: 800;
   min-height: 2.65rem;
   padding: 0 0.85rem;
+  transition: background-color 150ms ease;
+}
+.send:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--chat-accent) 72%, white);
 }
 button:disabled,
 textarea:disabled {
