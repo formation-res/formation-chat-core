@@ -32,6 +32,7 @@ describe('embeddable widget asset', () => {
     expect(source).toContain("Ceci n'est pas une chatbot.");
     expect(source).toContain('Artwork - in respectful admiration, inspired by René Magritte');
     expect(source).toContain('class="launcher-tooltip-artwork"');
+    expect(source).toContain('class="launcher-tooltip-expand"');
     expect(source).toContain('class="launcher-agent"');
     expect(source).toContain("this.getAttribute('launcher-text') ?? 'Chat'");
     expect(styles).toContain('.launcher-agent-button');
@@ -39,8 +40,9 @@ describe('embeddable widget asset', () => {
     expect(styles).toMatch(/\.launcher \{[\s\S]*?border: 0;/);
     expect(styles).not.toMatch(/\.launcher-agent \{[^}]*animation:/);
     expect(styles).toMatch(/\.launcher-agent svg \{[^}]*animation: agent-float/);
-    expect(styles).toContain('.launcher-agent-button + .panel');
+    expect(styles).toContain('.launcher-shell-agent + .panel');
     expect(styles).toContain('.launcher-tooltip');
+    expect(styles).toContain('.launcher-shell:hover');
     expect(styles).toMatch(/header \{[\s\S]*?background: var\(--chat-accent\);/);
     expect(styles).toMatch(/\.message\.user \{[\s\S]*?background: var\(--chat-accent\);/);
     expect(styles).toMatch(/\.message\.assistant \{[\s\S]*?background: transparent;/);

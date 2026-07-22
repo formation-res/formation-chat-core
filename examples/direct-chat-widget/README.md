@@ -81,6 +81,11 @@ Magritte attribution on hover or keyboard focus. Set website-specific main copy 
 <formation-chat-widget launcher-tooltip="Ask MailFront anything"></formation-chat-widget>
 ```
 
+The popup remains open while the pointer moves from the launcher onto the artwork. Hovering the
+artwork reveals a top-left enlarge control; click it to smoothly expand or reduce the complete card.
+Leaving the popup closes it and resets the compact size. Clicking the robot launcher itself still
+opens the chat panel.
+
 The image is decorative because the enclosing button always has an accessible `Open chat` label.
 Its default size can be adjusted with `--chat-launcher-size` on the custom element.
 

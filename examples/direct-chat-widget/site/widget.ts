@@ -20,6 +20,7 @@ class FormationChatWidget extends HTMLElement {
   private readonly storageKey: string;
   private chat: StoredChat;
   private open = false;
+  private tooltipExpanded = false;
   private busy = false;
   private abort: AbortController | undefined;
 
@@ -38,6 +39,8 @@ class FormationChatWidget extends HTMLElement {
     ).trim();
     const launcherClass =
       launcherType === 'button' ? 'launcher-text-button' : 'launcher-agent-button';
+    const launcherShellClass =
+      launcherType === 'button' ? 'launcher-shell-text' : 'launcher-shell-agent';
     const launcherContent =
       launcherType === 'button'
         ? `<span class="launcher-text">${escapeHtml(this.getAttribute('launcher-text') ?? 'Chat')}</span>`
@@ -45,21 +48,30 @@ class FormationChatWidget extends HTMLElement {
           ? `<img class="launcher-image" src="${escapeAttribute(launcherImage)}" alt="">`
           : defaultAgentLauncher();
     const launcherTooltipMarkup = launcherTooltip
-      ? `<span class="launcher-tooltip" id="launcher-tooltip" role="tooltip">
-          <img class="launcher-tooltip-artwork" src="${escapeAttribute(tooltipArtworkUrl)}" alt="">
-          <span class="launcher-tooltip-copy">
-            <strong class="launcher-tooltip-title">${escapeHtml(launcherTooltip)}</strong>
+      ? `<span class="launcher-tooltip" id="launcher-tooltip" aria-label="Agent artwork preview">
+          <span class="launcher-tooltip-artwork-frame">
+            <img class="launcher-tooltip-artwork" src="${escapeAttribute(tooltipArtworkUrl)}" alt="">
             <span class="launcher-tooltip-credit">Artwork - in respectful admiration, inspired by René Magritte</span>
+            <button class="launcher-tooltip-expand" type="button" aria-label="Enlarge artwork" aria-expanded="false">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M9 4H4v5M15 4h5v5M20 15v5h-5M4 15v5h5"></path>
+              </svg>
+            </button>
+          </span>
+          <span class="launcher-tooltip-copy">
+            <strong class="launcher-tooltip-title" id="launcher-tooltip-title">${escapeHtml(launcherTooltip)}</strong>
           </span>
         </span>`
       : '';
-    const launcherDescription = launcherTooltip ? ' aria-describedby="launcher-tooltip"' : '';
+    const launcherDescription = launcherTooltip ? ' aria-describedby="launcher-tooltip-title"' : '';
     this.root.innerHTML = `
       <style>${styles}</style>
-      <button class="launcher ${launcherClass}" type="button" aria-expanded="false" aria-label="Open chat"${launcherDescription}>
-        ${launcherContent}
+      <span class="launcher-shell ${launcherShellClass}">
+        <button class="launcher ${launcherClass}" type="button" aria-expanded="false" aria-label="Open chat"${launcherDescription}>
+          ${launcherContent}
+        </button>
         ${launcherTooltipMarkup}
-      </button>
+      </span>
       <section class="panel" aria-label="${escapeAttribute(this.getAttribute('title') ?? 'Ask us')}" hidden>
         <header>
           <div><strong>${escapeHtml(this.getAttribute('title') ?? 'Ask us')}</strong><span>Usually replies in moments</span></div>
@@ -91,6 +103,22 @@ class FormationChatWidget extends HTMLElement {
 
   private bind(): void {
     this.launcher.addEventListener('click', () => this.setOpen(!this.open));
+    this.tooltipExpandButton?.addEventListener('click', (event) => {
+      event.stopPropagation();
+      this.setTooltipExpanded(!this.tooltipExpanded);
+    });
+    this.launcherShell.addEventListener('pointerleave', () => {
+      this.setTooltipExpanded(false);
+      this.tooltipExpandButton?.blur();
+    });
+    this.tooltip?.addEventListener('pointerleave', () => this.setTooltipExpanded(false));
+    this.root.addEventListener('keydown', (event) => {
+      if (!(event instanceof KeyboardEvent)) return;
+      if (event.key === 'Escape' && this.tooltipExpanded) {
+        this.setTooltipExpanded(false);
+        this.tooltipExpandButton?.focus();
+      }
+    });
     this.closeButton.addEventListener('click', () => this.setOpen(false));
     this.clearButton.addEventListener('click', () => this.clear());
     this.form.addEventListener('submit', (event) => {
@@ -106,12 +134,23 @@ class FormationChatWidget extends HTMLElement {
   }
 
   private setOpen(value: boolean): void {
+    this.setTooltipExpanded(false);
     this.open = value;
     this.panel.hidden = !value;
     this.launcher.setAttribute('aria-expanded', String(value));
     this.launcher.setAttribute('aria-label', value ? 'Close chat' : 'Open chat');
     if (value) this.input.focus();
     else this.launcher.focus();
+  }
+
+  private setTooltipExpanded(value: boolean): void {
+    const tooltip = this.tooltip;
+    const button = this.tooltipExpandButton;
+    if (!tooltip || !button) return;
+    this.tooltipExpanded = value;
+    tooltip.classList.toggle('is-expanded', value);
+    button.setAttribute('aria-expanded', String(value));
+    button.setAttribute('aria-label', value ? 'Reduce artwork' : 'Enlarge artwork');
   }
 
   private async submit(): Promise<void> {
@@ -239,6 +278,15 @@ class FormationChatWidget extends HTMLElement {
 
   private get launcher() {
     return requiredElement<HTMLButtonElement>(this.root, '.launcher');
+  }
+  private get launcherShell() {
+    return requiredElement<HTMLElement>(this.root, '.launcher-shell');
+  }
+  private get tooltip() {
+    return this.root.querySelector<HTMLElement>('.launcher-tooltip');
+  }
+  private get tooltipExpandButton() {
+    return this.root.querySelector<HTMLButtonElement>('.launcher-tooltip-expand');
   }
   private get panel() {
     return requiredElement<HTMLElement>(this.root, '.panel');

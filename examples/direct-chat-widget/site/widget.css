@@ -27,12 +27,25 @@ button {
   color: inherit;
 }
 
+.launcher-shell {
+  bottom: 1rem;
+  position: fixed;
+  right: 1rem;
+  z-index: 2147483647;
+}
+.launcher-shell::before {
+  bottom: 0;
+  content: '';
+  height: 100%;
+  position: absolute;
+  right: 100%;
+  width: 0.75rem;
+}
 .launcher {
   align-items: center;
   background: var(--chat-accent);
   border: 0;
   border-radius: 999px;
-  bottom: 1rem;
   box-shadow: 0 0.35rem 1rem rgb(0 0 0 / 14%);
   color: white;
   cursor: pointer;
@@ -40,9 +53,7 @@ button {
   font-weight: 700;
   justify-content: center;
   overflow: visible;
-  position: fixed;
-  right: 1rem;
-  z-index: 2147483647;
+  position: relative;
 }
 
 .launcher-agent-button {
@@ -87,25 +98,33 @@ button {
   color: var(--chat-ink);
   display: grid;
   gap: 0;
-  max-width: min(15rem, calc(100vw - var(--chat-launcher-size, 4rem) - 3rem));
   opacity: 0;
   overflow: hidden;
   pointer-events: none;
   position: absolute;
-  right: calc(100% + 0.8rem);
+  right: calc(100% + 0.75rem);
   text-align: left;
   transform: translateX(0.25rem);
   transition:
     opacity 150ms ease,
     transform 150ms ease,
-    visibility 150ms ease;
+    visibility 150ms ease,
+    width 280ms ease;
   visibility: hidden;
   white-space: normal;
-  width: max-content;
+  width: min(15rem, calc(100vw - var(--chat-launcher-size, 4rem) - 3rem));
 }
-.launcher-tooltip-artwork {
+.launcher-tooltip.is-expanded {
+  width: min(34rem, calc(100vw - var(--chat-launcher-size, 4rem) - 3rem));
+}
+.launcher-tooltip-artwork-frame {
   aspect-ratio: 3 / 2;
   display: block;
+  position: relative;
+}
+.launcher-tooltip-artwork {
+  display: block;
+  height: 100%;
   object-fit: cover;
   width: 100%;
 }
@@ -121,19 +140,68 @@ button {
   font-weight: 800;
   line-height: 1.3;
   text-align: center;
+  transition: font-size 280ms ease;
 }
 .launcher-tooltip-credit {
   color: var(--chat-muted);
   font-size: 0.44rem;
   font-weight: 400;
   line-height: 1.35;
-  margin-top: 0.15rem;
+  bottom: 0.25rem;
+  position: absolute;
+  right: 0.35rem;
   text-align: right;
+  text-shadow: 0 1px 1px rgb(255 255 255 / 80%);
   white-space: nowrap;
 }
-.launcher[aria-expanded='false']:hover .launcher-tooltip,
-.launcher[aria-expanded='false']:focus-visible .launcher-tooltip {
+.launcher-tooltip-expand {
+  align-items: center;
+  background: rgb(255 255 255 / 86%);
+  border: 0;
+  border-radius: 0.45rem;
+  cursor: pointer;
+  display: flex;
+  height: 2rem;
+  justify-content: center;
+  left: 0.5rem;
+  opacity: 0;
+  padding: 0;
+  position: absolute;
+  top: 0.5rem;
+  transform: scale(0.9);
+  transition:
+    background-color 150ms ease,
+    opacity 150ms ease,
+    transform 150ms ease;
+  width: 2rem;
+}
+.launcher-tooltip-expand:hover {
+  background: white;
+}
+.launcher-tooltip-expand svg {
+  fill: none;
+  height: 1rem;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+  width: 1rem;
+}
+.launcher-tooltip:hover .launcher-tooltip-expand,
+.launcher-tooltip-expand:focus-visible {
   opacity: 1;
+  transform: scale(1);
+}
+.launcher-tooltip.is-expanded .launcher-tooltip-title {
+  font-size: 1.1rem;
+}
+.launcher-tooltip.is-expanded .launcher-tooltip-credit {
+  font-size: 0.65rem;
+}
+.launcher-shell:hover > .launcher[aria-expanded='false'] + .launcher-tooltip,
+.launcher-shell:focus-within > .launcher[aria-expanded='false'] + .launcher-tooltip {
+  opacity: 1;
+  pointer-events: auto;
   transform: translateX(0);
   visibility: visible;
 }
@@ -213,7 +281,7 @@ button {
 .panel[hidden] {
   display: none;
 }
-.launcher-agent-button + .panel {
+.launcher-shell-agent + .panel {
   bottom: calc(1rem + var(--chat-launcher-size, 4rem) + 0.75rem);
 }
 header {
@@ -382,10 +450,10 @@ small {
     top: 0;
     width: 100vw;
   }
-  .launcher-agent-button + .panel {
+  .launcher-shell-agent + .panel {
     bottom: 0;
   }
-  .launcher[aria-expanded='true'] {
+  .launcher-shell:has(.launcher[aria-expanded='true']) {
     display: none;
   }
 }

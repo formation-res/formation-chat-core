@@ -44,6 +44,7 @@ try {
   assert.ok(launcherGeometry.smileClearance >= 2);
   const launcher = widget.locator('.launcher');
   const tooltip = widget.locator('.launcher-tooltip');
+  const tooltipArtworkFrame = tooltip.locator('.launcher-tooltip-artwork-frame');
   const tooltipArtwork = tooltip.locator('.launcher-tooltip-artwork');
   assert.equal(
     await tooltip.locator('.launcher-tooltip-title').textContent(),
@@ -53,6 +54,8 @@ try {
     await tooltip.locator('.launcher-tooltip-credit').textContent(),
     'Artwork - in respectful admiration, inspired by René Magritte',
   );
+  assert.equal(await tooltip.locator('.launcher-tooltip-copy .launcher-tooltip-credit').count(), 0);
+  assert.equal(await tooltip.locator('.launcher-tooltip-copy > *').count(), 1);
   assert.deepEqual(
     await tooltipArtwork.evaluate((image) => ({
       complete: image.complete,
@@ -79,7 +82,10 @@ try {
   if (!launcherBox || !tooltipBox || !tooltipCopyBox) {
     throw new Error('Launcher tooltip geometry is unavailable.');
   }
-  assert.ok(tooltipBox.x + tooltipBox.width < launcherBox.x);
+  const initialHorizontalGap = launcherBox.x - (tooltipBox.x + tooltipBox.width);
+  const initialTooltipRight = tooltipBox.x + tooltipBox.width;
+  const initialTooltipBottom = tooltipBox.y + tooltipBox.height;
+  assert.ok(initialHorizontalGap >= 8 && initialHorizontalGap <= 16);
   assert.ok(tooltipBox.width <= 240);
   assert.ok(tooltipBox.y >= 0);
   assert.ok(tooltipBox.y + tooltipBox.height <= 800);
@@ -90,8 +96,16 @@ try {
   });
   assert.deepEqual(tooltipStyles, { gap: '0px', overflow: 'hidden' });
   const artworkBox = await tooltipArtwork.boundingBox();
-  if (!artworkBox) throw new Error('Tooltip artwork geometry is unavailable.');
+  const artworkFrameBox = await tooltipArtworkFrame.boundingBox();
+  const creditBox = await tooltip.locator('.launcher-tooltip-credit').boundingBox();
+  if (!artworkBox || !artworkFrameBox || !creditBox) {
+    throw new Error('Tooltip artwork geometry is unavailable.');
+  }
   assert.ok(Math.abs(artworkBox.y + artworkBox.height - tooltipCopyBox.y) <= 0.5);
+  assert.ok(creditBox.x >= artworkFrameBox.x);
+  assert.ok(creditBox.y >= artworkFrameBox.y);
+  assert.ok(creditBox.x + creditBox.width <= artworkFrameBox.x + artworkFrameBox.width);
+  assert.ok(creditBox.y + creditBox.height <= artworkFrameBox.y + artworkFrameBox.height);
   assert.deepEqual(
     await tooltip.locator('.launcher-tooltip-copy').evaluate((element) => {
       const styles = globalThis.getComputedStyle(element);
@@ -124,6 +138,77 @@ try {
   assert.equal(creditStyles.textAlign, 'right');
   assert.equal(creditStyles.whiteSpace, 'nowrap');
   assert.equal(creditStyles.fitsOneLine, true);
+  const expandArtworkButton = tooltip.locator('.launcher-tooltip-expand');
+  assert.equal(await expandArtworkButton.count(), 1);
+  assert.equal(await expandArtworkButton.getAttribute('aria-label'), 'Enlarge artwork');
+  await tooltip.hover();
+  await page.waitForTimeout(200);
+  assert.equal(
+    await tooltip.evaluate((element) => globalThis.getComputedStyle(element).opacity),
+    '1',
+  );
+  assert.equal(
+    await expandArtworkButton.evaluate((element) => globalThis.getComputedStyle(element).opacity),
+    '1',
+  );
+  const expandButtonBox = await expandArtworkButton.boundingBox();
+  if (!expandButtonBox) throw new Error('Artwork expand control geometry is unavailable.');
+  assert.ok(expandButtonBox.x >= artworkFrameBox.x);
+  assert.ok(expandButtonBox.y >= artworkFrameBox.y);
+  assert.ok(expandButtonBox.x + expandButtonBox.width <= artworkFrameBox.x + artworkFrameBox.width);
+  assert.ok(
+    expandButtonBox.y + expandButtonBox.height <= artworkFrameBox.y + artworkFrameBox.height,
+  );
+  const initialTooltipWidth = tooltipBox.width;
+  const initialArtworkWidth = artworkBox.width;
+  await expandArtworkButton.click();
+  await page.waitForTimeout(350);
+  const expandedTooltipBox = await tooltip.boundingBox();
+  const expandedArtworkBox = await tooltipArtwork.boundingBox();
+  if (!expandedTooltipBox || !expandedArtworkBox) {
+    throw new Error('Expanded tooltip geometry is unavailable.');
+  }
+  assert.equal(await expandArtworkButton.getAttribute('aria-expanded'), 'true');
+  assert.equal(await expandArtworkButton.getAttribute('aria-label'), 'Reduce artwork');
+  assert.ok(expandedTooltipBox.width > initialTooltipWidth * 1.8);
+  assert.ok(expandedArtworkBox.width > initialArtworkWidth * 1.8);
+  assert.ok(expandedTooltipBox.x < tooltipBox.x);
+  assert.ok(expandedTooltipBox.y < tooltipBox.y);
+  assert.ok(Math.abs(expandedTooltipBox.x + expandedTooltipBox.width - initialTooltipRight) <= 1);
+  assert.ok(Math.abs(expandedTooltipBox.y + expandedTooltipBox.height - initialTooltipBottom) <= 1);
+  assert.ok(
+    Math.abs(
+      launcherBox.x - (expandedTooltipBox.x + expandedTooltipBox.width) - initialHorizontalGap,
+    ) <= 1,
+  );
+  assert.ok(
+    Number.parseFloat(
+      await tooltip
+        .locator('.launcher-tooltip-title')
+        .evaluate((element) => globalThis.getComputedStyle(element).fontSize),
+    ) > titleFontSize,
+  );
+  assert.equal(await widget.locator('.panel').getAttribute('hidden'), '');
+  await page.screenshot({
+    path: join(tmpdir(), 'formation-direct-widget-tooltip-expanded.png'),
+    fullPage: true,
+  });
+  await expandArtworkButton.click();
+  await page.waitForTimeout(350);
+  assert.equal(await expandArtworkButton.getAttribute('aria-expanded'), 'false');
+  assert.equal(await expandArtworkButton.getAttribute('aria-label'), 'Enlarge artwork');
+  assert.ok(Math.abs((await tooltip.boundingBox()).width - initialTooltipWidth) <= 1);
+  await launcher.hover();
+  await page.waitForTimeout(200);
+  await tooltip.hover();
+  await page.mouse.move(100, 700);
+  await page.waitForTimeout(200);
+  assert.equal(
+    await tooltip.evaluate((element) => globalThis.getComputedStyle(element).opacity),
+    '0',
+  );
+  await launcher.hover();
+  await page.waitForTimeout(200);
   await page.screenshot({
     path: join(tmpdir(), 'formation-direct-widget-tooltip.png'),
     fullPage: true,
