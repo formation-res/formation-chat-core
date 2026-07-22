@@ -20,5 +20,7 @@ await build({
   target: ['es2022'],
 });
 await Promise.all(
-  ['index.html', '_headers'].map((file) => copyFile(join(root, 'site', file), join(output, file))),
+  ['index.html', '_headers', 'agent-shadow-tooltip.webp'].map((file) =>
+    copyFile(join(root, 'site', file), join(output, file)),
+  ),
 );

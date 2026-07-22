@@ -44,7 +44,23 @@ try {
   assert.ok(launcherGeometry.smileClearance >= 2);
   const launcher = widget.locator('.launcher');
   const tooltip = widget.locator('.launcher-tooltip');
-  assert.equal(await tooltip.textContent(), "Ceci n'est pas une bot. ☝");
+  const tooltipArtwork = tooltip.locator('.launcher-tooltip-artwork');
+  assert.equal(
+    await tooltip.locator('.launcher-tooltip-title').textContent(),
+    "Ceci n'est pas une chatbot.",
+  );
+  assert.equal(
+    await tooltip.locator('.launcher-tooltip-credit').textContent(),
+    'Artwork - in respectful admiration, inspired by René Magritte',
+  );
+  assert.deepEqual(
+    await tooltipArtwork.evaluate((image) => ({
+      complete: image.complete,
+      naturalHeight: image.naturalHeight,
+      naturalWidth: image.naturalWidth,
+    })),
+    { complete: true, naturalHeight: 320, naturalWidth: 480 },
+  );
   assert.equal(
     await launcher.evaluate((element) => globalThis.getComputedStyle(element).backgroundColor),
     await widget
@@ -59,8 +75,55 @@ try {
   );
   const launcherBox = await launcher.boundingBox();
   const tooltipBox = await tooltip.boundingBox();
-  if (!launcherBox || !tooltipBox) throw new Error('Launcher tooltip geometry is unavailable.');
+  const tooltipCopyBox = await tooltip.locator('.launcher-tooltip-copy').boundingBox();
+  if (!launcherBox || !tooltipBox || !tooltipCopyBox) {
+    throw new Error('Launcher tooltip geometry is unavailable.');
+  }
   assert.ok(tooltipBox.x + tooltipBox.width < launcherBox.x);
+  assert.ok(tooltipBox.width <= 240);
+  assert.ok(tooltipBox.y >= 0);
+  assert.ok(tooltipBox.y + tooltipBox.height <= 800);
+  assert.ok(tooltipCopyBox.y + tooltipCopyBox.height <= 800);
+  const tooltipStyles = await tooltip.evaluate((element) => {
+    const styles = globalThis.getComputedStyle(element);
+    return { gap: styles.gap, overflow: styles.overflow };
+  });
+  assert.deepEqual(tooltipStyles, { gap: '0px', overflow: 'hidden' });
+  const artworkBox = await tooltipArtwork.boundingBox();
+  if (!artworkBox) throw new Error('Tooltip artwork geometry is unavailable.');
+  assert.ok(Math.abs(artworkBox.y + artworkBox.height - tooltipCopyBox.y) <= 0.5);
+  assert.deepEqual(
+    await tooltip.locator('.launcher-tooltip-copy').evaluate((element) => {
+      const styles = globalThis.getComputedStyle(element);
+      return { backgroundColor: styles.backgroundColor, backgroundImage: styles.backgroundImage };
+    }),
+    { backgroundColor: 'rgb(255, 255, 255)', backgroundImage: 'none' },
+  );
+  assert.equal(
+    await tooltip
+      .locator('.launcher-tooltip-title')
+      .evaluate((element) => globalThis.getComputedStyle(element).textAlign),
+    'center',
+  );
+  const titleFontSize = Number.parseFloat(
+    await tooltip
+      .locator('.launcher-tooltip-title')
+      .evaluate((element) => globalThis.getComputedStyle(element).fontSize),
+  );
+  const creditStyles = await tooltip.locator('.launcher-tooltip-credit').evaluate((element) => {
+    const styles = globalThis.getComputedStyle(element);
+    return {
+      fitsOneLine: element.scrollWidth <= element.clientWidth,
+      fontSize: Number.parseFloat(styles.fontSize),
+      textAlign: styles.textAlign,
+      whiteSpace: styles.whiteSpace,
+    };
+  });
+  assert.ok(creditStyles.fontSize < titleFontSize);
+  assert.ok(creditStyles.fontSize <= 7.2);
+  assert.equal(creditStyles.textAlign, 'right');
+  assert.equal(creditStyles.whiteSpace, 'nowrap');
+  assert.equal(creditStyles.fitsOneLine, true);
   await page.screenshot({
     path: join(tmpdir(), 'formation-direct-widget-tooltip.png'),
     fullPage: true,
@@ -77,7 +140,10 @@ try {
   const textLauncher = page.locator('formation-chat-widget[launcher-type="button"]');
   const imageLauncher = page.locator('formation-chat-widget[launcher-image]');
   assert.equal(await textLauncher.locator('.launcher-text').textContent(), 'Ask us');
-  assert.equal(await textLauncher.locator('.launcher-tooltip').textContent(), 'Custom prompt');
+  assert.equal(
+    await textLauncher.locator('.launcher-tooltip-title').textContent(),
+    'Custom prompt',
+  );
   const textLauncherRadius = await textLauncher
     .locator('.launcher')
     .evaluate((element) => globalThis.getComputedStyle(element).borderRadius);

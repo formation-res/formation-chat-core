@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import { readFile, stat } from 'node:fs/promises';
 
 import { describe, expect, it } from 'vitest';
 
@@ -7,6 +7,7 @@ describe('embeddable widget asset', () => {
     const headers = await readFile(new URL('../site/_headers', import.meta.url), 'utf8');
 
     expect(headers).toContain('/widget.js');
+    expect(headers).toContain('/agent-shadow-tooltip.webp');
     expect(headers).toContain('Access-Control-Allow-Origin: *');
     expect(headers).toContain('Cross-Origin-Resource-Policy: cross-origin');
   });
@@ -28,7 +29,9 @@ describe('embeddable widget asset', () => {
     expect(source).toContain("this.getAttribute('launcher-type') === 'button'");
     expect(source).toContain("this.getAttribute('launcher-image')");
     expect(source).toContain("this.getAttribute('launcher-tooltip')");
-    expect(source).toContain("Ceci n'est pas une bot. ☝");
+    expect(source).toContain("Ceci n'est pas une chatbot.");
+    expect(source).toContain('Artwork - in respectful admiration, inspired by René Magritte');
+    expect(source).toContain('class="launcher-tooltip-artwork"');
     expect(source).toContain('class="launcher-agent"');
     expect(source).toContain("this.getAttribute('launcher-text') ?? 'Chat'");
     expect(styles).toContain('.launcher-agent-button');
@@ -47,5 +50,8 @@ describe('embeddable widget asset', () => {
     expect(styles).toContain('.close {');
     expect(styles).toMatch(/\.close \{[\s\S]*?display: grid;/);
     expect(styles).toMatch(/\.close \{[\s\S]*?place-items: center;/);
+
+    const artwork = await stat(new URL('../site/agent-shadow-tooltip.webp', import.meta.url));
+    expect(artwork.size).toBeLessThan(100_000);
   });
 });

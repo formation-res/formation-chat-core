@@ -428,7 +428,11 @@ accessible animated agent launcher and supports either a conventional text launc
 site-provided animated image through documented element attributes. Header actions have distinct
 sizing and hover feedback. The green launcher background remains stationary while only the roomier
 robot artwork animates. The launcher uses one accent-colored layer, reserves a visible gap below the
-open panel, and exposes configurable hover/focus speech-bubble copy.
+open panel, and exposes configurable hover/focus tooltip copy. The default compact tooltip pairs a
+cropped, optimized robot-and-shadow artwork with the bold italic line `Ceci n'est pas une chatbot.`
+and a smaller respectful René Magritte attribution. Artwork and copy form one gapless rounded card;
+the centered title sits on a solid white copy area while the very small single-line attribution
+aligns at the lower right.
 The panel reduces visual chrome with an accent header, an unbordered shell, and unboxed assistant
 replies instead of black background blocks. Text and panel controls share the panel corner radius;
 the close action uses a geometrically centered SVG icon and color-only hover feedback, and the

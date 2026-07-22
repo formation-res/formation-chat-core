@@ -1,6 +1,8 @@
 import styles from './widget.css';
 import { readEventStream, type WidgetEvent } from './stream.js';
 
+const tooltipArtworkUrl = new URL('./agent-shadow-tooltip.webp', import.meta.url).href;
+
 interface Message {
   role: 'user' | 'assistant';
   text: string;
@@ -32,7 +34,7 @@ class FormationChatWidget extends HTMLElement {
     const launcherType = this.getAttribute('launcher-type') === 'button' ? 'button' : 'agent';
     const launcherImage = this.getAttribute('launcher-image');
     const launcherTooltip = (
-      this.getAttribute('launcher-tooltip') ?? "Ceci n'est pas une bot. ☝"
+      this.getAttribute('launcher-tooltip') ?? "Ceci n'est pas une chatbot."
     ).trim();
     const launcherClass =
       launcherType === 'button' ? 'launcher-text-button' : 'launcher-agent-button';
@@ -43,7 +45,13 @@ class FormationChatWidget extends HTMLElement {
           ? `<img class="launcher-image" src="${escapeAttribute(launcherImage)}" alt="">`
           : defaultAgentLauncher();
     const launcherTooltipMarkup = launcherTooltip
-      ? `<span class="launcher-tooltip" id="launcher-tooltip" role="tooltip">${escapeHtml(launcherTooltip)}</span>`
+      ? `<span class="launcher-tooltip" id="launcher-tooltip" role="tooltip">
+          <img class="launcher-tooltip-artwork" src="${escapeAttribute(tooltipArtworkUrl)}" alt="">
+          <span class="launcher-tooltip-copy">
+            <strong class="launcher-tooltip-title">${escapeHtml(launcherTooltip)}</strong>
+            <span class="launcher-tooltip-credit">Artwork - in respectful admiration, inspired by René Magritte</span>
+          </span>
+        </span>`
       : '';
     const launcherDescription = launcherTooltip ? ' aria-describedby="launcher-tooltip"' : '';
     this.root.innerHTML = `
