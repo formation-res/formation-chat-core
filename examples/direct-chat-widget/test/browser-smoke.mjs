@@ -111,9 +111,21 @@ try {
   assert.deepEqual(
     await tooltip.locator('.launcher-tooltip-copy').evaluate((element) => {
       const styles = globalThis.getComputedStyle(element);
-      return { backgroundColor: styles.backgroundColor, backgroundImage: styles.backgroundImage };
+      return {
+        backgroundColor: styles.backgroundColor,
+        backgroundImage: styles.backgroundImage,
+        color: styles.color,
+        paddingBottom: Number.parseFloat(styles.paddingBottom),
+        paddingTop: Number.parseFloat(styles.paddingTop),
+      };
     }),
-    { backgroundColor: 'rgb(255, 255, 255)', backgroundImage: 'none' },
+    {
+      backgroundColor: 'rgb(239, 225, 187)',
+      backgroundImage: 'none',
+      color: 'rgb(64, 53, 34)',
+      paddingBottom: 10.88,
+      paddingTop: 11.52,
+    },
   );
   assert.equal(
     await tooltip

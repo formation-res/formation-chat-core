@@ -129,10 +129,11 @@ button {
   width: 100%;
 }
 .launcher-tooltip-copy {
-  background: white;
+  background: #efe1bb;
+  color: #403522;
   display: grid;
   gap: 0.2rem;
-  padding: 0.55rem 0.7rem 0.45rem;
+  padding: 0.72rem 0.9rem 0.68rem;
 }
 .launcher-tooltip-title {
   font-size: 0.78rem;

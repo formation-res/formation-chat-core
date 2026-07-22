@@ -431,7 +431,7 @@ robot artwork animates. The launcher uses one accent-colored layer, reserves a v
 open panel, and exposes configurable hover/focus tooltip copy. The default compact tooltip pairs a
 cropped, optimized robot-and-shadow artwork with the bold italic line `Ceci n'est pas une chatbot.`
 and a smaller respectful René Magritte attribution. Artwork and copy form one gapless rounded card;
-the centered title sits alone on a solid white copy area while the very small single-line
+the centered title sits alone on a pale-parchment copy area while the very small single-line
 attribution overlays the artwork's lower-right corner like an image source declaration. The popup
 remains hoverable across the launcher boundary, reveals an accessible enlarge control over the
 artwork, smoothly expands and reduces the full card, resets after pointer exit, and leaves the
@@ -439,6 +439,9 @@ launcher's click-to-open-chat behavior unchanged. A transparent hover bridge pre
 0.75rem launcher gap at both sizes while the popup's fixed bottom-right anchor makes expansion move
 only leftward and upward. The bundled artwork retains the native 1110×740 crop at under 100 KB,
 providing at least two source pixels per expanded CSS pixel without generative redrawing.
+
+**Tooltip palette refinement:** 2026-07-22. The centered statement uses a roomier pale-parchment
+panel with dark umber text, matching the artwork's earth tones while preserving readable contrast.
 The panel reduces visual chrome with an accent header, an unbordered shell, and unboxed assistant
 replies instead of black background blocks. Text and panel controls share the panel corner radius;
 the close action uses a geometrically centered SVG icon and color-only hover feedback, and the
