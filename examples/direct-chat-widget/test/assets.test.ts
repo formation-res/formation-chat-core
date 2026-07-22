@@ -73,7 +73,8 @@ describe('embeddable widget asset', () => {
     expect(styles).toMatch(/\.launcher-agent svg \{[^}]*animation: agent-float/);
     expect(styles).toContain('.launcher-shell-agent + .panel');
     expect(styles).toContain('.launcher-tooltip');
-    expect(styles).toContain('.launcher-shell:hover');
+    expect(source).toContain("classList.add('suppress-tooltip')");
+    expect(styles).toContain('.launcher-shell:not(.suppress-tooltip):hover');
     expect(styles).toMatch(/header \{[\s\S]*?background: var\(--chat-accent\);/);
     expect(styles).toMatch(/\.message\.user \{[\s\S]*?background: var\(--chat-accent\);/);
     expect(styles).toMatch(/\.message\.assistant \{[\s\S]*?background: transparent;/);

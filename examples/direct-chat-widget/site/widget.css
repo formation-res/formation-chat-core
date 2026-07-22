@@ -201,8 +201,10 @@ button {
 .launcher-tooltip.is-expanded .launcher-tooltip-credit {
   font-size: 0.65rem;
 }
-.launcher-shell:hover > .launcher[aria-expanded='false'] + .launcher-tooltip,
-.launcher-shell:focus-within > .launcher[aria-expanded='false'] + .launcher-tooltip {
+.launcher-shell:not(.suppress-tooltip):hover > .launcher[aria-expanded='false'] + .launcher-tooltip,
+.launcher-shell:not(.suppress-tooltip):focus-within
+  > .launcher[aria-expanded='false']
+  + .launcher-tooltip {
   opacity: 1;
   pointer-events: auto;
   transform: translateX(0);

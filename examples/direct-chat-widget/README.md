@@ -104,7 +104,8 @@ The popup remains open while the pointer moves from the launcher onto the artwor
 popup reveals a transparent top-left enlarge indicator. Click anywhere on the artwork or caption to
 smoothly expand or reduce the complete card; the indicator remains keyboard accessible. Leaving the
 popup closes it and resets the compact size. Clicking the robot launcher itself still opens the chat
-panel.
+panel. Closing the chat returns keyboard focus to the launcher but keeps the artwork hidden until the
+next pointer entry or a later keyboard refocus.
 
 The image is decorative because the enclosing button always has an accessible `Open chat` label.
 Its default size can be adjusted with `--chat-launcher-size` on the custom element.

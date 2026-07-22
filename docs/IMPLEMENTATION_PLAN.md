@@ -458,6 +458,11 @@ Missing, empty, and unknown keys safely fall back to `earth`; browser input cann
 arbitrary asset URL. The Worker build publishes each optimized WebP with cross-origin asset headers,
 and browser coverage verifies every key and the fallback.
 
+**Close-state tooltip fix:** 2026-07-22. Closing the chat still restores keyboard focus to the
+launcher, but a one-shot suppression state prevents that programmatic focus from immediately
+reopening the artwork. The suppression clears on the next genuine pointer entry or after focus leaves
+the launcher, preserving both the requested next-hover behavior and later keyboard discovery.
+
 ### Checkpoint: Public website
 
 - A static website can embed the reference UI or browser client.

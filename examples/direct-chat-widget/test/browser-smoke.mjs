@@ -276,6 +276,7 @@ try {
       .locator(`formation-chat-widget[artwork-key="${key}"]`)
       .locator('.launcher-tooltip-artwork');
     assert.equal(new globalThis.URL(await artwork.getAttribute('src')).pathname, `/${filename}`);
+    await artwork.evaluate((image) => image.decode());
     assert.ok(await artwork.evaluate((image) => image.complete && image.naturalWidth > 0));
   }
   await page.locator('#custom-launcher-fixtures').evaluate((element) => element.remove());
@@ -380,6 +381,26 @@ try {
     path: join(tmpdir(), 'formation-direct-widget-wide.png'),
     fullPage: true,
   });
+  await closeButton.click();
+  await page.waitForTimeout(200);
+  assert.equal(await widget.locator('.panel').isHidden(), true);
+  assert.equal(
+    await widget.evaluate(
+      (element) => element.shadowRoot?.activeElement?.classList.contains('launcher') ?? false,
+    ),
+    true,
+  );
+  assert.equal(
+    await tooltip.evaluate((element) => globalThis.getComputedStyle(element).opacity),
+    '0',
+  );
+  await launcher.hover();
+  await page.waitForTimeout(200);
+  assert.equal(
+    await tooltip.evaluate((element) => globalThis.getComputedStyle(element).opacity),
+    '1',
+  );
+  await launcher.click();
   await page.setViewportSize({ width: 320, height: 700 });
   assert.equal(await page.getByRole('textbox', { name: 'Message' }).count(), 1);
   await page.screenshot({

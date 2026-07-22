@@ -113,6 +113,12 @@ class FormationChatWidget extends HTMLElement {
 
   private bind(): void {
     this.launcher.addEventListener('click', () => this.setOpen(!this.open));
+    this.launcher.addEventListener('blur', () => {
+      this.launcherShell.classList.remove('suppress-tooltip');
+    });
+    this.launcherShell.addEventListener('pointerenter', () => {
+      this.launcherShell.classList.remove('suppress-tooltip');
+    });
     this.tooltip?.addEventListener('click', () => {
       this.setTooltipExpanded(!this.tooltipExpanded);
     });
@@ -144,6 +150,7 @@ class FormationChatWidget extends HTMLElement {
 
   private setOpen(value: boolean): void {
     this.setTooltipExpanded(false);
+    if (!value) this.launcherShell.classList.add('suppress-tooltip');
     this.open = value;
     this.panel.hidden = !value;
     this.launcher.setAttribute('aria-expanded', String(value));
