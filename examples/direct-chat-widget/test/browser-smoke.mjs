@@ -48,7 +48,7 @@ try {
   const tooltipArtwork = tooltip.locator('.launcher-tooltip-artwork');
   assert.equal(
     await tooltip.locator('.launcher-tooltip-title').textContent(),
-    "\"Ceci n'est pas une chatbot.\"",
+    "Ceci n'est pas une chatbot.",
   );
   assert.equal(
     await tooltip.locator('.launcher-tooltip-credit').textContent(),
