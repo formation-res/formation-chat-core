@@ -132,7 +132,7 @@ button {
 }
 .launcher-tooltip-copy {
   background: var(--chat-accent);
-  color: #403522;
+  color: var(--chat-ink);
   display: grid;
   gap: 0.2rem;
   padding: 0.72rem 0.9rem 0.68rem;
@@ -403,7 +403,7 @@ label {
   width: 1px;
 }
 textarea {
-  background: white;
+  background: var(--chat-paper);
   border: 1px solid var(--chat-line);
   border-radius: 0.5rem;
   color: var(--chat-ink);

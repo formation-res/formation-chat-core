@@ -26,7 +26,9 @@ describe('embeddable widget asset', () => {
 
     expect(styles).toContain('--chat-accent: #efe1bb;');
     expect(styles).toMatch(/\.launcher-tooltip-copy \{[\s\S]*?background: var\(--chat-accent\);/);
+    expect(styles).toMatch(/\.launcher-tooltip-copy \{[^}]*color: var\(--chat-ink\);/);
     expect(styles).not.toContain('#d8ff63');
+    expect(styles).toMatch(/textarea \{[^}]*background: var\(--chat-paper\);/);
     expect(styles).toContain('textarea:focus-visible {');
     expect(styles).toContain('box-shadow: inset 0 0 0 1px var(--chat-ink);');
     expect(styles).toContain('outline: none;');
