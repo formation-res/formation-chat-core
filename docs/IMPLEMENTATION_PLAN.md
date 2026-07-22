@@ -423,9 +423,14 @@ native fetch function with the Worker global receiver. Non-success redirects rem
 responses and are never followed with the connector bearer token. Regression assertions cover both
 Cloudflare runtime requirements.
 
-**Launcher customization:** 2026-07-21. The direct widget defaults to an accessible animated agent
-launcher and supports either a conventional text launcher or a site-provided animated image through
-documented element attributes. Header actions have distinct sizing and hover feedback.
+**Launcher customization:** 2026-07-21, refined 2026-07-22. The direct widget defaults to an
+accessible animated agent launcher and supports either a conventional text launcher or a
+site-provided animated image through documented element attributes. Header actions have distinct
+sizing and hover feedback. The green launcher background remains stationary while only the roomier
+robot artwork animates. The launcher uses one accent-colored layer, reserves a visible gap below the
+open panel, and exposes configurable hover/focus speech-bubble copy.
+The panel reduces visual chrome with an accent header, an unbordered shell, and unboxed assistant
+replies instead of black background blocks.
 
 ### Checkpoint: Public website
 

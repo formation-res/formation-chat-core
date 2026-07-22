@@ -28,17 +28,17 @@ button {
 
 .launcher {
   align-items: center;
-  background: var(--chat-ink);
+  background: var(--chat-accent);
   border: 0;
   border-radius: 999px;
   bottom: 1rem;
-  box-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 18%);
+  box-shadow: 0 0.35rem 1rem rgb(0 0 0 / 14%);
   color: white;
   cursor: pointer;
   display: flex;
   font-weight: 700;
   justify-content: center;
-  overflow: hidden;
+  overflow: visible;
   position: fixed;
   right: 1rem;
   z-index: 2147483647;
@@ -55,6 +55,7 @@ button {
 }
 .launcher-agent,
 .launcher-image {
+  border-radius: inherit;
   display: block;
   height: 100%;
   width: 100%;
@@ -63,15 +64,62 @@ button {
   object-fit: cover;
 }
 .launcher-agent {
-  animation: agent-float 3.2s ease-in-out infinite;
   background: var(--chat-accent);
   padding: 0.35rem;
 }
 .launcher-agent svg {
+  animation: agent-float 3.2s ease-in-out infinite;
   display: block;
   height: 100%;
   overflow: visible;
+  transform-box: fill-box;
+  transform-origin: center;
   width: 100%;
+}
+.launcher-tooltip {
+  background: var(--chat-paper);
+  border: 1px solid var(--chat-line);
+  border-radius: 0.6rem 0.6rem 0.2rem 0.6rem;
+  box-shadow: 0 0.3rem 1rem rgb(0 0 0 / 12%);
+  color: var(--chat-ink);
+  font-size: 0.75rem;
+  font-style: italic;
+  font-weight: 700;
+  line-height: 1.3;
+  max-width: min(18rem, calc(100vw - var(--chat-launcher-size, 4rem) - 3rem));
+  opacity: 0;
+  padding: 0.55rem 0.7rem;
+  pointer-events: none;
+  position: absolute;
+  right: calc(100% + 0.8rem);
+  text-align: left;
+  top: 50%;
+  transform: translate(0.25rem, -50%);
+  transition:
+    opacity 150ms ease,
+    transform 150ms ease,
+    visibility 150ms ease;
+  visibility: hidden;
+  white-space: normal;
+  width: max-content;
+}
+.launcher-tooltip::after {
+  background: var(--chat-paper);
+  border-right: 1px solid var(--chat-line);
+  border-top: 1px solid var(--chat-line);
+  content: '';
+  height: 0.55rem;
+  position: absolute;
+  right: -0.32rem;
+  top: calc(50% - 0.28rem);
+  transform: rotate(45deg);
+  width: 0.55rem;
+}
+.launcher[aria-expanded='false']:hover .launcher-tooltip,
+.launcher[aria-expanded='false']:focus-visible .launcher-tooltip {
+  opacity: 1;
+  transform: translate(0, -50%);
+  visibility: visible;
 }
 .agent-antenna,
 .agent-smile {
@@ -132,7 +180,7 @@ button {
 
 .panel {
   background: var(--chat-paper);
-  border: 1px solid var(--chat-line);
+  border: 0;
   border-radius: 0.75rem;
   bottom: 4.75rem;
   box-shadow: 0 1.25rem 4rem rgb(0 0 0 / 18%);
@@ -149,10 +197,13 @@ button {
 .panel[hidden] {
   display: none;
 }
+.launcher-agent-button + .panel {
+  bottom: calc(1rem + var(--chat-launcher-size, 4rem) + 0.75rem);
+}
 header {
   align-items: center;
-  background: var(--chat-ink);
-  color: white;
+  background: var(--chat-accent);
+  color: var(--chat-ink);
   display: flex;
   justify-content: space-between;
   padding: 0.9rem 1rem;
@@ -165,7 +216,7 @@ header strong {
   font-size: 0.95rem;
 }
 header span {
-  color: #c8c9c2;
+  color: color-mix(in srgb, var(--chat-ink) 68%, var(--chat-accent));
   font-size: 0.75rem;
 }
 .header-actions {
@@ -177,7 +228,7 @@ header span {
 .close {
   background: transparent;
   border: 0;
-  color: #e8e8e2;
+  color: var(--chat-ink);
   cursor: pointer;
   border-radius: 0.35rem;
   padding: 0.45rem;
@@ -196,8 +247,8 @@ header span {
   min-width: 2.5rem;
 }
 .header-actions button:hover:not(:disabled) {
-  background: rgb(255 255 255 / 12%);
-  color: white;
+  background: rgb(24 25 22 / 10%);
+  color: var(--chat-ink);
 }
 .close:hover:not(:disabled) {
   transform: scale(1.08);
@@ -227,12 +278,13 @@ header span {
 }
 .message.user {
   align-self: flex-end;
-  background: var(--chat-ink);
-  color: white;
+  background: var(--chat-accent);
+  color: var(--chat-ink);
 }
 .message.assistant {
   align-self: flex-start;
-  background: #ecece5;
+  background: transparent;
+  padding-inline: 0.1rem;
 }
 .status {
   color: var(--chat-muted);
@@ -305,6 +357,9 @@ small {
     right: 0;
     top: 0;
     width: 100vw;
+  }
+  .launcher-agent-button + .panel {
+    bottom: 0;
   }
   .launcher[aria-expanded='true'] {
     display: none;

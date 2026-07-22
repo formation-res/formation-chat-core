@@ -73,6 +73,13 @@ To replace the built-in agent with a website-specific animated GIF, WebP, or SVG
 <formation-chat-widget launcher-image="/images/website-agent.webp"></formation-chat-widget>
 ```
 
+The launcher shows `Ceci n'est pas une bot. ☝` in a speech bubble on hover or keyboard focus. Set
+website-specific copy with `launcher-tooltip`, or use an empty value to disable the bubble:
+
+```html
+<formation-chat-widget launcher-tooltip="Ask MailFront anything"></formation-chat-widget>
+```
+
 The image is decorative because the enclosing button always has an accessible `Open chat` label.
 Its default size can be adjusted with `--chat-launcher-size` on the custom element.
 

@@ -31,6 +31,9 @@ class FormationChatWidget extends HTMLElement {
     this.chat = this.loadChat();
     const launcherType = this.getAttribute('launcher-type') === 'button' ? 'button' : 'agent';
     const launcherImage = this.getAttribute('launcher-image');
+    const launcherTooltip = (
+      this.getAttribute('launcher-tooltip') ?? "Ceci n'est pas une bot. ☝"
+    ).trim();
     const launcherClass =
       launcherType === 'button' ? 'launcher-text-button' : 'launcher-agent-button';
     const launcherContent =
@@ -39,10 +42,15 @@ class FormationChatWidget extends HTMLElement {
         : launcherImage
           ? `<img class="launcher-image" src="${escapeAttribute(launcherImage)}" alt="">`
           : defaultAgentLauncher();
+    const launcherTooltipMarkup = launcherTooltip
+      ? `<span class="launcher-tooltip" id="launcher-tooltip" role="tooltip">${escapeHtml(launcherTooltip)}</span>`
+      : '';
+    const launcherDescription = launcherTooltip ? ' aria-describedby="launcher-tooltip"' : '';
     this.root.innerHTML = `
       <style>${styles}</style>
-      <button class="launcher ${launcherClass}" type="button" aria-expanded="false" aria-label="Open chat">
+      <button class="launcher ${launcherClass}" type="button" aria-expanded="false" aria-label="Open chat"${launcherDescription}>
         ${launcherContent}
+        ${launcherTooltipMarkup}
       </button>
       <section class="panel" aria-label="${escapeAttribute(this.getAttribute('title') ?? 'Ask us')}" hidden>
         <header>
@@ -253,13 +261,13 @@ function newChat(): StoredChat {
 function defaultAgentLauncher(): string {
   return `<span class="launcher-agent" aria-hidden="true">
     <svg viewBox="0 0 64 64" focusable="false">
-      <path class="agent-antenna" d="M32 16V10"></path>
+      <path class="agent-antenna" d="M32 17V10"></path>
       <circle class="agent-signal" cx="32" cy="7" r="3"></circle>
-      <rect class="agent-head" x="12" y="16" width="40" height="36" rx="15"></rect>
-      <path class="agent-face" d="M20 31c5-7 19-7 24 0v7c-5 7-19 7-24 0z"></path>
-      <circle class="agent-eye agent-eye-left" cx="27" cy="34" r="2.5"></circle>
-      <circle class="agent-eye agent-eye-right" cx="37" cy="34" r="2.5"></circle>
-      <path class="agent-smile" d="M27 41c3 2 7 2 10 0"></path>
+      <rect class="agent-head" x="13.5" y="17" width="37" height="34" rx="14"></rect>
+      <path class="agent-face" d="M18.5 29.5c6-6.5 21-6.5 27 0v9c-6 8-21 8-27 0z"></path>
+      <circle class="agent-eye agent-eye-left" cx="26.5" cy="34" r="2.4"></circle>
+      <circle class="agent-eye agent-eye-right" cx="37.5" cy="34" r="2.4"></circle>
+      <path class="agent-smile" d="M27 40c3 1.6 7 1.6 10 0"></path>
     </svg>
   </span>`;
 }

@@ -22,23 +22,70 @@ try {
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
   const widget = page.locator('formation-chat-widget').first();
   assert.equal(await widget.locator('.launcher-agent').count(), 1);
-  assert.equal((await widget.locator('.launcher').textContent())?.trim(), '');
+  const launcherGeometry = await widget.locator('.launcher-agent').evaluate((agent) => {
+    const svg = agent.querySelector('svg');
+    const head = agent.querySelector('.agent-head');
+    const face = agent.querySelector('.agent-face');
+    const smile = agent.querySelector('.agent-smile');
+    if (!svg || !head || !face || !smile) throw new Error('Agent launcher artwork is incomplete.');
+    const headBox = head.getBBox();
+    const faceBox = face.getBBox();
+    const smileBox = smile.getBBox();
+    return {
+      backgroundAnimation: globalThis.getComputedStyle(agent).animationName,
+      robotAnimation: globalThis.getComputedStyle(svg).animationName,
+      shellThickness: (headBox.width - faceBox.width) / 2,
+      smileClearance: faceBox.y + faceBox.height - (smileBox.y + smileBox.height),
+    };
+  });
+  assert.equal(launcherGeometry.backgroundAnimation, 'none');
+  assert.equal(launcherGeometry.robotAnimation, 'agent-float');
+  assert.ok(launcherGeometry.shellThickness <= 5);
+  assert.ok(launcherGeometry.smileClearance >= 2);
+  const launcher = widget.locator('.launcher');
+  const tooltip = widget.locator('.launcher-tooltip');
+  assert.equal(await tooltip.textContent(), "Ceci n'est pas une bot. ☝");
+  assert.equal(
+    await launcher.evaluate((element) => globalThis.getComputedStyle(element).backgroundColor),
+    await widget
+      .locator('.launcher-agent')
+      .evaluate((element) => globalThis.getComputedStyle(element).backgroundColor),
+  );
+  await launcher.hover();
+  await page.waitForTimeout(200);
+  assert.equal(
+    await tooltip.evaluate((element) => globalThis.getComputedStyle(element).opacity),
+    '1',
+  );
+  const launcherBox = await launcher.boundingBox();
+  const tooltipBox = await tooltip.boundingBox();
+  if (!launcherBox || !tooltipBox) throw new Error('Launcher tooltip geometry is unavailable.');
+  assert.ok(tooltipBox.x + tooltipBox.width < launcherBox.x);
+  await page.screenshot({
+    path: join(tmpdir(), 'formation-direct-widget-tooltip.png'),
+    fullPage: true,
+  });
 
   await page.evaluate(() => {
     const launchers = globalThis.document.createElement('div');
     launchers.id = 'custom-launcher-fixtures';
     launchers.innerHTML = `
-      <formation-chat-widget launcher-type="button" launcher-text="Ask us"></formation-chat-widget>
+      <formation-chat-widget launcher-type="button" launcher-text="Ask us" launcher-tooltip="Custom prompt"></formation-chat-widget>
       <formation-chat-widget launcher-image="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="></formation-chat-widget>`;
     globalThis.document.body.append(launchers);
   });
   const textLauncher = page.locator('formation-chat-widget[launcher-type="button"]');
   const imageLauncher = page.locator('formation-chat-widget[launcher-image]');
   assert.equal(await textLauncher.locator('.launcher-text').textContent(), 'Ask us');
+  assert.equal(await textLauncher.locator('.launcher-tooltip').textContent(), 'Custom prompt');
   assert.equal(await imageLauncher.locator('.launcher-image').count(), 1);
   await page.locator('#custom-launcher-fixtures').evaluate((element) => element.remove());
 
   await page.getByRole('button', { name: 'Open chat' }).click();
+  const panelBox = await widget.locator('.panel').boundingBox();
+  const openLauncherBox = await launcher.boundingBox();
+  if (!panelBox || !openLauncherBox) throw new Error('Open widget geometry is unavailable.');
+  assert.ok(panelBox.y + panelBox.height + 8 <= openLauncherBox.y);
   const clearButton = widget.locator('.clear');
   const closeButton = widget.locator('.close');
   const clearFontSize = Number.parseFloat(

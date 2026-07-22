@@ -27,11 +27,21 @@ describe('embeddable widget asset', () => {
 
     expect(source).toContain("this.getAttribute('launcher-type') === 'button'");
     expect(source).toContain("this.getAttribute('launcher-image')");
+    expect(source).toContain("this.getAttribute('launcher-tooltip')");
+    expect(source).toContain("Ceci n'est pas une bot. ☝");
     expect(source).toContain('class="launcher-agent"');
     expect(source).toContain("this.getAttribute('launcher-text') ?? 'Chat'");
     expect(styles).toContain('.launcher-agent-button');
     expect(styles).toContain('.launcher-text-button');
     expect(styles).toMatch(/\.launcher \{[\s\S]*?border: 0;/);
+    expect(styles).not.toMatch(/\.launcher-agent \{[^}]*animation:/);
+    expect(styles).toMatch(/\.launcher-agent svg \{[^}]*animation: agent-float/);
+    expect(styles).toContain('.launcher-agent-button + .panel');
+    expect(styles).toContain('.launcher-tooltip');
+    expect(styles).toMatch(/header \{[\s\S]*?background: var\(--chat-accent\);/);
+    expect(styles).toMatch(/\.message\.user \{[\s\S]*?background: var\(--chat-accent\);/);
+    expect(styles).toMatch(/\.message\.assistant \{[\s\S]*?background: transparent;/);
+    expect(styles).toMatch(/\.panel \{[\s\S]*?border: 0;/);
     expect(styles).toContain('.header-actions button:hover:not(:disabled)');
     expect(styles).toContain('.close {');
     expect(styles).toContain('font-size: 1.75rem;');
