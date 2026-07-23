@@ -86,6 +86,7 @@ try {
     );
     await dashboard.getByLabel('Admin token').fill(token);
     await dashboard.getByRole('button', { name: 'Open dashboard' }).click();
+    await dashboard.getByText('data-widget-key="main-chat"').waitFor();
     await dashboard.getByRole('heading', { name: 'Conversations' }).waitFor();
     await dashboard.locator('[data-conversation-id]').first().click();
     await dashboard.getByText('How does this work?').waitFor();

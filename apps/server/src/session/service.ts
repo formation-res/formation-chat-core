@@ -13,10 +13,7 @@ import { SessionTokenService } from './token.js';
 export class SessionBootstrapError extends Error {
   constructor(
     readonly code:
-      | 'SITE_NOT_FOUND'
-      | 'ORIGIN_NOT_ALLOWED'
-      | 'WIDGET_NOT_FOUND'
-      | 'AGENT_ALIAS_NOT_ALLOWED',
+      'SITE_NOT_FOUND' | 'ORIGIN_NOT_ALLOWED' | 'WIDGET_NOT_FOUND' | 'AGENT_ALIAS_NOT_ALLOWED',
     readonly statusCode: 403 | 404,
   ) {
     super(messageForBootstrapError(code));

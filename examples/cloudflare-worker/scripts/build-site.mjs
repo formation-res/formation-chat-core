@@ -23,6 +23,7 @@ await build({
   target: ['es2022'],
 });
 await copyFile(join(exampleDirectory, 'site/index.html'), join(outputDirectory, 'index.html'));
+await copyFile(join(exampleDirectory, 'site/favicon.svg'), join(outputDirectory, 'favicon.svg'));
 await copyFile(
   join(exampleDirectory, 'site/dashboard.html'),
   join(outputDirectory, 'dashboard.html'),

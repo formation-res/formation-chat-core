@@ -12,7 +12,10 @@ import type { DatabaseSchema } from '../database/types.js';
 import { decodeConversationCursor, encodeConversationCursor } from './cursor.js';
 
 type QueryDatabase = Kysely<DatabaseSchema> | Transaction<DatabaseSchema>;
-type ConversationScope = Pick<SessionTokenClaims, 'tenantId' | 'siteId' | 'agentRef' | 'principalId'>;
+type ConversationScope = Pick<
+  SessionTokenClaims,
+  'tenantId' | 'siteId' | 'agentRef' | 'principalId'
+>;
 
 export class ConversationApiError extends Error {
   constructor(

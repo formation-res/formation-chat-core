@@ -1,7 +1,11 @@
 /*
-  Content-Security-Policy: default-src 'self'; connect-src 'self'; img-src 'self'; script-src 'self'; style-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'self'; connect-src 'self'; img-src 'self'; script-src 'self'; style-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'
   Permissions-Policy: camera=(), geolocation=(), microphone=(), payment=()
   Referrer-Policy: no-referrer
   Strict-Transport-Security: max-age=31536000
   X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+
+/dashboard.html
+  Content-Security-Policy: default-src 'self'; connect-src 'self'; img-src 'self'; script-src 'self'; style-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'
   X-Frame-Options: DENY

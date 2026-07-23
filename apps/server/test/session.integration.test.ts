@@ -149,9 +149,7 @@ describe('POST /v1/sessions', () => {
       siteId: 'site-a',
       agentRef: 'agent-sales',
     });
-    expect((await bootstrap({ siteKey: 'site-key-a', widgetKey: 'missing' })).statusCode).toBe(
-      404,
-    );
+    expect((await bootstrap({ siteKey: 'site-key-a', widgetKey: 'missing' })).statusCode).toBe(404);
     expect(
       (
         await bootstrap({

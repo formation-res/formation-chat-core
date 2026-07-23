@@ -9,10 +9,11 @@ Worker code.
 
 The gateway:
 
-- resolves the integration site from the request hostname and injects its trusted `siteKey` into
-  session bootstrap requests;
+- resolves the integration site from the request hostname and injects its trusted `siteKey` plus
+  optional public widget alias into session bootstrap requests;
 - serves `/widget.js` and public `/widget/config` responses for configured widget keys;
-- resolves public widget `agent` aliases to trusted site keys before bootstrap reaches the core;
+- validates public widget `agent` aliases for the hostname and widget before bootstrap reaches the
+  core;
 - requires an exact configured `Origin`, or same-origin Fetch Metadata when a browser GET omits it,
   and returns the trusted origin rather than `*` in CORS responses;
 - rejects identity-exchange paths and methods outside the public route allowlist;
@@ -38,9 +39,10 @@ Edit non-secret values in `wrangler.jsonc`:
 - `CHAT_SITES` is a JSON object keyed by lowercase public hostname. Each entry contains a trusted
   `siteKey`, one or more exact HTTPS `allowedOrigins`, optional exact HTTPS `dashboardOrigins`, and
   optional widget configuration.
-- `widget.agentAliases` maps public aliases such as `support` to trusted site keys. Browser embeds
-  may pass an alias, but never raw connector URLs, Haystack tenant keys, unrestricted agent slugs,
-  or credentials.
+- `widget.agentAliases` maps public aliases such as `support` to labels for this site. Browser
+  embeds may pass an alias; Chat Core validates it against the widget registry and resolves the
+  trusted `agentRef`. Browser embeds never pass raw connector URLs, Haystack tenant keys,
+  unrestricted agent slugs, or credentials.
 
 Declare the production credential interactively; never put its value in the config or shell
 history:
@@ -60,6 +62,7 @@ From the repository root:
 ```sh
 npm run build --workspace @formation-chat-core/cloudflare-worker-example
 npm test --workspace @formation-chat-core/cloudflare-worker-example
+npm run test:browser --workspace @formation-chat-core/cloudflare-worker-example
 npm run test:runtime --workspace @formation-chat-core/cloudflare-worker-example
 npm run typecheck --workspace @formation-chat-core/cloudflare-worker-example
 npx wrangler deploy --dry-run --cwd examples/cloudflare-worker
