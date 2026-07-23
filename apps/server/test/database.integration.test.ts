@@ -2,7 +2,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 
 import { createDatabase } from '../src/database/database.js';
 import { migrateDatabase } from '../src/database/migrate.js';
-import { provisionWidgetRegistry } from '../src/provisioning/widget.js';
+import { exportWorkerChatSites, provisionWidgetRegistry } from '../src/provisioning/widget.js';
 import { DatabaseAuditSink } from '../src/security/audit.js';
 
 const databaseUrl = process.env.DATABASE_URL;
@@ -162,6 +162,21 @@ describe('PostgreSQL persistence base', () => {
       display_name: 'Updated chat',
       theme: 'blue',
       agent_aliases: [{ alias: 'support', label: 'Support', agentRef: 'support-agent' }],
+    });
+    await expect(exportWorkerChatSites(database)).resolves.toEqual({
+      'widget.example.test': {
+        siteKey: 'site-widget-key',
+        allowedOrigins: ['https://widget.example.test'],
+        widget: {
+          widgetKey: 'main-chat',
+          version: '2026-07-23',
+          defaultAgent: 'support',
+          theme: 'blue',
+          launcher: 'agent',
+          placement: 'bottom-right',
+          agentAliases: { support: { siteKey: 'site-widget-key', label: 'Support' } },
+        },
+      },
     });
   });
 

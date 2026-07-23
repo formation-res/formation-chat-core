@@ -9,6 +9,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "lint": "eslint src test scripts --no-error-on-unmatched-pattern",
+    "export:worker-sites": "npm run build && node scripts/export-worker-sites.mjs",
     "pretest": "npm run build --workspace @formation-chat-core/haystack-connector",
     "provision:widget": "npm run build && node scripts/provision-widget.mjs",
     "start": "node dist/index.js",

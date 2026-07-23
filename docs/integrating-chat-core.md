@@ -136,6 +136,18 @@ Example `widget.json`:
 The provisioning config intentionally excludes connector URLs, Haystack tenant keys, unrestricted
 agent slugs, provider settings, and credentials.
 
+After provisioning, generate the Worker site map from the registry instead of hand-editing a large
+JSON value:
+
+```sh
+DATABASE_URL='postgresql://...' npm run export:worker-sites --workspace @formation-chat-core/server
+```
+
+The command prints the `CHAT_SITES` JSON object expected by the shared Worker. The current exporter
+only emits aliases that route to the site's default `agentRef`, because bootstrap still resolves the
+trusted agent from the site key. Widgets with public aliases for different agents need a later
+per-alias site-key or bootstrap-routing slice.
+
 ### 4. Add the shared gateway
 
 Expose only these public routes:

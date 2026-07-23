@@ -51,6 +51,13 @@ export class ProvisioningConfigError extends Error {
   }
 }
 
+export class WorkerSiteExportError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'WorkerSiteExportError';
+  }
+}
+
 export async function provisionWidgetRegistry(
   database: Database,
   input: unknown,
@@ -118,6 +125,84 @@ export async function provisionWidgetRegistry(
       .execute();
   });
   return config;
+}
+
+export interface WorkerChatSites {
+  [hostname: string]: {
+    siteKey: string;
+    allowedOrigins: string[];
+    widget: {
+      widgetKey: string;
+      version: string;
+      defaultAgent: string;
+      theme: string;
+      launcher: string;
+      placement: string;
+      agentAliases: Record<string, { siteKey: string; label: string }>;
+    };
+  };
+}
+
+export async function exportWorkerChatSites(database: Database): Promise<WorkerChatSites> {
+  const rows = await database
+    .selectFrom('site_widgets as widget')
+    .innerJoin('sites as site', (join) =>
+      join
+        .onRef('site.tenant_id', '=', 'widget.tenant_id')
+        .onRef('site.site_id', '=', 'widget.site_id'),
+    )
+    .select([
+      'site.site_key',
+      'site.allowed_origins',
+      'site.agent_ref',
+      'widget.widget_key',
+      'widget.version',
+      'widget.theme',
+      'widget.launcher',
+      'widget.placement',
+      'widget.default_agent_alias',
+      'widget.agent_aliases',
+    ])
+    .orderBy('site.site_id')
+    .orderBy('widget.widget_id')
+    .execute();
+  const sites: WorkerChatSites = {};
+  for (const row of rows) {
+    const allowedOrigins = normalizeStringArray(row.allowed_origins);
+    const aliases = normalizeAgentAliases(row.agent_aliases);
+    const workerAliases: Record<string, { siteKey: string; label: string }> = {};
+    for (const alias of aliases) {
+      if (alias.agentRef !== row.agent_ref) {
+        throw new WorkerSiteExportError(
+          `Widget ${row.widget_key} alias ${alias.alias} requires agentRef ${alias.agentRef}; current bootstrap can only export aliases for ${row.agent_ref}.`,
+        );
+      }
+      workerAliases[alias.alias] = { siteKey: row.site_key, label: alias.label };
+    }
+    if (!workerAliases[row.default_agent_alias]) {
+      throw new WorkerSiteExportError(`Widget ${row.widget_key} default alias is not configured.`);
+    }
+    for (const origin of allowedOrigins) {
+      const hostname = hostnameForOrigin(origin);
+      if (sites[hostname]) {
+        throw new WorkerSiteExportError(`Multiple widgets target hostname ${hostname}.`);
+      }
+      sites[hostname] = {
+        siteKey: row.site_key,
+        allowedOrigins,
+        widget: {
+          widgetKey: row.widget_key,
+          version: row.version,
+          defaultAgent: row.default_agent_alias,
+          theme: row.theme,
+          launcher: row.launcher,
+          placement: row.placement,
+          agentAliases: workerAliases,
+        },
+      };
+    }
+  }
+  return sites;
 }
 
 export function parseWidgetProvisioningConfig(input: unknown): WidgetProvisioningConfig {
@@ -239,6 +324,27 @@ function exactHttpsOrigin(input: unknown, label: string): string {
     if (error instanceof ProvisioningConfigError) throw error;
     throw new ProvisioningConfigError(`${label} must be an exact HTTPS origin.`);
   }
+}
+
+function hostnameForOrigin(origin: string): string {
+  try {
+    const url = new URL(origin);
+    if (url.protocol !== 'https:' || url.origin !== origin) {
+      throw new WorkerSiteExportError(`Invalid origin ${origin}.`);
+    }
+    return url.hostname.toLowerCase();
+  } catch (error) {
+    if (error instanceof WorkerSiteExportError) throw error;
+    throw new WorkerSiteExportError(`Invalid origin ${origin}.`);
+  }
+}
+
+function normalizeStringArray(value: string[] | string): string[] {
+  return Array.isArray(value) ? value : (JSON.parse(value) as string[]);
+}
+
+function normalizeAgentAliases(value: SiteWidgetAgentAlias[] | string): SiteWidgetAgentAlias[] {
+  return Array.isArray(value) ? value : (JSON.parse(value) as SiteWidgetAgentAlias[]);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
