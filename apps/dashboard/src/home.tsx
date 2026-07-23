@@ -62,8 +62,9 @@ export function DashboardHome({
 }
 
 function SiteCard({ site, onSelect }: { site: AdminSiteOverview; onSelect(): void }) {
+  const firstWidget = site.widgets[0];
   return (
-    <button className="tenant-card" onClick={onSelect}>
+    <article className="tenant-card">
       <span className="tenant-card-icon">
         <Icon name="activity" />
       </span>
@@ -87,6 +88,7 @@ function SiteCard({ site, onSelect }: { site: AdminSiteOverview; onSelect(): voi
           ))}
         </span>
       ) : null}
+      {firstWidget ? <code className="tenant-card-embed">{embedSnippet(firstWidget)}</code> : null}
       <span className="tenant-card-footer">
         <span>{site.agentRef}</span>
         {site.recentActivityAt ? (
@@ -95,8 +97,17 @@ function SiteCard({ site, onSelect }: { site: AdminSiteOverview; onSelect(): voi
           <span>No recent activity</span>
         )}
       </span>
-    </button>
+      <button className="button button-secondary tenant-card-open" onClick={onSelect}>
+        Open {site.displayName}
+      </button>
+    </article>
   );
+}
+
+function embedSnippet(widget: AdminSiteOverview['widgets'][number]): string {
+  const scriptUrl = new URL('/widget.js', window.location.origin).toString();
+  const agent = widget.defaultAgentAlias;
+  return `<script src="${scriptUrl}" data-widget-key="${widget.widgetKey}" data-agent="${agent}" data-theme="${widget.theme}" data-launcher="${widget.launcher}" async></script>`;
 }
 
 function Stat({

@@ -51,6 +51,8 @@ describe('operations dashboard', () => {
     expect(container?.textContent).toContain('Operations');
     expect(container?.textContent).toContain('Tenant One');
     expect(container?.textContent).toContain('Main website');
+    expect(container?.textContent).toContain('data-widget-key="main-chat"');
+    expect(container?.textContent).toContain('data-agent="support"');
     expect(container?.querySelector('input[name="token"]')).toBeNull();
   });
 
@@ -156,9 +158,9 @@ async function settle(): Promise<void> {
 
 async function selectMainWebsite(): Promise<void> {
   await waitForText('Main website');
-  const button = [...(container?.querySelectorAll<HTMLButtonElement>('.tenant-card') ?? [])].find(
-    (candidate) => candidate.textContent?.includes('Main website'),
-  );
+  const button = [
+    ...(container?.querySelectorAll<HTMLButtonElement>('.tenant-card-open') ?? []),
+  ].find((candidate) => candidate.textContent?.includes('Main website'));
   if (!button) throw new Error('Main website card was not rendered.');
   await act(async () => {
     button.dispatchEvent(new MouseEvent('click', { bubbles: true }));

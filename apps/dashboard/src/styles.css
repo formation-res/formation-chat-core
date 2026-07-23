@@ -976,17 +976,14 @@ select:focus {
   border-radius: 0.65rem;
   color: inherit;
   background: var(--surface);
-  cursor: pointer;
   text-align: left;
   transition:
     background 150ms ease,
-    border-color 150ms ease,
-    transform 150ms ease;
+    border-color 150ms ease;
 }
 .tenant-card:hover {
   border-color: var(--border-strong);
   background: var(--surface-raised);
-  transform: translateY(-1px);
 }
 .tenant-card-icon {
   width: 2.4rem;
@@ -1002,6 +999,7 @@ select:focus {
 }
 .tenant-card-main,
 .tenant-card-widgets,
+.tenant-card-embed,
 .tenant-card-footer {
   min-width: 0;
 }
@@ -1040,6 +1038,19 @@ select:focus {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.tenant-card-embed {
+  grid-column: 1 / -1;
+  display: block;
+  overflow-x: auto;
+  padding: 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  color: var(--text-muted);
+  background: var(--surface-muted);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  white-space: nowrap;
+}
 .tenant-card-footer {
   grid-column: 1 / -1;
   display: flex;
@@ -1053,6 +1064,10 @@ select:focus {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.tenant-card-open {
+  grid-column: 1 / -1;
+  justify-self: start;
 }
 .expandable-list {
   border-top: 1px solid var(--border);

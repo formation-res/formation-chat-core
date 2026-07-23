@@ -73,7 +73,8 @@ async function runBrowserSmoke() {
     await page.getByLabel('Chat Core URL').fill(baseUrl);
     await page.getByLabel('Admin token').fill('browser-admin-token');
     await page.getByRole('button', { name: 'Open dashboard' }).click();
-    await page.getByRole('button', { name: /Formation website/ }).click();
+    await page.getByText('data-widget-key="main-chat"').waitFor();
+    await page.getByRole('button', { name: /Open Formation website/ }).click();
     await page
       .getByText('Support agent conversation')
       .waitFor({ timeout: 5_000 })
