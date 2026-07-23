@@ -222,12 +222,14 @@ export async function handleGatewayRequest(
         redirect: 'manual',
       }),
     );
-  } catch {
+  } catch (error) {
     console.error(
       JSON.stringify({
         message: 'chat core request failed',
         correlationId,
         path: requestUrl.pathname,
+        upstreamHost: configuration.coreBaseUrl.hostname,
+        error: errorDetails(error),
       }),
     );
     return errorResponse(
@@ -634,6 +636,16 @@ function errorResponse(
 function addCorsHeaders(headers: Headers, origin: string): void {
   headers.set('Access-Control-Allow-Origin', origin);
   headers.append('Vary', 'Origin');
+}
+
+function errorDetails(error: unknown): { name: string; message: string } {
+  if (error instanceof Error) {
+    return {
+      name: error.name,
+      message: error.message.slice(0, 300),
+    };
+  }
+  return { name: typeof error, message: String(error).slice(0, 300) };
 }
 
 function isJsonContentType(value: string | null): boolean {
