@@ -202,7 +202,7 @@ class FormationChatWidget extends HTMLElement {
     const transport = createHttpChatTransport({
       baseUrl: config.transportBaseUrl,
       fetch: (input, init) => {
-        const url = new URL(typeof input === 'string' ? input : input.url);
+        const url = new URL(input instanceof Request ? input.url : input.toString());
         if (url.pathname === '/v1/sessions') {
           url.searchParams.set('widgetKey', config.widgetKey);
           url.searchParams.set('agent', config.agent);
