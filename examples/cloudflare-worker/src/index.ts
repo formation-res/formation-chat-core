@@ -96,7 +96,7 @@ export interface GatewayDependencies {
 export async function handleGatewayRequest(
   request: Request,
   env: GatewayEnv,
-  dependencies: GatewayDependencies = { fetch: globalThis.fetch },
+  dependencies: GatewayDependencies = { fetch: (upstreamRequest) => fetch(upstreamRequest) },
 ): Promise<Response> {
   const correlationId = crypto.randomUUID();
   const requestUrl = new URL(request.url);
