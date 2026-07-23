@@ -8,8 +8,9 @@
   "main": "./dist/index.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "lint": "eslint src test --no-error-on-unmatched-pattern",
+    "lint": "eslint src test scripts --no-error-on-unmatched-pattern",
     "pretest": "npm run build --workspace @formation-chat-core/haystack-connector",
+    "provision:widget": "npm run build && node scripts/provision-widget.mjs",
     "start": "node dist/index.js",
     "test": "vitest run --config test/vitest.config.ts",
     "test:integration": "vitest run --config test/vitest.integration.config.ts",

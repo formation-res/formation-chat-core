@@ -95,10 +95,46 @@ Use parameterized SQL in a real provisioning script. Treat tenant and site chang
 actions. Do not expose them as public browser endpoints.
 
 For the shared-widget architecture, model the embeddable widget as an operator-controlled binding
-on top of the site. Until a dedicated widget table exists, the site's `siteKey`, `allowedOrigins`,
-and `agentRef` are the trusted binding. A public embed may include style, widget-version, and
-placement values. If it includes an `agent` value, that value is only a public alias that must be
-allowed for the widget's hostname and resolved server side to the trusted `agentRef`.
+on top of the site. The site's `siteKey`, `allowedOrigins`, and default `agentRef` remain the
+trusted bootstrap binding, while the widget registry stores public widget keys, style defaults, and
+allowed public agent aliases. A public embed may include style, widget-version, and placement
+values. If it includes an `agent` value, that value is only a public alias that must be allowed for
+the widget's hostname and resolved server side to the trusted `agentRef`.
+
+The server package also provides an idempotent provisioning command for the first-class widget
+registry:
+
+```sh
+DATABASE_URL='postgresql://...' npm run provision:widget --workspace @formation-chat-core/server -- ./widget.json
+```
+
+Example `widget.json`:
+
+```json
+{
+  "tenant": { "tenantId": "example", "displayName": "Example" },
+  "site": {
+    "siteId": "example-website",
+    "siteKey": "example-public-chat",
+    "displayName": "Example website",
+    "allowedOrigins": ["https://www.example.com"]
+  },
+  "widget": {
+    "widgetId": "example-main-widget",
+    "widgetKey": "main-chat",
+    "displayName": "Main chat",
+    "version": "2026-07-23",
+    "theme": "earth",
+    "launcher": "agent",
+    "placement": "bottom-right",
+    "defaultAgentAlias": "support",
+    "agentAliases": [{ "alias": "support", "label": "Support", "agentRef": "support" }]
+  }
+}
+```
+
+The provisioning config intentionally excludes connector URLs, Haystack tenant keys, unrestricted
+agent slugs, provider settings, and credentials.
 
 ### 4. Add the shared gateway
 

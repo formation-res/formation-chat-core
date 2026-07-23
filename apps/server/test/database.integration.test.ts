@@ -2,6 +2,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 
 import { createDatabase } from '../src/database/database.js';
 import { migrateDatabase } from '../src/database/migrate.js';
+import { provisionWidgetRegistry } from '../src/provisioning/widget.js';
 import { DatabaseAuditSink } from '../src/security/audit.js';
 
 const databaseUrl = process.env.DATABASE_URL;
@@ -97,6 +98,70 @@ describe('PostgreSQL persistence base', () => {
     expect(site).toEqual({
       tenant_id: 'tenant-test',
       allowed_origins: ['https://example.test'],
+    });
+  });
+
+  it('provisions a site widget registry idempotently', async () => {
+    await database.deleteFrom('audit_events').execute();
+    await database.deleteFrom('conversation_events').execute();
+    await database.deleteFrom('command_idempotency').execute();
+    await database.deleteFrom('agent_runs').execute();
+    await database.deleteFrom('messages').execute();
+    await database.deleteFrom('conversation_participants').execute();
+    await database.deleteFrom('conversations').execute();
+    await database.deleteFrom('session_bootstrap_idempotency').execute();
+    await database.deleteFrom('browser_sessions').execute();
+    await database.deleteFrom('principals').execute();
+    await database.deleteFrom('site_widgets').execute();
+    await database.deleteFrom('sites').execute();
+    await database.deleteFrom('tenants').execute();
+
+    const config = {
+      tenant: { tenantId: 'tenant-widget', displayName: 'Widget tenant' },
+      site: {
+        siteId: 'site-widget',
+        siteKey: 'site-widget-key',
+        displayName: 'Widget site',
+        allowedOrigins: ['https://widget.example.test'],
+      },
+      widget: {
+        widgetId: 'widget-main',
+        widgetKey: 'main-chat',
+        displayName: 'Main chat',
+        version: '2026-07-23',
+        theme: 'earth',
+        launcher: 'agent',
+        placement: 'bottom-right',
+        defaultAgentAlias: 'support',
+        agentAliases: [{ alias: 'support', label: 'Support', agentRef: 'support-agent' }],
+      },
+    };
+
+    await provisionWidgetRegistry(database, config);
+    await provisionWidgetRegistry(database, {
+      ...config,
+      widget: { ...config.widget, displayName: 'Updated chat', theme: 'blue' },
+    });
+
+    const site = await database
+      .selectFrom('sites')
+      .select(['agent_ref', 'allowed_origins'])
+      .where('site_key', '=', 'site-widget-key')
+      .executeTakeFirstOrThrow();
+    const widget = await database
+      .selectFrom('site_widgets')
+      .select(['display_name', 'theme', 'agent_aliases'])
+      .where('widget_key', '=', 'main-chat')
+      .executeTakeFirstOrThrow();
+
+    expect(site).toEqual({
+      agent_ref: 'support-agent',
+      allowed_origins: ['https://widget.example.test'],
+    });
+    expect(widget).toEqual({
+      display_name: 'Updated chat',
+      theme: 'blue',
+      agent_aliases: [{ alias: 'support', label: 'Support', agentRef: 'support-agent' }],
     });
   });
 
