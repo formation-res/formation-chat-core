@@ -691,11 +691,18 @@ const WIDGET_SCRIPT = `(() => {
       launcher.dataset.theme = config.theme;
       launcher.dataset.launcher = config.launcher;
       launcher.textContent = config.agentLabel || 'Chat';
+      launcher.setAttribute('aria-expanded', 'false');
       Object.assign(launcher.style, {
         position: 'fixed',
-        right: '1rem',
-        bottom: '1rem',
         zIndex: '2147483647',
+        border: '0',
+        borderRadius: config.launcher === 'text' ? '999px' : '12px',
+        padding: config.launcher === 'text' ? '0.75rem 1rem' : '0.8rem 1rem',
+        font: '600 0.95rem system-ui, sans-serif',
+        color: config.theme === 'dark' ? '#f5f3eb' : '#163126',
+        background: config.theme === 'dark' ? '#163126' : '#efe1bb',
+        boxShadow: '0 12px 30px rgba(0, 0, 0, 0.18)',
+        cursor: 'pointer',
       });
       const frame = document.createElement('iframe');
       frame.title = config.agentLabel ? config.agentLabel + ' chat' : 'Chat';
@@ -704,16 +711,17 @@ const WIDGET_SCRIPT = `(() => {
       frame.dataset.formationChatWidgetFrame = config.widgetKey;
       Object.assign(frame.style, {
         position: 'fixed',
-        right: '1rem',
-        bottom: '4.5rem',
         width: 'min(24rem, calc(100vw - 2rem))',
         height: 'min(40rem, calc(100vh - 6rem))',
         border: '0',
         borderRadius: '12px',
         zIndex: '2147483647',
       });
+      applyPlacement(launcher, config.placement, '1rem');
+      applyPlacement(frame, config.placement, '4.5rem');
       launcher.addEventListener('click', () => {
         frame.hidden = !frame.hidden;
+        launcher.setAttribute('aria-expanded', String(!frame.hidden));
         window.dispatchEvent(new CustomEvent('formation-chat-widget-open', { detail: config }));
       });
       document.body.appendChild(frame);
@@ -726,4 +734,12 @@ const WIDGET_SCRIPT = `(() => {
       window.dispatchEvent(new CustomEvent('formation-chat-widget-error'));
       throw error;
     });
+
+  function applyPlacement(element, placement, bottom) {
+    element.style.bottom = bottom;
+    element.style.left = '';
+    element.style.right = '';
+    if (placement === 'bottom-left') element.style.left = '1rem';
+    else element.style.right = '1rem';
+  }
 })();`;

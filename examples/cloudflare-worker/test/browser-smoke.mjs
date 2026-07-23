@@ -1,4 +1,4 @@
-/* global Headers, Request, Response, URL */
+/* global Headers, Request, Response, URL, URLSearchParams */
 
 import assert from 'node:assert/strict';
 import { Buffer } from 'node:buffer';
@@ -115,8 +115,12 @@ try {
 
   browser = await chromium.launch({ executablePath, headless: true });
   const context = await browser.newContext({ ignoreHTTPSErrors: true });
-  await exerciseAlias(context, 'support', 'Support');
-  await exerciseAlias(context, 'sales', 'Sales');
+  await exerciseAlias(context, 'support', 'Support', { placement: 'bottom-right' });
+  await exerciseAlias(context, 'sales', 'Sales', {
+    launcher: 'text',
+    placement: 'bottom-left',
+    theme: 'dark',
+  });
 
   const sessionAliases = requests
     .filter(({ path }) => path === '/v1/sessions')
@@ -141,7 +145,7 @@ try {
   await new Promise((resolve) => server.close(resolve));
 }
 
-async function exerciseAlias(context, agent, label) {
+async function exerciseAlias(context, agent, label, options = {}) {
   const page = await context.newPage();
   await page.setViewportSize({ width: 1024, height: 768 });
   const problems = [];
@@ -157,8 +161,15 @@ async function exerciseAlias(context, agent, label) {
       problems.push(`${response.status()} ${new URL(response.url()).pathname}`);
     }
   });
-  await page.goto(`${baseUrl}/host?agent=${agent}`, { waitUntil: 'networkidle' });
-  await page.getByRole('button', { name: label }).click();
+  const search = new URLSearchParams({ agent, ...options });
+  await page.goto(`${baseUrl}/host?${search}`, { waitUntil: 'networkidle' });
+  const launcher = page.getByRole('button', { name: label });
+  await launcher.waitFor();
+  assert.equal(await launcher.getAttribute('data-launcher'), options.launcher ?? 'agent');
+  assert.equal(await launcher.getAttribute('data-theme'), options.theme ?? 'earth');
+  await assertPlacement(launcher, options.placement ?? 'bottom-right');
+  await launcher.click();
+  assert.equal(await launcher.getAttribute('aria-expanded'), 'true');
   const frame = page.frameLocator(`iframe[title="${label} chat"]`);
   await frame.getByRole('heading', { name: 'Ask Formation' }).waitFor();
   await frame.getByRole('textbox', { name: 'Message' }).fill(`Hello from ${agent}`);
@@ -172,7 +183,17 @@ async function exerciseAlias(context, agent, label) {
   await page.close();
 }
 
+async function assertPlacement(locator, placement) {
+  const box = await locator.boundingBox();
+  if (!box) throw new Error('Launcher geometry is unavailable.');
+  if (placement === 'bottom-left') assert.ok(box.x < 40, `Expected left placement, got ${box.x}.`);
+  else assert.ok(box.x > 700, `Expected right placement, got ${box.x}.`);
+}
+
 function hostPage(agent) {
+  const launcher = searchParam(agent, 'launcher');
+  const placement = searchParam(agent, 'placement');
+  const theme = searchParam(agent, 'theme');
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -182,9 +203,20 @@ function hostPage(agent) {
   </head>
   <body>
     <h1>Widget host</h1>
-    <script src="/widget.js" data-widget-key="main-chat" data-agent="${agent}" data-theme="earth" async></script>
+    <script src="/widget.js" data-widget-key="main-chat" data-agent="${agent}" data-theme="${theme}" data-launcher="${launcher}" data-placement="${placement}" async></script>
   </body>
 </html>`;
+}
+
+function searchParam(agent, name) {
+  if (agent !== 'sales') {
+    if (name === 'theme') return 'earth';
+    if (name === 'launcher') return 'agent';
+    if (name === 'placement') return 'bottom-right';
+  }
+  if (name === 'theme') return 'dark';
+  if (name === 'launcher') return 'text';
+  return 'bottom-left';
 }
 
 async function sendStatic(outgoing, path) {

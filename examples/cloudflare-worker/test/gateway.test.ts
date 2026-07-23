@@ -278,6 +278,8 @@ describe('Cloudflare chat gateway', () => {
     const script = await response.text();
     expect(script).toContain('formationChatWidget');
     expect(script).toContain("createElement('iframe')");
+    expect(script).toContain('applyPlacement');
+    expect(script).toContain('aria-expanded');
     expect(fetchUpstream).not.toHaveBeenCalled();
   });
 
