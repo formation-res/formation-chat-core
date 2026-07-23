@@ -8,6 +8,19 @@ const env: GatewayEnv = {
     'chat.example.test': {
       siteKey: 'trusted-site',
       allowedOrigins: ['https://chat.example.test'],
+      dashboardOrigins: ['https://dashboard.example.test'],
+      widget: {
+        widgetKey: 'main-chat',
+        version: '2026-07-23',
+        defaultAgent: 'support',
+        theme: 'earth',
+        launcher: 'agent',
+        placement: 'bottom-right',
+        agentAliases: {
+          support: { siteKey: 'trusted-site', label: 'Support' },
+          sales: { siteKey: 'sales-site', label: 'Sales' },
+        },
+      },
     },
   }),
   CHAT_CORE_SERVICE_TOKEN: 'worker-secret',
@@ -91,7 +104,7 @@ describe('Cloudflare chat gateway', () => {
       { fetch: fetchUpstream },
     );
 
-    expect(admin.status).toBe(404);
+    expect(admin.status).toBe(403);
     const identityExchange = await handleGatewayRequest(
       jsonRequest('/v1/identity/exchange', { externalSubject: 'attacker' }),
       env,
@@ -171,6 +184,140 @@ describe('Cloudflare chat gateway', () => {
     expect(response.body).toBe(stream);
     expect(response.headers.get('content-type')).toContain('text/event-stream');
     expect(response.headers.get('access-control-allow-origin')).toBe('https://chat.example.test');
+  });
+
+  it('serves public widget configuration without exposing trusted wiring', async () => {
+    const fetchUpstream = vi.fn<typeof fetch>();
+
+    const response = await handleGatewayRequest(
+      request('/widget/config?widgetKey=main-chat&agent=sales&theme=blue&launcher=text', {
+        method: 'GET',
+      }),
+      env,
+      { fetch: fetchUpstream },
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toContain('application/json');
+    expect(response.headers.get('cache-control')).toContain('max-age=60');
+    expect(await response.json()).toEqual({
+      widgetKey: 'main-chat',
+      siteKey: 'same-origin-gateway',
+      agent: 'sales',
+      agentLabel: 'Sales',
+      version: '2026-07-23',
+      theme: 'blue',
+      launcher: 'text',
+      placement: 'bottom-right',
+      transportBaseUrl: 'https://chat.example.test',
+    });
+    expect(fetchUpstream).not.toHaveBeenCalled();
+  });
+
+  it('rejects unknown widget keys and unauthorized public agent aliases', async () => {
+    const fetchUpstream = vi.fn<typeof fetch>();
+
+    expect(
+      (
+        await handleGatewayRequest(
+          request('/widget/config?widgetKey=other', { method: 'GET' }),
+          env,
+          {
+            fetch: fetchUpstream,
+          },
+        )
+      ).status,
+    ).toBe(404);
+    expect(
+      (
+        await handleGatewayRequest(
+          request('/widget/config?widgetKey=main-chat&agent=private-admin', { method: 'GET' }),
+          env,
+          { fetch: fetchUpstream },
+        )
+      ).status,
+    ).toBe(403);
+    expect(fetchUpstream).not.toHaveBeenCalled();
+  });
+
+  it('resolves a public agent alias to a trusted site key during bootstrap', async () => {
+    let upstreamRequest: Request | undefined;
+    const fetchUpstream = vi.fn(async (request: Request) => {
+      upstreamRequest = request;
+      return Response.json({ ok: true });
+    });
+
+    const response = await handleGatewayRequest(
+      jsonRequest('/v1/sessions?widgetKey=main-chat&agent=sales', {
+        browserIdentity: 'browser-1',
+        siteKey: 'attacker-site',
+        agent: 'private-admin',
+      }),
+      env,
+      { fetch: fetchUpstream },
+    );
+
+    expect(response.status).toBe(200);
+    expect(await upstreamRequest?.json()).toEqual({
+      browserIdentity: 'browser-1',
+      siteKey: 'sales-site',
+    });
+  });
+
+  it('serves an embeddable widget script with safe initialization behavior', async () => {
+    const fetchUpstream = vi.fn<typeof fetch>();
+
+    const response = await handleGatewayRequest(request('/widget.js', { method: 'GET' }), env, {
+      fetch: fetchUpstream,
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toContain('application/javascript');
+    const script = await response.text();
+    expect(script).toContain('formationChatWidget');
+    expect(script).toContain("createElement('iframe')");
+    expect(fetchUpstream).not.toHaveBeenCalled();
+  });
+
+  it('forwards protected admin dashboard reads only from configured dashboard origins', async () => {
+    let upstreamRequest: Request | undefined;
+    const fetchUpstream = vi.fn(async (request: Request) => {
+      upstreamRequest = request;
+      return Response.json({ ok: true });
+    });
+
+    const response = await handleGatewayRequest(
+      request('/v1/admin/overview', {
+        method: 'GET',
+        headers: { Authorization: 'Bearer admin-token', Origin: 'https://dashboard.example.test' },
+      }),
+      env,
+      { fetch: fetchUpstream },
+    );
+    const publicWebsite = await handleGatewayRequest(
+      request('/v1/admin/overview', {
+        method: 'GET',
+        headers: { Authorization: 'Bearer admin-token', Origin: 'https://chat.example.test' },
+      }),
+      env,
+      { fetch: fetchUpstream },
+    );
+    const write = await handleGatewayRequest(
+      request('/v1/admin/overview', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer admin-token', Origin: 'https://dashboard.example.test' },
+      }),
+      env,
+      { fetch: fetchUpstream },
+    );
+
+    expect(response.status).toBe(200);
+    expect(upstreamRequest?.url).toBe('https://core.example.test/v1/admin/overview');
+    expect(upstreamRequest?.headers.get('authorization')).toBe('Bearer admin-token');
+    expect(upstreamRequest?.headers.get('x-formation-chat-service-token')).toBe('worker-secret');
+    expect(publicWebsite.status).toBe(403);
+    expect(write.status).toBe(405);
+    expect(fetchUpstream).toHaveBeenCalledTimes(1);
   });
 });
 

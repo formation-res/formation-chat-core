@@ -1,8 +1,9 @@
 # Cloudflare Worker gateway example
 
-This example deploys the React reference UI and a stateless, same-origin gateway in one Cloudflare
-Worker. Static assets are served directly by Cloudflare; only `/v1/*` requests enter the Worker
-code and only the anonymous public-chat route allowlist can reach the chat core.
+This example deploys the React reference UI, the read-only operations dashboard, an embeddable
+widget script, and a stateless shared gateway in one Cloudflare Worker. Static assets are served
+directly by Cloudflare; `/widget.js`, `/widget/config`, and allowed `/v1/*` requests enter the
+Worker code.
 
 ## Security boundary
 
@@ -10,9 +11,12 @@ The gateway:
 
 - resolves the integration site from the request hostname and injects its trusted `siteKey` into
   session bootstrap requests;
+- serves `/widget.js` and public `/widget/config` responses for configured widget keys;
+- resolves public widget `agent` aliases to trusted site keys before bootstrap reaches the core;
 - requires an exact configured `Origin`, or same-origin Fetch Metadata when a browser GET omits it,
   and returns the trusted origin rather than `*` in CORS responses;
-- rejects admin and identity-exchange paths and methods outside the public route allowlist;
+- rejects identity-exchange paths and methods outside the public route allowlist;
+- allows read-only `/v1/admin/*` dashboard API requests only from configured dashboard origins;
 - reconstructs upstream headers from an allowlist, dropping forwarding, tenant, site, connector,
   agent, and caller-supplied service-credential headers;
 - accepts only JSON writes and reads at most 128 KiB before forwarding them;
@@ -32,7 +36,11 @@ Edit non-secret values in `wrangler.jsonc`:
 
 - `CHAT_CORE_BASE_URL` must be an HTTPS origin without a path.
 - `CHAT_SITES` is a JSON object keyed by lowercase public hostname. Each entry contains a trusted
-  `siteKey` and one or more exact HTTPS `allowedOrigins`.
+  `siteKey`, one or more exact HTTPS `allowedOrigins`, optional exact HTTPS `dashboardOrigins`, and
+  optional widget configuration.
+- `widget.agentAliases` maps public aliases such as `support` to trusted site keys. Browser embeds
+  may pass an alias, but never raw connector URLs, Haystack tenant keys, unrestricted agent slugs,
+  or credentials.
 
 Declare the production credential interactively; never put its value in the config or shell
 history:

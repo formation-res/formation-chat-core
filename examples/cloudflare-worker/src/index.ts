@@ -1,8 +1,19 @@
 const MAX_REQUEST_BYTES = 131_072;
 const SERVICE_TOKEN_HEADER = 'X-Formation-Chat-Service-Token';
 const OPAQUE_ID = '[A-Za-z0-9][A-Za-z0-9._~-]{0,127}';
+const PUBLIC_TOKEN = /^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$/;
 
 const ROUTES: readonly Route[] = [
+  { pattern: /^\/widget\.js$/, methods: ['GET'], kind: 'widget-script' },
+  { pattern: /^\/widget\/config$/, methods: ['GET'], kind: 'widget-config' },
+  { pattern: /^\/v1\/admin\/overview$/, methods: ['GET'], kind: 'admin' },
+  {
+    pattern:
+      /^\/v1\/admin\/conversations(?:\/[A-Za-z0-9][A-Za-z0-9._~-]{0,127}(?:\/(?:messages|events))?)?$/,
+    methods: ['GET'],
+    kind: 'admin',
+  },
+  { pattern: /^\/v1\/admin\/(?:runs|failures|handoffs)$/, methods: ['GET'], kind: 'admin' },
   { pattern: /^\/v1\/sessions$/, methods: ['POST'], kind: 'bootstrap' },
   { pattern: /^\/v1\/conversations$/, methods: ['GET', 'POST'], kind: 'public' },
   { pattern: new RegExp(`^/v1/conversations/${OPAQUE_ID}$`), methods: ['GET'], kind: 'public' },
@@ -46,12 +57,29 @@ const FORWARDED_RESPONSE_HEADERS = [
 interface Route {
   pattern: RegExp;
   methods: readonly string[];
-  kind: 'bootstrap' | 'public';
+  kind: 'admin' | 'bootstrap' | 'public' | 'widget-config' | 'widget-script';
 }
 
 interface SiteConfig {
   siteKey: string;
   allowedOrigins: readonly string[];
+  dashboardOrigins?: readonly string[];
+  widget?: WidgetConfig;
+}
+
+interface WidgetConfig {
+  widgetKey: string;
+  version: string;
+  defaultAgent: string;
+  theme: string;
+  launcher: string;
+  placement: string;
+  agentAliases: Record<string, AgentAliasConfig>;
+}
+
+interface AgentAliasConfig {
+  siteKey: string;
+  label: string;
 }
 
 export type GatewayEnv = Pick<Env, 'CHAT_CORE_BASE_URL' | 'CHAT_SITES' | 'CHAT_CORE_SERVICE_TOKEN'>;
@@ -82,31 +110,67 @@ export async function handleGatewayRequest(
   const site = configuration.sites[requestUrl.hostname.toLowerCase()];
   if (!site) return errorResponse(404, 'SITE_NOT_FOUND', 'Site not found.', correlationId);
 
-  const origin = validatedOrigin(
-    request.headers.get('origin'),
-    site.allowedOrigins,
-    requestUrl.origin,
-    request.headers.get('sec-fetch-site'),
-  );
-  if (!origin) {
+  const route = ROUTES.find(({ pattern }) => pattern.test(requestUrl.pathname));
+  if (!route) return errorResponse(404, 'ROUTE_NOT_FOUND', 'Route not found.', correlationId);
+
+  const allowedOrigins =
+    route.kind === 'admin' ? dashboardOrigins(site, requestUrl) : site.allowedOrigins;
+  const requestOrigin = request.headers.get('origin');
+  const origin =
+    route.kind === 'widget-script' && !requestOrigin
+      ? undefined
+      : validatedOrigin(
+          requestOrigin,
+          allowedOrigins,
+          requestUrl.origin,
+          request.headers.get('sec-fetch-site'),
+        );
+  if (route.kind !== 'widget-script' && !origin) {
     return errorResponse(403, 'ORIGIN_NOT_ALLOWED', 'Origin not allowed.', correlationId);
   }
 
-  const route = ROUTES.find(({ pattern }) => pattern.test(requestUrl.pathname));
-  if (!route)
-    return errorResponse(404, 'ROUTE_NOT_FOUND', 'Route not found.', correlationId, origin);
-
-  if (request.method === 'OPTIONS') return preflightResponse(request, route, origin, correlationId);
+  if (request.method === 'OPTIONS')
+    return preflightResponse(request, route, origin ?? requestUrl.origin, correlationId);
   if (!route.methods.includes(request.method)) {
     const response = errorResponse(
       405,
       'METHOD_NOT_ALLOWED',
       'Method not allowed.',
       correlationId,
-      origin,
+      origin ?? undefined,
     );
     response.headers.set('Allow', route.methods.join(', '));
     return response;
+  }
+
+  if (route.kind === 'widget-script') return widgetScriptResponse(origin ?? undefined);
+  if (route.kind === 'widget-config') {
+    return widgetConfigurationResponse(
+      requestUrl,
+      site,
+      origin ?? requestUrl.origin,
+      correlationId,
+    );
+  }
+  if (!origin) {
+    return errorResponse(403, 'ORIGIN_NOT_ALLOWED', 'Origin not allowed.', correlationId);
+  }
+  const trustedOrigin = origin;
+
+  let selectedSiteKey: string;
+  try {
+    selectedSiteKey = trustedSiteKeyForRequest(requestUrl, site);
+  } catch (error) {
+    if (error instanceof WidgetRequestError) {
+      return errorResponse(error.status, error.code, error.message, correlationId, trustedOrigin);
+    }
+    return errorResponse(
+      400,
+      'INVALID_WIDGET_REQUEST',
+      'The widget request is invalid.',
+      correlationId,
+      trustedOrigin,
+    );
   }
 
   let body: string | undefined;
@@ -117,21 +181,21 @@ export async function handleGatewayRequest(
         'UNSUPPORTED_MEDIA_TYPE',
         'A JSON request body is required.',
         correlationId,
-        origin,
+        trustedOrigin,
       );
     }
     try {
-      body = await prepareBody(request, route.kind, site.siteKey);
+      body = await prepareBody(request, route.kind, selectedSiteKey);
     } catch (error) {
       if (error instanceof RequestBodyError) {
-        return errorResponse(error.status, error.code, error.message, correlationId, origin);
+        return errorResponse(error.status, error.code, error.message, correlationId, trustedOrigin);
       }
       return errorResponse(
         400,
         'INVALID_JSON',
         'The JSON request is invalid.',
         correlationId,
-        origin,
+        trustedOrigin,
       );
     }
   }
@@ -139,13 +203,10 @@ export async function handleGatewayRequest(
   const headers = forwardedRequestHeaders(
     request.headers,
     route.kind,
-    origin,
+    trustedOrigin,
     env.CHAT_CORE_SERVICE_TOKEN,
   );
-  const upstreamUrl = new URL(
-    `${requestUrl.pathname}${requestUrl.search}`,
-    configuration.coreBaseUrl,
-  );
+  const upstreamUrl = upstreamCoreUrl(requestUrl, configuration.coreBaseUrl, route.kind);
   let upstream: Response;
   try {
     upstream = await dependencies.fetch(
@@ -169,11 +230,11 @@ export async function handleGatewayRequest(
       'CORE_UNAVAILABLE',
       'The chat service is unavailable.',
       correlationId,
-      origin,
+      trustedOrigin,
     );
   }
 
-  return streamedResponse(upstream, origin);
+  return streamedResponse(upstream, trustedOrigin);
 }
 
 export default {
@@ -208,6 +269,10 @@ function parseConfiguration(env: GatewayEnv): GatewayConfiguration {
     sites[normalizedHostname] = {
       siteKey: candidate.siteKey,
       allowedOrigins: candidate.allowedOrigins.map(normalizeConfiguredOrigin),
+      ...(candidate.dashboardOrigins
+        ? { dashboardOrigins: candidate.dashboardOrigins.map(normalizeConfiguredOrigin) }
+        : {}),
+      ...(candidate.widget ? { widget: candidate.widget } : {}),
     };
   }
   return { coreBaseUrl, sites };
@@ -217,11 +282,55 @@ function isSiteConfig(value: unknown): value is SiteConfig {
   return (
     isRecord(value) &&
     typeof value.siteKey === 'string' &&
-    /^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$/.test(value.siteKey) &&
+    PUBLIC_TOKEN.test(value.siteKey) &&
     Array.isArray(value.allowedOrigins) &&
     value.allowedOrigins.length > 0 &&
     value.allowedOrigins.length <= 20 &&
-    value.allowedOrigins.every((origin) => typeof origin === 'string')
+    value.allowedOrigins.every((origin) => typeof origin === 'string') &&
+    (value.dashboardOrigins === undefined ||
+      (Array.isArray(value.dashboardOrigins) &&
+        value.dashboardOrigins.length > 0 &&
+        value.dashboardOrigins.length <= 20 &&
+        value.dashboardOrigins.every((origin) => typeof origin === 'string'))) &&
+    (value.widget === undefined || isWidgetConfig(value.widget))
+  );
+}
+
+function dashboardOrigins(site: SiteConfig, requestUrl: URL): readonly string[] {
+  return site.dashboardOrigins ?? [requestUrl.origin];
+}
+
+function isWidgetConfig(value: unknown): value is WidgetConfig {
+  return (
+    isRecord(value) &&
+    typeof value.widgetKey === 'string' &&
+    PUBLIC_TOKEN.test(value.widgetKey) &&
+    typeof value.version === 'string' &&
+    PUBLIC_TOKEN.test(value.version) &&
+    typeof value.defaultAgent === 'string' &&
+    PUBLIC_TOKEN.test(value.defaultAgent) &&
+    typeof value.theme === 'string' &&
+    PUBLIC_TOKEN.test(value.theme) &&
+    typeof value.launcher === 'string' &&
+    PUBLIC_TOKEN.test(value.launcher) &&
+    typeof value.placement === 'string' &&
+    PUBLIC_TOKEN.test(value.placement) &&
+    isRecord(value.agentAliases) &&
+    Object.keys(value.agentAliases).length > 0 &&
+    Object.keys(value.agentAliases).every((alias) => PUBLIC_TOKEN.test(alias)) &&
+    Object.values(value.agentAliases).every(isAgentAliasConfig) &&
+    value.agentAliases[value.defaultAgent] !== undefined
+  );
+}
+
+function isAgentAliasConfig(value: unknown): value is AgentAliasConfig {
+  return (
+    isRecord(value) &&
+    typeof value.siteKey === 'string' &&
+    PUBLIC_TOKEN.test(value.siteKey) &&
+    typeof value.label === 'string' &&
+    value.label.length >= 1 &&
+    value.label.length <= 80
   );
 }
 
@@ -281,6 +390,123 @@ async function prepareBody(
     throw new RequestBodyError(400, 'INVALID_REQUEST', 'The session request is invalid.');
   }
   return JSON.stringify({ ...(browserIdentity ? { browserIdentity } : {}), siteKey });
+}
+
+function trustedSiteKeyForRequest(requestUrl: URL, site: SiteConfig): string {
+  if (requestUrl.pathname !== '/v1/sessions') return site.siteKey;
+  const widget = resolveWidget(requestUrl, site);
+  if (!widget) return site.siteKey;
+  const agent = publicTokenParam(requestUrl, 'agent') ?? widget.defaultAgent;
+  const alias = widget.agentAliases[agent];
+  if (!alias) {
+    throw new WidgetRequestError(403, 'AGENT_NOT_ALLOWED', 'Agent not allowed for this widget.');
+  }
+  return alias.siteKey;
+}
+
+function resolveWidget(requestUrl: URL, site: SiteConfig): WidgetConfig | undefined {
+  const widgetKey = publicTokenParam(requestUrl, 'widgetKey');
+  if (!widgetKey) return undefined;
+  if (!site.widget || site.widget.widgetKey !== widgetKey) {
+    throw new WidgetRequestError(404, 'WIDGET_NOT_FOUND', 'Widget not found.');
+  }
+  return site.widget;
+}
+
+function publicTokenParam(requestUrl: URL, name: string): string | undefined {
+  const value = requestUrl.searchParams.get(name);
+  if (!value) return undefined;
+  if (!PUBLIC_TOKEN.test(value)) {
+    throw new WidgetRequestError(400, 'INVALID_WIDGET_REQUEST', 'The widget request is invalid.');
+  }
+  return value;
+}
+
+function widgetConfigurationResponse(
+  requestUrl: URL,
+  site: SiteConfig,
+  origin: string,
+  correlationId: string,
+): Response {
+  let widget: WidgetConfig | undefined;
+  try {
+    widget = resolveWidget(requestUrl, site);
+  } catch (error) {
+    if (error instanceof WidgetRequestError) {
+      return errorResponse(error.status, error.code, error.message, correlationId, origin);
+    }
+    return errorResponse(
+      400,
+      'INVALID_WIDGET_REQUEST',
+      'The widget request is invalid.',
+      correlationId,
+      origin,
+    );
+  }
+  if (!widget)
+    return errorResponse(404, 'WIDGET_NOT_FOUND', 'Widget not found.', correlationId, origin);
+
+  let agent: string;
+  try {
+    agent = publicTokenParam(requestUrl, 'agent') ?? widget.defaultAgent;
+  } catch (error) {
+    if (error instanceof WidgetRequestError) {
+      return errorResponse(error.status, error.code, error.message, correlationId, origin);
+    }
+    return errorResponse(
+      400,
+      'INVALID_WIDGET_REQUEST',
+      'The widget request is invalid.',
+      correlationId,
+      origin,
+    );
+  }
+  const alias = widget.agentAliases[agent];
+  if (!alias) {
+    return errorResponse(
+      403,
+      'AGENT_NOT_ALLOWED',
+      'Agent not allowed for this widget.',
+      correlationId,
+      origin,
+    );
+  }
+
+  const headers = new Headers({
+    'Cache-Control': 'public, max-age=60',
+    'Content-Type': 'application/json; charset=utf-8',
+  });
+  addCorsHeaders(headers, origin);
+  return new Response(
+    JSON.stringify({
+      widgetKey: widget.widgetKey,
+      siteKey: 'same-origin-gateway',
+      agent,
+      agentLabel: alias.label,
+      version: publicTokenParam(requestUrl, 'version') ?? widget.version,
+      theme: publicTokenParam(requestUrl, 'theme') ?? widget.theme,
+      launcher: publicTokenParam(requestUrl, 'launcher') ?? widget.launcher,
+      placement: publicTokenParam(requestUrl, 'placement') ?? widget.placement,
+      transportBaseUrl: requestUrl.origin,
+    }),
+    { headers },
+  );
+}
+
+function widgetScriptResponse(origin?: string): Response {
+  const headers = new Headers({
+    'Cache-Control': 'public, max-age=300',
+    'Content-Type': 'application/javascript; charset=utf-8',
+  });
+  headers.set('X-Content-Type-Options', 'nosniff');
+  if (origin) addCorsHeaders(headers, origin);
+  return new Response(WIDGET_SCRIPT, { headers });
+}
+
+function upstreamCoreUrl(requestUrl: URL, coreBaseUrl: URL, kind: Route['kind']): URL {
+  const upstream = new URL(requestUrl.pathname, coreBaseUrl);
+  if (kind !== 'bootstrap') upstream.search = requestUrl.search;
+  return upstream;
 }
 
 async function readBoundedBody(request: Request, maximumBytes: number): Promise<string> {
@@ -414,3 +640,84 @@ class RequestBodyError extends Error {
     super(message);
   }
 }
+
+class WidgetRequestError extends Error {
+  constructor(
+    readonly status: 400 | 403 | 404,
+    readonly code: string,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+const WIDGET_SCRIPT = `(() => {
+  const script = document.currentScript;
+  const dataset = script && script.dataset ? script.dataset : {};
+  const endpoint = new URL('/widget/config', script ? script.src : window.location.href);
+  const params = {
+    widgetKey: dataset.widgetKey,
+    agent: dataset.agent,
+    theme: dataset.theme,
+    launcher: dataset.launcher,
+    placement: dataset.placement,
+    version: dataset.version,
+  };
+  for (const [key, value] of Object.entries(params)) {
+    if (value) endpoint.searchParams.set(key, value);
+  }
+
+  const state = window.formationChatWidget || {};
+  window.formationChatWidget = state;
+  state.ready = fetch(endpoint, { credentials: 'omit' })
+    .then((response) => {
+      if (!response.ok) throw new Error('Widget configuration failed.');
+      return response.json();
+    })
+    .then((config) => {
+      state.config = config;
+      const frameUrl = new URL('/', endpoint.origin);
+      frameUrl.searchParams.set('widgetKey', config.widgetKey);
+      frameUrl.searchParams.set('agent', config.agent);
+      const launcher = document.createElement('button');
+      launcher.type = 'button';
+      launcher.dataset.formationChatWidget = config.widgetKey;
+      launcher.dataset.theme = config.theme;
+      launcher.dataset.launcher = config.launcher;
+      launcher.textContent = config.agentLabel || 'Chat';
+      Object.assign(launcher.style, {
+        position: 'fixed',
+        right: '1rem',
+        bottom: '1rem',
+        zIndex: '2147483647',
+      });
+      const frame = document.createElement('iframe');
+      frame.title = config.agentLabel ? config.agentLabel + ' chat' : 'Chat';
+      frame.src = frameUrl.toString();
+      frame.hidden = true;
+      frame.dataset.formationChatWidgetFrame = config.widgetKey;
+      Object.assign(frame.style, {
+        position: 'fixed',
+        right: '1rem',
+        bottom: '4.5rem',
+        width: 'min(24rem, calc(100vw - 2rem))',
+        height: 'min(40rem, calc(100vh - 6rem))',
+        border: '0',
+        borderRadius: '12px',
+        zIndex: '2147483647',
+      });
+      launcher.addEventListener('click', () => {
+        frame.hidden = !frame.hidden;
+        window.dispatchEvent(new CustomEvent('formation-chat-widget-open', { detail: config }));
+      });
+      document.body.appendChild(frame);
+      document.body.appendChild(launcher);
+      window.dispatchEvent(new CustomEvent('formation-chat-widget-ready', { detail: config }));
+      return config;
+    })
+    .catch((error) => {
+      state.error = error;
+      window.dispatchEvent(new CustomEvent('formation-chat-widget-error'));
+      throw error;
+    });
+})();`;
