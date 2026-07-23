@@ -999,6 +999,7 @@ select:focus {
 }
 .tenant-card-main,
 .tenant-card-widgets,
+.tenant-card-embeds,
 .tenant-card-embed,
 .tenant-card-footer {
   min-width: 0;
@@ -1038,8 +1039,24 @@ select:focus {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.tenant-card-embed {
+.tenant-card-embeds {
   grid-column: 1 / -1;
+  display: grid;
+  gap: 0.45rem;
+}
+.tenant-card-embed-row {
+  min-width: 0;
+  display: grid;
+  gap: 0.3rem;
+}
+.tenant-card-embed-row > span {
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tenant-card-embed {
   display: block;
   overflow-x: auto;
   padding: 0.65rem;

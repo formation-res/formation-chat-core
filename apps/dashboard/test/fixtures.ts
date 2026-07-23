@@ -54,7 +54,10 @@ export const overview: AdminOverview = {
           launcher: 'agent',
           placement: 'bottom-right',
           defaultAgentAlias: 'support',
-          agentAliases: [{ alias: 'support', label: 'Support', agentRef: 'support-agent' }],
+          agentAliases: [
+            { alias: 'support', label: 'Support', agentRef: 'support-agent' },
+            { alias: 'sales', label: 'Sales', agentRef: 'sales-agent' },
+          ],
           createdAt: '2026-07-16T09:00:00.000Z',
           updatedAt: '2026-07-16T09:00:00.000Z',
         },

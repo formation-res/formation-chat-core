@@ -73,7 +73,8 @@ async function runBrowserSmoke() {
     await page.getByLabel('Chat Core URL').fill(baseUrl);
     await page.getByLabel('Admin token').fill('browser-admin-token');
     await page.getByRole('button', { name: 'Open dashboard' }).click();
-    await page.getByText('data-widget-key="main-chat"').waitFor();
+    assert.equal(await page.getByText('data-widget-key="main-chat"').count(), 2);
+    await page.getByText('data-agent="sales"').waitFor();
     await page.getByRole('button', { name: /Open Formation website/ }).click();
     await page
       .getByText('Support agent conversation')
@@ -195,7 +196,10 @@ const overview = {
           launcher: 'agent',
           placement: 'bottom-right',
           defaultAgentAlias: 'support',
-          agentAliases: [{ alias: 'support', label: 'Support', agentRef: 'support-agent' }],
+          agentAliases: [
+            { alias: 'support', label: 'Support', agentRef: 'support-agent' },
+            { alias: 'sales', label: 'Sales', agentRef: 'sales-agent' },
+          ],
           createdAt: '2026-07-16T09:00:00.000Z',
           updatedAt: '2026-07-16T09:00:00.000Z',
         },

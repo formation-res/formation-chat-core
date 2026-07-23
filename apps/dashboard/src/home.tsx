@@ -62,7 +62,6 @@ export function DashboardHome({
 }
 
 function SiteCard({ site, onSelect }: { site: AdminSiteOverview; onSelect(): void }) {
-  const firstWidget = site.widgets[0];
   return (
     <article className="tenant-card">
       <span className="tenant-card-icon">
@@ -88,7 +87,20 @@ function SiteCard({ site, onSelect }: { site: AdminSiteOverview; onSelect(): voi
           ))}
         </span>
       ) : null}
-      {firstWidget ? <code className="tenant-card-embed">{embedSnippet(firstWidget)}</code> : null}
+      {site.widgets.length > 0 ? (
+        <span className="tenant-card-embeds">
+          {site.widgets.flatMap((widget) =>
+            widget.agentAliases.map((alias) => (
+              <span key={`${widget.widgetId}:${alias.alias}`} className="tenant-card-embed-row">
+                <span>
+                  {widget.displayName} · {alias.label}
+                </span>
+                <code className="tenant-card-embed">{embedSnippet(widget, alias.alias)}</code>
+              </span>
+            )),
+          )}
+        </span>
+      ) : null}
       <span className="tenant-card-footer">
         <span>{site.agentRef}</span>
         {site.recentActivityAt ? (
@@ -104,10 +116,9 @@ function SiteCard({ site, onSelect }: { site: AdminSiteOverview; onSelect(): voi
   );
 }
 
-function embedSnippet(widget: AdminSiteOverview['widgets'][number]): string {
+function embedSnippet(widget: AdminSiteOverview['widgets'][number], agent: string): string {
   const scriptUrl = new URL('/widget.js', window.location.origin).toString();
-  const agent = widget.defaultAgentAlias;
-  return `<script src="${scriptUrl}" data-widget-key="${widget.widgetKey}" data-agent="${agent}" data-theme="${widget.theme}" data-launcher="${widget.launcher}" async></script>`;
+  return `<script src="${scriptUrl}" data-widget-key="${widget.widgetKey}" data-agent="${agent}" data-theme="${widget.theme}" data-launcher="${widget.launcher}" data-placement="${widget.placement}" async></script>`;
 }
 
 function Stat({

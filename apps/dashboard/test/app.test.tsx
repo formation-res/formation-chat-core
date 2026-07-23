@@ -53,6 +53,8 @@ describe('operations dashboard', () => {
     expect(container?.textContent).toContain('Main website');
     expect(container?.textContent).toContain('data-widget-key="main-chat"');
     expect(container?.textContent).toContain('data-agent="support"');
+    expect(container?.textContent).toContain('data-agent="sales"');
+    expect(container?.textContent).toContain('data-placement="bottom-right"');
     expect(container?.querySelector('input[name="token"]')).toBeNull();
   });
 
