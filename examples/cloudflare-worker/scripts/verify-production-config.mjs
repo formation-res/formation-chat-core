@@ -77,7 +77,9 @@ export function verifyProductionConfig(config, options = {}) {
       }
     }
     if (runWorkerFirst.includes('/widget.js')) {
-      errors.push('assets.run_worker_first must not include /widget.js; it is a bundled static asset.');
+      errors.push(
+        'assets.run_worker_first must not include /widget.js; it is a bundled static asset.',
+      );
     }
   }
 

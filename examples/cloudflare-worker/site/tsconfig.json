@@ -7,5 +7,5 @@
     "rootDir": ".",
     "types": ["react", "react-dom"]
   },
-  "include": ["./**/*.tsx", "./**/*.d.ts"]
+  "include": ["./**/*.ts", "./**/*.tsx", "./**/*.d.ts"]
 }

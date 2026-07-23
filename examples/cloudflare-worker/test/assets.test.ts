@@ -26,7 +26,9 @@ describe('Cloudflare gateway static assets', () => {
     expect(source).toContain('createChatClient');
     expect(source).toContain("url.searchParams.set('widgetKey', config.widgetKey)");
     expect(headers).toMatch(/\/widget\.js[\s\S]*Access-Control-Allow-Origin: \*/);
-    expect(headers).toMatch(/\/agent-shadow-tooltip-blue\.webp[\s\S]*Cross-Origin-Resource-Policy: cross-origin/);
+    expect(headers).toMatch(
+      /\/agent-shadow-tooltip-blue\.webp[\s\S]*Cross-Origin-Resource-Policy: cross-origin/,
+    );
   });
 
   it('keeps the chat iframe frameable only same-origin while blocking dashboard framing', async () => {
