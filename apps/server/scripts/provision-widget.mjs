@@ -6,7 +6,9 @@ import { provisionWidgetRegistry } from '../dist/provisioning/widget.js';
 
 const configPath = process.argv[2];
 if (!configPath) {
-  process.stderr.write('Usage: npm run provision:widget -- <config.json>\n');
+  process.stderr.write(
+    'Usage: npm run provision:widget -- <config.json> or npm run provision:widget:dist -- <config.json>\n',
+  );
   process.exitCode = 1;
 } else if (!process.env.DATABASE_URL) {
   process.stderr.write('DATABASE_URL is required.\n');

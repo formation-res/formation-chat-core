@@ -29,6 +29,7 @@ COPY connectors/haystack/package.json connectors/haystack/package.json
 COPY connectors/mock/package.json connectors/mock/package.json
 RUN npm ci --omit=dev
 COPY --from=build /app/apps/server/dist apps/server/dist
+COPY --from=build /app/apps/server/scripts apps/server/scripts
 COPY --from=build /app/packages/protocol/dist packages/protocol/dist
 COPY --from=build /app/packages/server-sdk/dist packages/server-sdk/dist
 COPY --from=build /app/connectors/haystack/dist connectors/haystack/dist
