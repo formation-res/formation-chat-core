@@ -399,7 +399,7 @@ smoke test when credentials are available.
 **Completed:** 2026-07-15 in `5a7671c`. The stateless Worker resolves trusted site configuration from the public
 hostname, enforces configured origins (with a same-origin Fetch Metadata fallback) and a public
 path/method allowlist, limits JSON writes to 128 KiB,
-reconstructs upstream headers, injects a required secret origin credential, and passes upstream
+reconstructs upstream headers, injects the required `HAYSTACK_CONNECTOR_TOKEN` origin credential, and passes upstream
 response streams through unchanged. The example bundles the React reference UI as same-origin
 Cloudflare static assets with restrictive response headers. Seven unit contracts, a local workerd SSE
 integration test, generated-binding drift check, type checking, linting, build, startup analysis,

@@ -91,7 +91,7 @@ try {
   baseUrl = `https://127.0.0.1:${address.port}`;
   env = {
     CHAT_CORE_BASE_URL: 'https://core.example.test',
-    CHAT_CORE_SERVICE_TOKEN: 'browser-smoke-service-token',
+    HAYSTACK_CONNECTOR_TOKEN: 'browser-smoke-service-token',
     CHAT_SITES: JSON.stringify({
       '127.0.0.1': {
         siteKey: 'trusted-site',

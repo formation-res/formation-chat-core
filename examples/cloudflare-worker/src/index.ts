@@ -82,7 +82,12 @@ interface AgentAliasConfig {
   label: string;
 }
 
-export type GatewayEnv = Pick<Env, 'CHAT_CORE_BASE_URL' | 'CHAT_SITES' | 'CHAT_CORE_SERVICE_TOKEN'>;
+export interface GatewayEnv {
+  CHAT_CORE_BASE_URL: string;
+  CHAT_SITES: string;
+  HAYSTACK_CONNECTOR_TOKEN?: string;
+  CHAT_CORE_SERVICE_TOKEN?: string;
+}
 
 export interface GatewayDependencies {
   fetch(request: Request): Promise<Response>;
@@ -204,7 +209,7 @@ export async function handleGatewayRequest(
     request.headers,
     route.kind,
     trustedOrigin,
-    env.CHAT_CORE_SERVICE_TOKEN,
+    configuration.serviceToken,
   );
   const upstreamUrl = upstreamCoreUrl(requestUrl, configuration.coreBaseUrl, route.kind);
   let upstream: Response;
@@ -246,6 +251,7 @@ export default {
 interface GatewayConfiguration {
   coreBaseUrl: URL;
   sites: Record<string, SiteConfig>;
+  serviceToken: string;
 }
 
 function parseConfiguration(env: GatewayEnv): GatewayConfiguration {
@@ -256,7 +262,8 @@ function parseConfiguration(env: GatewayEnv): GatewayConfiguration {
   if (coreBaseUrl.pathname !== '/' || coreBaseUrl.search || coreBaseUrl.hash) {
     throw new Error('Core URL must not contain a path, query, or fragment.');
   }
-  if (!env.CHAT_CORE_SERVICE_TOKEN) throw new Error('Missing service token.');
+  const serviceToken = env.HAYSTACK_CONNECTOR_TOKEN ?? env.CHAT_CORE_SERVICE_TOKEN;
+  if (!serviceToken) throw new Error('Missing service token.');
 
   const value: unknown = JSON.parse(env.CHAT_SITES);
   if (!isRecord(value) || Object.keys(value).length === 0) throw new Error('Invalid site map.');
@@ -275,7 +282,7 @@ function parseConfiguration(env: GatewayEnv): GatewayConfiguration {
       ...(candidate.widget ? { widget: candidate.widget } : {}),
     };
   }
-  return { coreBaseUrl, sites };
+  return { coreBaseUrl, sites, serviceToken };
 }
 
 function isSiteConfig(value: unknown): value is SiteConfig {

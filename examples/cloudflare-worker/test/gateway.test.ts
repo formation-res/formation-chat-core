@@ -23,7 +23,7 @@ const env: GatewayEnv = {
       },
     },
   }),
-  CHAT_CORE_SERVICE_TOKEN: 'worker-secret',
+  HAYSTACK_CONNECTOR_TOKEN: 'worker-secret',
 };
 
 describe('Cloudflare chat gateway', () => {
@@ -60,6 +60,30 @@ describe('Cloudflare chat gateway', () => {
     expect(upstreamRequest?.headers.get('x-agent-ref')).toBeNull();
     expect(upstreamRequest?.headers.get('x-forwarded-for')).toBeNull();
     expect(upstreamRequest?.headers.get('authorization')).toBeNull();
+  });
+
+  it('accepts the deprecated CHAT_CORE_SERVICE_TOKEN binding while deployments move to HAYSTACK_CONNECTOR_TOKEN', async () => {
+    let upstreamRequest: Request | undefined;
+    const fetchUpstream = vi.fn(async (request: Request) => {
+      upstreamRequest = request;
+      return Response.json({ ok: true });
+    });
+    const compatibilityEnv: GatewayEnv = {
+      CHAT_CORE_BASE_URL: env.CHAT_CORE_BASE_URL,
+      CHAT_SITES: env.CHAT_SITES,
+      CHAT_CORE_SERVICE_TOKEN: 'legacy-worker-secret',
+    };
+
+    const response = await handleGatewayRequest(
+      jsonRequest('/v1/sessions', { browserIdentity: 'browser-1' }),
+      compatibilityEnv,
+      { fetch: fetchUpstream },
+    );
+
+    expect(response.status).toBe(200);
+    expect(upstreamRequest?.headers.get('x-formation-chat-service-token')).toBe(
+      'legacy-worker-secret',
+    );
   });
 
   it('rejects unknown hosts and origins before calling the core', async () => {

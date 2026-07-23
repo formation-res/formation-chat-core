@@ -9,7 +9,7 @@
     "CHAT_SITES": "{\"www.example.com\":{\"siteKey\":\"example-site\",\"allowedOrigins\":[\"https://www.example.com\"],\"dashboardOrigins\":[\"https://chat-admin.example.com\"],\"widget\":{\"widgetKey\":\"example-widget\",\"version\":\"2026-07-23\",\"defaultAgent\":\"support\",\"theme\":\"earth\",\"launcher\":\"agent\",\"placement\":\"bottom-right\",\"agentAliases\":{\"support\":{\"siteKey\":\"example-site\",\"label\":\"Support\"}}}}}",
   },
   "secrets": {
-    "required": ["CHAT_CORE_SERVICE_TOKEN"],
+    "required": ["HAYSTACK_CONNECTOR_TOKEN"],
   },
   "assets": {
     "directory": "./dist/site",

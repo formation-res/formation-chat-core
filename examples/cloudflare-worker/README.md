@@ -22,11 +22,12 @@ The gateway:
   agent, and caller-supplied service-credential headers;
 - accepts only JSON writes and reads at most 128 KiB before forwarding them;
 - forwards the short-lived browser bearer token only after bootstrap;
-- injects `X-Formation-Chat-Service-Token` from a required Worker secret; and
+- injects `X-Formation-Chat-Service-Token` from the required `HAYSTACK_CONNECTOR_TOKEN`
+  Worker secret; and
 - returns the upstream `ReadableStream` directly, preserving incremental SSE delivery.
 
-The service token is an origin credential, not a browser session token. Configure the private
-network ingress or reverse proxy in front of chat core to verify and remove
+The connector token is reused as the core origin credential, not as a browser session token.
+Configure the private network ingress or reverse proxy in front of chat core to verify and remove
 `X-Formation-Chat-Service-Token` before requests reach application logs. Do not expose an origin
 that ignores this credential. A private service binding, mTLS, or another authenticated ingress
 can replace this header without changing the browser protocol.
@@ -49,7 +50,7 @@ history:
 
 ```sh
 cd examples/cloudflare-worker
-npx wrangler secret put CHAT_CORE_SERVICE_TOKEN
+npx wrangler secret put HAYSTACK_CONNECTOR_TOKEN
 ```
 
 For local development, put the same key in an untracked `.dev.vars` file. Wrangler validates the

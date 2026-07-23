@@ -7,8 +7,8 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build-site.mjs && tsc -p tsconfig.json",
-    "deploy": "npm run build && node scripts/verify-production-config.mjs && wrangler deploy",
-    "deploy:dry-run": "npm run build && node scripts/verify-production-config.mjs && wrangler deploy --dry-run",
+    "deploy": "npm run build && node scripts/deploy.mjs",
+    "deploy:dry-run": "npm run build && node scripts/deploy.mjs --dry-run",
     "lint": "eslint src site test scripts --no-error-on-unmatched-pattern",
     "test": "vitest run test/gateway.test.ts test/assets.test.ts",
     "test:browser": "npm run build && node test/browser-smoke.mjs",
