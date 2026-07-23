@@ -61,11 +61,7 @@ const server = createServer(
         outgoing.end();
         return;
       }
-      if (
-        url.pathname === '/widget.js' ||
-        url.pathname === '/widget/config' ||
-        url.pathname.startsWith('/v1/')
-      ) {
+      if (url.pathname === '/widget/config' || url.pathname.startsWith('/v1/')) {
         const response = await handleGatewayRequest(await toRequest(incoming, url), env, {
           fetch: coreFetch,
         });
@@ -163,31 +159,23 @@ async function exerciseAlias(context, agent, label, options = {}) {
   });
   const search = new URLSearchParams({ agent, ...options });
   await page.goto(`${baseUrl}/host?${search}`, { waitUntil: 'networkidle' });
-  const launcher = page.getByRole('button', { name: label });
+  const widget = page.locator('formation-chat-widget').first();
+  await widget.waitFor({ state: 'attached' });
+  const launcher = widget.locator('button.launcher');
   await launcher.waitFor();
-  assert.equal(await launcher.getAttribute('data-launcher'), options.launcher ?? 'agent');
-  assert.equal(await launcher.getAttribute('data-theme'), options.theme ?? 'earth');
-  await assertPlacement(launcher, options.placement ?? 'bottom-right');
   await launcher.click();
   assert.equal(await launcher.getAttribute('aria-expanded'), 'true');
-  const frame = page.frameLocator(`iframe[title="${label} chat"]`);
-  await frame.getByRole('heading', { name: 'Ask Formation' }).waitFor();
-  await frame.getByRole('textbox', { name: 'Message' }).fill(`Hello from ${agent}`);
-  await frame.getByRole('textbox', { name: 'Message' }).press('Enter');
-  await frame.getByLabel('You').getByText(`Hello from ${agent}`).waitFor();
+  await widget.getByText('What can we help you with?').waitFor();
+  await widget.locator('textarea').fill(`Hello from ${agent}`);
+  await widget.locator('textarea').press('Enter');
+  await widget.getByText(`Hello from ${agent}`).waitFor();
+  await widget.getByText('Hello from the shared gateway.').waitFor();
   await page.screenshot({
     path: join(tmpdir(), `formation-worker-widget-${agent}.png`),
     fullPage: true,
   });
   assert.deepEqual(problems, []);
   await page.close();
-}
-
-async function assertPlacement(locator, placement) {
-  const box = await locator.boundingBox();
-  if (!box) throw new Error('Launcher geometry is unavailable.');
-  if (placement === 'bottom-left') assert.ok(box.x < 40, `Expected left placement, got ${box.x}.`);
-  else assert.ok(box.x > 700, `Expected right placement, got ${box.x}.`);
 }
 
 function hostPage(agent) {
@@ -203,7 +191,7 @@ function hostPage(agent) {
   </head>
   <body>
     <h1>Widget host</h1>
-    <script src="/widget.js" data-widget-key="main-chat" data-agent="${agent}" data-theme="${theme}" data-launcher="${launcher}" data-placement="${placement}" async></script>
+    <script type="module" src="/widget.js" data-widget-key="main-chat" data-agent="${agent}" data-theme="${theme}" data-launcher="${launcher}" data-placement="${placement}" async></script>
   </body>
 </html>`;
 }
@@ -310,7 +298,7 @@ async function coreFetch(request) {
     return Response.json(messageFor(conversation, body));
   }
   if (url.pathname === `/v1/conversations/${conversation.conversationId}/events`) {
-    return new Response('', {
+    return new Response(eventStream(conversation), {
       headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' },
     });
   }
@@ -337,6 +325,21 @@ function conversationFor(agentRef) {
     createdAt: '2026-07-23T12:00:00.000Z',
     updatedAt: '2026-07-23T12:00:00.000Z',
   };
+}
+
+function eventStream(conversation) {
+  const base = {
+    eventId: `event-${conversation.agentRef}`,
+    sequence: 1,
+    type: 'message.delta',
+    occurredAt: '2026-07-23T12:00:02.000Z',
+    visibility: 'public',
+    conversationId: conversation.conversationId,
+    runId: `run-${conversation.agentRef}`,
+    messageId: `assistant-${conversation.agentRef}`,
+    data: { delta: 'Hello from the shared gateway.' },
+  };
+  return `id: ${base.eventId}\nevent: ${base.type}\ndata: ${JSON.stringify(base)}\n\n`;
 }
 
 function messageFor(conversation, body) {

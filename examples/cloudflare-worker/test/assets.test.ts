@@ -12,8 +12,21 @@ describe('Cloudflare gateway static assets', () => {
 
     expect(buildScript).toContain("join(outputDirectory, 'dashboard.html')");
     expect(buildScript).toContain("join(outputDirectory, 'favicon.svg')");
+    expect(buildScript).toContain("widget: join(exampleDirectory, 'site/widget.ts')");
     expect(dashboard).toContain('<div id="root"></div>');
     expect(dashboard).toContain('src="/dashboard.js"');
+  });
+
+  it('bundles the artwork widget as a static cross-origin script', async () => {
+    const source = await readFile(new URL('../site/widget.ts', import.meta.url), 'utf8');
+    const headers = await readFile(new URL('../site/_headers', import.meta.url), 'utf8');
+
+    expect(source).toContain("this.getAttribute('artwork-key')");
+    expect(source).toContain("new URL('./agent-shadow-tooltip-blue.webp'");
+    expect(source).toContain('createChatClient');
+    expect(source).toContain("url.searchParams.set('widgetKey', config.widgetKey)");
+    expect(headers).toMatch(/\/widget\.js[\s\S]*Access-Control-Allow-Origin: \*/);
+    expect(headers).toMatch(/\/agent-shadow-tooltip-blue\.webp[\s\S]*Cross-Origin-Resource-Policy: cross-origin/);
   });
 
   it('keeps the chat iframe frameable only same-origin while blocking dashboard framing', async () => {

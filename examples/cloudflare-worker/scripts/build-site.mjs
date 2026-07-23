@@ -14,9 +14,11 @@ await build({
   entryPoints: {
     app: join(exampleDirectory, 'site/main.tsx'),
     dashboard: join(repositoryDirectory, 'apps/dashboard/src/main.tsx'),
+    widget: join(exampleDirectory, 'site/widget.ts'),
   },
   bundle: true,
   format: 'esm',
+  loader: { '.css': 'text' },
   minify: true,
   outdir: outputDirectory,
   sourcemap: true,
@@ -29,3 +31,14 @@ await copyFile(
   join(outputDirectory, 'dashboard.html'),
 );
 await copyFile(join(exampleDirectory, 'site/_headers'), join(outputDirectory, '_headers'));
+await Promise.all(
+  [
+    'agent-shadow-tooltip.webp',
+    'agent-shadow-tooltip-earth.webp',
+    'agent-shadow-tooltip-blue.webp',
+    'agent-shadow-tooltip-dark-green.webp',
+    'agent-shadow-tooltip-rgb.webp',
+    'agent-shadow-tooltip-light.webp',
+    'agent-shadow-tooltip-rgb-neon.webp',
+  ].map((file) => copyFile(join(exampleDirectory, 'site', file), join(outputDirectory, file))),
+);

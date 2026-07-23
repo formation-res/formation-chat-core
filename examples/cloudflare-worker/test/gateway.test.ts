@@ -226,7 +226,7 @@ describe('Cloudflare chat gateway', () => {
     expect(response.headers.get('cache-control')).toContain('max-age=60');
     expect(await response.json()).toEqual({
       widgetKey: 'main-chat',
-      siteKey: 'same-origin-gateway',
+      siteKey: 'trusted-site',
       agent: 'sales',
       agentLabel: 'Sales',
       version: '2026-07-23',
@@ -288,23 +288,6 @@ describe('Cloudflare chat gateway', () => {
       widgetKey: 'main-chat',
       agentAlias: 'sales',
     });
-  });
-
-  it('serves an embeddable widget script with safe initialization behavior', async () => {
-    const fetchUpstream = vi.fn<typeof fetch>();
-
-    const response = await handleGatewayRequest(request('/widget.js', { method: 'GET' }), env, {
-      fetch: fetchUpstream,
-    });
-
-    expect(response.status).toBe(200);
-    expect(response.headers.get('content-type')).toContain('application/javascript');
-    const script = await response.text();
-    expect(script).toContain('formationChatWidget');
-    expect(script).toContain("createElement('iframe')");
-    expect(script).toContain('applyPlacement');
-    expect(script).toContain('aria-expanded');
-    expect(fetchUpstream).not.toHaveBeenCalled();
   });
 
   it('forwards protected admin dashboard reads only from configured dashboard origins', async () => {

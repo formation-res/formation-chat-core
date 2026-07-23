@@ -4,7 +4,6 @@ const OPAQUE_ID = '[A-Za-z0-9][A-Za-z0-9._~-]{0,127}';
 const PUBLIC_TOKEN = /^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$/;
 
 const ROUTES: readonly Route[] = [
-  { pattern: /^\/widget\.js$/, methods: ['GET'], kind: 'widget-script' },
   { pattern: /^\/widget\/config$/, methods: ['GET'], kind: 'widget-config' },
   { pattern: /^\/v1\/admin\/overview$/, methods: ['GET'], kind: 'admin' },
   {
@@ -57,7 +56,7 @@ const FORWARDED_RESPONSE_HEADERS = [
 interface Route {
   pattern: RegExp;
   methods: readonly string[];
-  kind: 'admin' | 'bootstrap' | 'public' | 'widget-config' | 'widget-script';
+  kind: 'admin' | 'bootstrap' | 'public' | 'widget-config';
 }
 
 interface SiteConfig {
@@ -121,16 +120,13 @@ export async function handleGatewayRequest(
   const allowedOrigins =
     route.kind === 'admin' ? dashboardOrigins(site, requestUrl) : site.allowedOrigins;
   const requestOrigin = request.headers.get('origin');
-  const origin =
-    route.kind === 'widget-script' && !requestOrigin
-      ? undefined
-      : validatedOrigin(
-          requestOrigin,
-          allowedOrigins,
-          requestUrl.origin,
-          request.headers.get('sec-fetch-site'),
-        );
-  if (route.kind !== 'widget-script' && !origin) {
+  const origin = validatedOrigin(
+    requestOrigin,
+    allowedOrigins,
+    requestUrl.origin,
+    request.headers.get('sec-fetch-site'),
+  );
+  if (!origin) {
     return errorResponse(403, 'ORIGIN_NOT_ALLOWED', 'Origin not allowed.', correlationId);
   }
 
@@ -148,7 +144,6 @@ export async function handleGatewayRequest(
     return response;
   }
 
-  if (route.kind === 'widget-script') return widgetScriptResponse(origin ?? undefined);
   if (route.kind === 'widget-config') {
     return widgetConfigurationResponse(
       requestUrl,
@@ -495,7 +490,7 @@ function widgetConfigurationResponse(
   return new Response(
     JSON.stringify({
       widgetKey: widget.widgetKey,
-      siteKey: 'same-origin-gateway',
+      siteKey: site.siteKey,
       agent,
       agentLabel: alias.label,
       version: publicTokenParam(requestUrl, 'version') ?? widget.version,
@@ -506,16 +501,6 @@ function widgetConfigurationResponse(
     }),
     { headers },
   );
-}
-
-function widgetScriptResponse(origin?: string): Response {
-  const headers = new Headers({
-    'Cache-Control': 'public, max-age=300',
-    'Content-Type': 'application/javascript; charset=utf-8',
-  });
-  headers.set('X-Content-Type-Options', 'nosniff');
-  if (origin) addCorsHeaders(headers, origin);
-  return new Response(WIDGET_SCRIPT, { headers });
 }
 
 function upstreamCoreUrl(requestUrl: URL, coreBaseUrl: URL, kind: Route['kind']): URL {
@@ -675,90 +660,3 @@ class WidgetRequestError extends Error {
     super(message);
   }
 }
-
-const WIDGET_SCRIPT = `(() => {
-  const script = document.currentScript;
-  const dataset = script && script.dataset ? script.dataset : {};
-  const endpoint = new URL('/widget/config', script ? script.src : window.location.href);
-  const params = {
-    widgetKey: dataset.widgetKey,
-    agent: dataset.agent,
-    theme: dataset.theme,
-    launcher: dataset.launcher,
-    placement: dataset.placement,
-    version: dataset.version,
-  };
-  for (const [key, value] of Object.entries(params)) {
-    if (value) endpoint.searchParams.set(key, value);
-  }
-
-  const state = window.formationChatWidget || {};
-  window.formationChatWidget = state;
-  state.ready = fetch(endpoint, { credentials: 'omit' })
-    .then((response) => {
-      if (!response.ok) throw new Error('Widget configuration failed.');
-      return response.json();
-    })
-    .then((config) => {
-      state.config = config;
-      const frameUrl = new URL('/', endpoint.origin);
-      frameUrl.searchParams.set('widgetKey', config.widgetKey);
-      frameUrl.searchParams.set('agent', config.agent);
-      const launcher = document.createElement('button');
-      launcher.type = 'button';
-      launcher.dataset.formationChatWidget = config.widgetKey;
-      launcher.dataset.theme = config.theme;
-      launcher.dataset.launcher = config.launcher;
-      launcher.textContent = config.agentLabel || 'Chat';
-      launcher.setAttribute('aria-expanded', 'false');
-      Object.assign(launcher.style, {
-        position: 'fixed',
-        zIndex: '2147483647',
-        border: '0',
-        borderRadius: config.launcher === 'text' ? '999px' : '12px',
-        padding: config.launcher === 'text' ? '0.75rem 1rem' : '0.8rem 1rem',
-        font: '600 0.95rem system-ui, sans-serif',
-        color: config.theme === 'dark' ? '#f5f3eb' : '#163126',
-        background: config.theme === 'dark' ? '#163126' : '#efe1bb',
-        boxShadow: '0 12px 30px rgba(0, 0, 0, 0.18)',
-        cursor: 'pointer',
-      });
-      const frame = document.createElement('iframe');
-      frame.title = config.agentLabel ? config.agentLabel + ' chat' : 'Chat';
-      frame.src = frameUrl.toString();
-      frame.hidden = true;
-      frame.dataset.formationChatWidgetFrame = config.widgetKey;
-      Object.assign(frame.style, {
-        position: 'fixed',
-        width: 'min(24rem, calc(100vw - 2rem))',
-        height: 'min(40rem, calc(100vh - 6rem))',
-        border: '0',
-        borderRadius: '12px',
-        zIndex: '2147483647',
-      });
-      applyPlacement(launcher, config.placement, '1rem');
-      applyPlacement(frame, config.placement, '4.5rem');
-      launcher.addEventListener('click', () => {
-        frame.hidden = !frame.hidden;
-        launcher.setAttribute('aria-expanded', String(!frame.hidden));
-        window.dispatchEvent(new CustomEvent('formation-chat-widget-open', { detail: config }));
-      });
-      document.body.appendChild(frame);
-      document.body.appendChild(launcher);
-      window.dispatchEvent(new CustomEvent('formation-chat-widget-ready', { detail: config }));
-      return config;
-    })
-    .catch((error) => {
-      state.error = error;
-      window.dispatchEvent(new CustomEvent('formation-chat-widget-error'));
-      throw error;
-    });
-
-  function applyPlacement(element, placement, bottom) {
-    element.style.bottom = bottom;
-    element.style.left = '';
-    element.style.right = '';
-    if (placement === 'bottom-left') element.style.left = '1rem';
-    else element.style.right = '1rem';
-  }
-})();`;

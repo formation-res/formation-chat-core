@@ -69,12 +69,15 @@ export function verifyProductionConfig(config, options = {}) {
 
   const runWorkerFirst = assets.run_worker_first;
   if (!Array.isArray(runWorkerFirst)) {
-    errors.push('assets.run_worker_first must include /widget.js, /widget/config, and /v1/*.');
+    errors.push('assets.run_worker_first must include /widget/config and /v1/*.');
   } else {
-    for (const route of ['/widget.js', '/widget/config', '/v1/*']) {
+    for (const route of ['/widget/config', '/v1/*']) {
       if (!runWorkerFirst.includes(route)) {
         errors.push(`assets.run_worker_first must include ${route}.`);
       }
+    }
+    if (runWorkerFirst.includes('/widget.js')) {
+      errors.push('assets.run_worker_first must not include /widget.js; it is a bundled static asset.');
     }
   }
 
