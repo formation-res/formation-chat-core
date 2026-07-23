@@ -157,9 +157,9 @@ export async function handleGatewayRequest(
   }
   const trustedOrigin = origin;
 
-  let selectedSiteKey: string;
+  let selectedWidget: WidgetConfig | undefined;
   try {
-    selectedSiteKey = trustedSiteKeyForRequest(requestUrl, site);
+    selectedWidget = validatedWidgetForRequest(requestUrl, site);
   } catch (error) {
     if (error instanceof WidgetRequestError) {
       return errorResponse(error.status, error.code, error.message, correlationId, trustedOrigin);
@@ -185,7 +185,7 @@ export async function handleGatewayRequest(
       );
     }
     try {
-      body = await prepareBody(request, route.kind, selectedSiteKey);
+      body = await prepareBody(request, route.kind, site.siteKey, requestUrl, selectedWidget);
     } catch (error) {
       if (error instanceof RequestBodyError) {
         return errorResponse(error.status, error.code, error.message, correlationId, trustedOrigin);
@@ -373,6 +373,8 @@ async function prepareBody(
   request: Request,
   kind: Route['kind'],
   siteKey: string,
+  requestUrl: URL,
+  widget?: WidgetConfig,
 ): Promise<string> {
   const raw = await readBoundedBody(request, MAX_REQUEST_BYTES);
   let value: unknown;
@@ -389,19 +391,23 @@ async function prepareBody(
   if (browserIdentity !== undefined && typeof browserIdentity !== 'string') {
     throw new RequestBodyError(400, 'INVALID_REQUEST', 'The session request is invalid.');
   }
-  return JSON.stringify({ ...(browserIdentity ? { browserIdentity } : {}), siteKey });
+  return JSON.stringify({
+    ...(browserIdentity ? { browserIdentity } : {}),
+    siteKey,
+    ...(widget ? { widgetKey: widget.widgetKey } : {}),
+    ...(widget ? { agentAlias: publicTokenParam(requestUrl, 'agent') ?? widget.defaultAgent } : {}),
+  });
 }
 
-function trustedSiteKeyForRequest(requestUrl: URL, site: SiteConfig): string {
-  if (requestUrl.pathname !== '/v1/sessions') return site.siteKey;
+function validatedWidgetForRequest(requestUrl: URL, site: SiteConfig): WidgetConfig | undefined {
+  if (requestUrl.pathname !== '/v1/sessions') return undefined;
   const widget = resolveWidget(requestUrl, site);
-  if (!widget) return site.siteKey;
+  if (!widget) return undefined;
   const agent = publicTokenParam(requestUrl, 'agent') ?? widget.defaultAgent;
-  const alias = widget.agentAliases[agent];
-  if (!alias) {
+  if (!widget.agentAliases[agent]) {
     throw new WidgetRequestError(403, 'AGENT_NOT_ALLOWED', 'Agent not allowed for this widget.');
   }
-  return alias.siteKey;
+  return widget;
 }
 
 function resolveWidget(requestUrl: URL, site: SiteConfig): WidgetConfig | undefined {

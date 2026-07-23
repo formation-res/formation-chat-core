@@ -133,7 +133,10 @@ describe('PostgreSQL persistence base', () => {
         launcher: 'agent',
         placement: 'bottom-right',
         defaultAgentAlias: 'support',
-        agentAliases: [{ alias: 'support', label: 'Support', agentRef: 'support-agent' }],
+        agentAliases: [
+          { alias: 'support', label: 'Support', agentRef: 'support-agent' },
+          { alias: 'sales', label: 'Sales', agentRef: 'sales-agent' },
+        ],
       },
     };
 
@@ -161,7 +164,10 @@ describe('PostgreSQL persistence base', () => {
     expect(widget).toEqual({
       display_name: 'Updated chat',
       theme: 'blue',
-      agent_aliases: [{ alias: 'support', label: 'Support', agentRef: 'support-agent' }],
+      agent_aliases: [
+        { alias: 'support', label: 'Support', agentRef: 'support-agent' },
+        { alias: 'sales', label: 'Sales', agentRef: 'sales-agent' },
+      ],
     });
     await expect(exportWorkerChatSites(database)).resolves.toEqual({
       'widget.example.test': {
@@ -174,7 +180,10 @@ describe('PostgreSQL persistence base', () => {
           theme: 'blue',
           launcher: 'agent',
           placement: 'bottom-right',
-          agentAliases: { support: { siteKey: 'site-widget-key', label: 'Support' } },
+          agentAliases: {
+            support: { siteKey: 'site-widget-key', label: 'Support' },
+            sales: { siteKey: 'site-widget-key', label: 'Sales' },
+          },
         },
       },
     });

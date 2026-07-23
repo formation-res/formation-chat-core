@@ -7,15 +7,33 @@ import type {
 import { sql } from 'kysely';
 
 import type { Database } from '../database/database.js';
+import type { SiteWidgetAgentAlias } from '../database/types.js';
 import { SessionTokenService } from './token.js';
 
 export class SessionBootstrapError extends Error {
   constructor(
-    readonly code: 'SITE_NOT_FOUND' | 'ORIGIN_NOT_ALLOWED',
+    readonly code:
+      | 'SITE_NOT_FOUND'
+      | 'ORIGIN_NOT_ALLOWED'
+      | 'WIDGET_NOT_FOUND'
+      | 'AGENT_ALIAS_NOT_ALLOWED',
     readonly statusCode: 403 | 404,
   ) {
-    super(code === 'SITE_NOT_FOUND' ? 'The site was not found.' : 'The origin is not allowed.');
+    super(messageForBootstrapError(code));
     this.name = 'SessionBootstrapError';
+  }
+}
+
+function messageForBootstrapError(code: SessionBootstrapError['code']): string {
+  switch (code) {
+    case 'SITE_NOT_FOUND':
+      return 'The site was not found.';
+    case 'ORIGIN_NOT_ALLOWED':
+      return 'The origin is not allowed.';
+    case 'WIDGET_NOT_FOUND':
+      return 'The widget was not found.';
+    case 'AGENT_ALIAS_NOT_ALLOWED':
+      return 'The agent alias is not allowed for this widget.';
   }
 }
 
@@ -62,7 +80,7 @@ export class SessionService {
   ): Promise<SessionBootstrapResponse> {
     const site = await this.database
       .selectFrom('sites')
-      .select(['site_id', 'tenant_id', 'allowed_origins'])
+      .select(['site_id', 'tenant_id', 'allowed_origins', 'agent_ref'])
       .where('site_key', '=', request.siteKey)
       .executeTakeFirst();
     if (!site) throw new SessionBootstrapError('SITE_NOT_FOUND', 404);
@@ -71,8 +89,23 @@ export class SessionService {
     const allowed = site.allowed_origins.some((candidate) => normalizeOrigin(candidate) === origin);
     if (!origin || !allowed) throw new SessionBootstrapError('ORIGIN_NOT_ALLOWED', 403);
 
+    const agentRef = await this.resolveAgentRef(
+      site.tenant_id,
+      site.site_id,
+      site.agent_ref,
+      request.widgetKey,
+      request.agentAlias,
+    );
+
     const requestHash = createHash('sha256')
-      .update(JSON.stringify([request.siteKey, request.browserIdentity ?? null]))
+      .update(
+        JSON.stringify([
+          request.siteKey,
+          request.widgetKey ?? null,
+          request.agentAlias ?? null,
+          request.browserIdentity ?? null,
+        ]),
+      )
       .digest('hex');
     const expiresAt = new Date(now.getTime() + this.ttlSeconds * 1000);
     const identity = await this.database.transaction().execute(async (transaction) => {
@@ -182,6 +215,7 @@ export class SessionService {
       {
         tenantId: site.tenant_id,
         siteId: site.site_id,
+        agentRef,
         principalId: identity.principalId,
         sessionId: identity.sessionId,
       },
@@ -193,9 +227,40 @@ export class SessionService {
       expiresAt: issued.claims.expiresAt,
       tenantId: site.tenant_id,
       siteId: site.site_id,
+      agentRef,
       principal: { kind: 'anonymous', principalId: identity.principalId },
       sessionId: identity.sessionId,
       browserIdentity: identity.browserIdentity,
     };
   }
+
+  private async resolveAgentRef(
+    tenantId: string,
+    siteId: string,
+    defaultAgentRef: string,
+    widgetKey?: string,
+    agentAlias?: string,
+  ): Promise<string> {
+    if (!widgetKey) {
+      if (agentAlias) throw new SessionBootstrapError('AGENT_ALIAS_NOT_ALLOWED', 403);
+      return defaultAgentRef;
+    }
+    const widget = await this.database
+      .selectFrom('site_widgets')
+      .select(['default_agent_alias', 'agent_aliases'])
+      .where('tenant_id', '=', tenantId)
+      .where('site_id', '=', siteId)
+      .where('widget_key', '=', widgetKey)
+      .executeTakeFirst();
+    if (!widget) throw new SessionBootstrapError('WIDGET_NOT_FOUND', 404);
+    const aliases = normalizeAgentAliases(widget.agent_aliases);
+    const selectedAlias = agentAlias ?? widget.default_agent_alias;
+    const match = aliases.find((alias) => alias.alias === selectedAlias);
+    if (!match) throw new SessionBootstrapError('AGENT_ALIAS_NOT_ALLOWED', 403);
+    return match.agentRef;
+  }
+}
+
+function normalizeAgentAliases(value: SiteWidgetAgentAlias[] | string): SiteWidgetAgentAlias[] {
+  return Array.isArray(value) ? value : (JSON.parse(value) as SiteWidgetAgentAlias[]);
 }

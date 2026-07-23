@@ -23,7 +23,12 @@ const events = new EventService(
   new EventStore(database, { retentionMaxEvents: 100 }),
   new EventBroker({ subscriberBufferSize: 10 }),
 );
-const scope = { tenantId: 'tenant-worker', siteId: 'site-worker', principalId: 'principal-worker' };
+const scope = {
+  tenantId: 'tenant-worker',
+  siteId: 'site-worker',
+  agentRef: 'agent-worker',
+  principalId: 'principal-worker',
+};
 
 beforeAll(async () => {
   await migrateDatabase(database);

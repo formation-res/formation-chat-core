@@ -135,6 +135,7 @@ describe('admin query API', () => {
       await sessionTokens.issue({
         tenantId: 'tenant-admin-a',
         siteId: 'site-admin-a1',
+        agentRef: 'support',
         principalId: 'principal-a1',
         sessionId: 'session-public',
       })

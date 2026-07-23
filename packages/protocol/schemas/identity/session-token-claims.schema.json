@@ -5,6 +5,7 @@
   "required": [
     "tenantId",
     "siteId",
+    "agentRef",
     "principalId",
     "sessionId",
     "scopes",
@@ -19,6 +20,12 @@
       "type": "string"
     },
     "siteId": {
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+      "type": "string"
+    },
+    "agentRef": {
       "minLength": 1,
       "maxLength": 128,
       "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",

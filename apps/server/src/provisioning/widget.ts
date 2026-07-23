@@ -154,7 +154,6 @@ export async function exportWorkerChatSites(database: Database): Promise<WorkerC
     .select([
       'site.site_key',
       'site.allowed_origins',
-      'site.agent_ref',
       'widget.widget_key',
       'widget.version',
       'widget.theme',
@@ -172,11 +171,6 @@ export async function exportWorkerChatSites(database: Database): Promise<WorkerC
     const aliases = normalizeAgentAliases(row.agent_aliases);
     const workerAliases: Record<string, { siteKey: string; label: string }> = {};
     for (const alias of aliases) {
-      if (alias.agentRef !== row.agent_ref) {
-        throw new WorkerSiteExportError(
-          `Widget ${row.widget_key} alias ${alias.alias} requires agentRef ${alias.agentRef}; current bootstrap can only export aliases for ${row.agent_ref}.`,
-        );
-      }
       workerAliases[alias.alias] = { siteKey: row.site_key, label: alias.label };
     }
     if (!workerAliases[row.default_agent_alias]) {

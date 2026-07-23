@@ -86,6 +86,7 @@ export const SessionTokenClaimsSchema = Type.Object(
   {
     tenantId: OpaqueIdSchema,
     siteId: OpaqueIdSchema,
+    agentRef: OpaqueIdSchema,
     principalId: OpaqueIdSchema,
     sessionId: OpaqueIdSchema,
     scopes: Type.Array(AccessScopeSchema, { minItems: 1, uniqueItems: true }),
@@ -99,6 +100,8 @@ export type SessionTokenClaims = Static<typeof SessionTokenClaimsSchema>;
 export const AnonymousBootstrapRequestSchema = Type.Object(
   {
     siteKey: OpaqueIdSchema,
+    widgetKey: Type.Optional(OpaqueIdSchema),
+    agentAlias: Type.Optional(OpaqueIdSchema),
     browserIdentity: Type.Optional(OpaqueIdSchema),
   },
   { additionalProperties: false },
@@ -121,6 +124,7 @@ export const SessionBootstrapResponseSchema = Type.Object(
     expiresAt: TimestampSchema,
     tenantId: OpaqueIdSchema,
     siteId: OpaqueIdSchema,
+    agentRef: OpaqueIdSchema,
     principal: PrincipalSchema,
     sessionId: OpaqueIdSchema,
     browserIdentity: Type.Optional(OpaqueIdSchema),

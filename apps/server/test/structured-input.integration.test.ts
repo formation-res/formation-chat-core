@@ -26,7 +26,12 @@ const events = new EventService(
   new EventBroker({ subscriberBufferSize: 10 }),
 );
 const tokens = new SessionTokenService('0123456789abcdef0123456789abcdef', 600);
-const scope = { tenantId: 'tenant-input', siteId: 'site-input', principalId: 'principal-input' };
+const scope = {
+  tenantId: 'tenant-input',
+  siteId: 'site-input',
+  agentRef: 'support',
+  principalId: 'principal-input',
+};
 const server = buildServer({
   checkDatabase: async () => undefined,
   conversationService: conversations,

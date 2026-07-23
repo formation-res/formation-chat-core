@@ -27,6 +27,7 @@ beforeAll(async () => {
   await database.deleteFrom('session_bootstrap_idempotency').execute();
   await database.deleteFrom('browser_sessions').execute();
   await database.deleteFrom('principals').execute();
+  await database.deleteFrom('site_widgets').execute();
   await database.deleteFrom('sites').execute();
   await database.deleteFrom('tenants').execute();
   await database
@@ -56,6 +57,25 @@ beforeAll(async () => {
         agent_ref: 'agent-b',
       },
     ])
+    .execute();
+  await database
+    .insertInto('site_widgets')
+    .values({
+      widget_id: 'widget-a',
+      tenant_id: 'tenant-a',
+      site_id: 'site-a',
+      widget_key: 'main-chat',
+      display_name: 'Main chat',
+      version: '2026-07-23',
+      theme: 'earth',
+      launcher: 'agent',
+      placement: 'bottom-right',
+      default_agent_alias: 'support',
+      agent_aliases: JSON.stringify([
+        { alias: 'support', label: 'Support', agentRef: 'agent-a' },
+        { alias: 'sales', label: 'Sales', agentRef: 'agent-sales' },
+      ]),
+    })
     .execute();
 });
 
@@ -111,6 +131,36 @@ describe('POST /v1/sessions', () => {
     expect((await bootstrap({ siteKey: 'site-key-a' }, 'https://evil.example')).statusCode).toBe(
       403,
     );
+  });
+
+  it('resolves configured widget aliases into trusted token agent refs', async () => {
+    const response = await bootstrap({
+      siteKey: 'site-key-a',
+      widgetKey: 'main-chat',
+      agentAlias: 'sales',
+    });
+    const body = response.json();
+    const tokens = new SessionTokenService(secret, 600);
+
+    expect(response.statusCode).toBe(200);
+    expect(body.agentRef).toBe('agent-sales');
+    await expect(tokens.verify(body.accessToken)).resolves.toMatchObject({
+      tenantId: 'tenant-a',
+      siteId: 'site-a',
+      agentRef: 'agent-sales',
+    });
+    expect((await bootstrap({ siteKey: 'site-key-a', widgetKey: 'missing' })).statusCode).toBe(
+      404,
+    );
+    expect(
+      (
+        await bootstrap({
+          siteKey: 'site-key-a',
+          widgetKey: 'main-chat',
+          agentAlias: 'private-admin',
+        })
+      ).statusCode,
+    ).toBe(403);
   });
 
   it('requires an idempotency key for the retryable write', async () => {

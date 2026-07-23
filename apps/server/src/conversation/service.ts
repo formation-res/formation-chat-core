@@ -12,7 +12,7 @@ import type { DatabaseSchema } from '../database/types.js';
 import { decodeConversationCursor, encodeConversationCursor } from './cursor.js';
 
 type QueryDatabase = Kysely<DatabaseSchema> | Transaction<DatabaseSchema>;
-type ConversationScope = Pick<SessionTokenClaims, 'tenantId' | 'siteId' | 'principalId'>;
+type ConversationScope = Pick<SessionTokenClaims, 'tenantId' | 'siteId' | 'agentRef' | 'principalId'>;
 
 export class ConversationApiError extends Error {
   constructor(
@@ -45,12 +45,6 @@ export class ConversationService {
         return previous.resource_id;
       }
 
-      const site = await transaction
-        .selectFrom('sites')
-        .select('agent_ref')
-        .where('tenant_id', '=', scope.tenantId)
-        .where('site_id', '=', scope.siteId)
-        .executeTakeFirstOrThrow();
       const id = randomUUID();
       const userParticipantId = randomUUID();
       const agentParticipantId = randomUUID();
@@ -61,7 +55,7 @@ export class ConversationService {
           tenant_id: scope.tenantId,
           site_id: scope.siteId,
           principal_id: scope.principalId,
-          agent_ref: site.agent_ref,
+          agent_ref: scope.agentRef,
           status: 'active',
         })
         .execute();
@@ -84,7 +78,7 @@ export class ConversationService {
             conversation_id: id,
             kind: 'agent',
             principal_id: null,
-            agent_ref: site.agent_ref,
+            agent_ref: scope.agentRef,
           },
         ])
         .execute();

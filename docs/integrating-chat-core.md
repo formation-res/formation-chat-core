@@ -143,10 +143,9 @@ JSON value:
 DATABASE_URL='postgresql://...' npm run export:worker-sites --workspace @formation-chat-core/server
 ```
 
-The command prints the `CHAT_SITES` JSON object expected by the shared Worker. The current exporter
-only emits aliases that route to the site's default `agentRef`, because bootstrap still resolves the
-trusted agent from the site key. Widgets with public aliases for different agents need a later
-per-alias site-key or bootstrap-routing slice.
+The command prints the `CHAT_SITES` JSON object expected by the shared Worker. The Worker exposes
+only public aliases and labels; Chat Core validates the widget key and alias against `site_widgets`
+during bootstrap, then places the resolved trusted `agentRef` in the session token.
 
 ### 4. Add the shared gateway
 

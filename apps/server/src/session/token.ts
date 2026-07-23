@@ -14,6 +14,7 @@ const scopes: AccessScope[] = [
 export interface TokenSubject {
   tenantId: string;
   siteId: string;
+  agentRef: string;
   principalId: string;
   sessionId: string;
 }
@@ -73,6 +74,7 @@ export class SessionTokenService {
     const claims: SessionTokenClaims = {
       tenantId: payload.tenantId as string,
       siteId: payload.siteId as string,
+      agentRef: payload.agentRef as string,
       principalId: payload.principalId as string,
       sessionId: payload.sessionId as string,
       scopes: payload.scopes as AccessScope[],
@@ -82,6 +84,7 @@ export class SessionTokenService {
     if (
       typeof claims.tenantId !== 'string' ||
       typeof claims.siteId !== 'string' ||
+      typeof claims.agentRef !== 'string' ||
       typeof claims.principalId !== 'string' ||
       typeof claims.sessionId !== 'string' ||
       !Array.isArray(claims.scopes) ||

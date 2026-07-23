@@ -20,6 +20,13 @@ describe('identity and session contracts', () => {
     expect(validate({ siteKey: 'public_site_key', browserIdentity: 'browser_01JY5N7P8Q' })).toBe(
       true,
     );
+    expect(
+      validate({
+        siteKey: 'public_site_key',
+        widgetKey: 'main-chat',
+        agentAlias: 'support',
+      }),
+    ).toBe(true);
     expect(validate({ siteKey: 'public_site_key', externalUserId: 'admin' })).toBe(false);
     expect(validate({ siteKey: 'public_site_key', tenantId: 'other_tenant' })).toBe(false);
     expect(validate({ siteKey: 'public_site_key', agentRef: 'privileged_agent' })).toBe(false);
@@ -77,6 +84,7 @@ describe('identity and session contracts', () => {
       validate({
         tenantId: 'tenant_01JY5N7P8Q',
         siteId: 'site_01JY5N7P8Q',
+        agentRef: 'agent_01JY5N7P8Q',
         principalId: 'principal_01JY5N7P8Q',
         sessionId: 'session_01JY5N7P8Q',
         scopes: ['conversations:read', 'conversations:write', 'events:read'],
@@ -94,6 +102,7 @@ describe('identity and session contracts', () => {
       expiresAt: '2026-07-15T12:10:00.000Z',
       tenantId: 'tenant_01JY5N7P8Q',
       siteId: 'site_01JY5N7P8Q',
+      agentRef: 'agent_01JY5N7P8Q',
       principal: { kind: 'anonymous', principalId: 'principal_01JY5N7P8Q' },
       sessionId: 'session_01JY5N7P8Q',
       browserIdentity: 'browser_01JY5N7P8Q',

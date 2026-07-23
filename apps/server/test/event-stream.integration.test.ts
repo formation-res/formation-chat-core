@@ -19,7 +19,12 @@ const conversations = new ConversationService(database);
 const tokens = new SessionTokenService('0123456789abcdef0123456789abcdef', 600);
 const broker = new EventBroker({ subscriberBufferSize: 4 });
 const events = new EventService(new EventStore(database, { retentionMaxEvents: 2 }), broker);
-const scope = { tenantId: 'tenant-stream', siteId: 'site-stream', principalId: 'principal-stream' };
+const scope = {
+  tenantId: 'tenant-stream',
+  siteId: 'site-stream',
+  agentRef: 'agent-stream',
+  principalId: 'principal-stream',
+};
 const server = buildServer({
   checkDatabase: async () => undefined,
   conversationService: conversations,

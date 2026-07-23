@@ -6,6 +6,7 @@ const secret = '0123456789abcdef0123456789abcdef';
 const subject = {
   tenantId: 'tenant-a',
   siteId: 'site-a',
+  agentRef: 'agent-a',
   principalId: 'principal-a',
   sessionId: 'session-a',
 };

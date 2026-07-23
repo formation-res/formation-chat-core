@@ -11,7 +11,12 @@ if (!databaseUrl) throw new Error('DATABASE_URL is required for database integra
 const database = createDatabase({ databaseUrl, databasePoolMax: 12 });
 const conversations = new ConversationService(database);
 const messages = new MessageService(database);
-const scope = { tenantId: 'tenant-events', siteId: 'site-events', principalId: 'principal-events' };
+const scope = {
+  tenantId: 'tenant-events',
+  siteId: 'site-events',
+  agentRef: 'agent-events',
+  principalId: 'principal-events',
+};
 
 beforeAll(async () => {
   await migrateDatabase(database);

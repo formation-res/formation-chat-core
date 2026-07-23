@@ -18,7 +18,7 @@ const env: GatewayEnv = {
         placement: 'bottom-right',
         agentAliases: {
           support: { siteKey: 'trusted-site', label: 'Support' },
-          sales: { siteKey: 'sales-site', label: 'Sales' },
+          sales: { siteKey: 'trusted-site', label: 'Sales' },
         },
       },
     },
@@ -240,7 +240,7 @@ describe('Cloudflare chat gateway', () => {
     expect(fetchUpstream).not.toHaveBeenCalled();
   });
 
-  it('resolves a public agent alias to a trusted site key during bootstrap', async () => {
+  it('forwards a public widget and agent alias during bootstrap', async () => {
     let upstreamRequest: Request | undefined;
     const fetchUpstream = vi.fn(async (request: Request) => {
       upstreamRequest = request;
@@ -260,7 +260,9 @@ describe('Cloudflare chat gateway', () => {
     expect(response.status).toBe(200);
     expect(await upstreamRequest?.json()).toEqual({
       browserIdentity: 'browser-1',
-      siteKey: 'sales-site',
+      siteKey: 'trusted-site',
+      widgetKey: 'main-chat',
+      agentAlias: 'sales',
     });
   });
 

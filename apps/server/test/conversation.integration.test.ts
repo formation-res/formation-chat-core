@@ -109,6 +109,7 @@ beforeAll(async () => {
     await tokens.issue({
       tenantId: 'tenant-a',
       siteId: 'site-a',
+      agentRef: 'agent-a',
       principalId: 'principal-a',
       sessionId: 'session-a',
     })
@@ -117,6 +118,7 @@ beforeAll(async () => {
     await tokens.issue({
       tenantId: 'tenant-b',
       siteId: 'site-b',
+      agentRef: 'agent-b',
       principalId: 'principal-b',
       sessionId: 'session-b',
     })
@@ -165,7 +167,7 @@ const cancelRun = (token: string, conversationId: string, idempotencyKey = crypt
   });
 
 describe('conversation API', () => {
-  it('creates a conversation from trusted token and site configuration', async () => {
+  it('creates a conversation from the trusted token agent binding', async () => {
     const response = await createConversation(tokenA);
 
     expect(response.statusCode).toBe(201);
@@ -178,6 +180,31 @@ describe('conversation API', () => {
       participants: [
         { kind: 'user', principalId: 'principal-a' },
         { kind: 'agent', agentRef: 'agent-a' },
+      ],
+    });
+  });
+
+  it('allows one site to create conversations for different trusted widget agents', async () => {
+    const aliasToken = (
+      await tokens.issue({
+        tenantId: 'tenant-a',
+        siteId: 'site-a',
+        agentRef: 'agent-sales',
+        principalId: 'principal-a',
+        sessionId: 'session-a',
+      })
+    ).token;
+    const response = await createConversation(aliasToken);
+
+    expect(response.statusCode).toBe(201);
+    expect(response.json()).toMatchObject({
+      tenantId: 'tenant-a',
+      siteId: 'site-a',
+      principalId: 'principal-a',
+      agentRef: 'agent-sales',
+      participants: [
+        { kind: 'user', principalId: 'principal-a' },
+        { kind: 'agent', agentRef: 'agent-sales' },
       ],
     });
   });
