@@ -11,7 +11,7 @@ services:
       HOST: 0.0.0.0
       PORT: 3000
       LOG_LEVEL: ${LOG_LEVEL:-info}
-      TRUST_PROXY: "true"
+      TRUST_PROXY: 'true'
       CONNECTOR_MODE: ${CONNECTOR_MODE:-haystack}
       HAYSTACK_CONNECTORS: ${HAYSTACK_CONNECTORS:?HAYSTACK_CONNECTORS is required}
       SESSION_TOKEN_SECRET: ${SESSION_TOKEN_SECRET:?SESSION_TOKEN_SECRET is required}
@@ -21,7 +21,7 @@ services:
       ADMIN_TOKEN_TTL_SECONDS: ${ADMIN_TOKEN_TTL_SECONDS:-3600}
       ADMIN_TOKEN_PREVIOUS_SECRETS: ${ADMIN_TOKEN_PREVIOUS_SECRETS:-[]}
     ports:
-      - "${FORMATION_CHAT_CORE_PORT:-127.0.0.1:13000}:3000"
+      - '${FORMATION_CHAT_CORE_PORT:-127.0.0.1:13000}:3000'
     depends_on:
       - postgres
     restart: unless-stopped
@@ -36,7 +36,7 @@ services:
     volumes:
       - formation-chat-core-postgres:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U chat_core -d chat_core"]
+      test: ['CMD-SHELL', 'pg_isready -U chat_core -d chat_core']
       interval: 5s
       timeout: 3s
       retries: 20

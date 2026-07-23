@@ -34,6 +34,7 @@ const bootstrap: SessionBootstrapResponse = {
   expiresAt: '2026-07-15T11:00:00.000Z',
   tenantId: 'tenant-1',
   siteId: 'site-1',
+  agentRef: 'agent-1',
   principal: { kind: 'anonymous', principalId: 'principal-1' },
   sessionId: 'session-1',
   browserIdentity: 'browser-1',

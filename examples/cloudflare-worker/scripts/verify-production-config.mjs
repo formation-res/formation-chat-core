@@ -33,7 +33,8 @@ export function verifyProductionConfig(config, options = {}) {
   const assets = asRecord(config.assets, 'assets', errors);
   const secrets = asRecord(config.secrets, 'secrets', errors);
 
-  const chatCoreBaseUrl = typeof vars.CHAT_CORE_BASE_URL === 'string' ? vars.CHAT_CORE_BASE_URL : '';
+  const chatCoreBaseUrl =
+    typeof vars.CHAT_CORE_BASE_URL === 'string' ? vars.CHAT_CORE_BASE_URL : '';
   const chatSites = typeof vars.CHAT_SITES === 'string' ? vars.CHAT_SITES : '';
 
   if (!chatCoreBaseUrl) {
@@ -53,7 +54,12 @@ export function verifyProductionConfig(config, options = {}) {
     }
     try {
       const sites = JSON.parse(chatSites);
-      if (!sites || typeof sites !== 'object' || Array.isArray(sites) || Object.keys(sites).length === 0) {
+      if (
+        !sites ||
+        typeof sites !== 'object' ||
+        Array.isArray(sites) ||
+        Object.keys(sites).length === 0
+      ) {
         errors.push('vars.CHAT_SITES must be a non-empty JSON object keyed by hostname.');
       }
     } catch (error) {

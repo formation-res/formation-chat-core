@@ -73,6 +73,8 @@ function buildRoute(pattern) {
     pattern,
     ...(process.env.CHAT_GATEWAY_CUSTOM_DOMAIN === 'true' ? { custom_domain: true } : {}),
     ...(process.env.CHAT_GATEWAY_ZONE_ID ? { zone_id: process.env.CHAT_GATEWAY_ZONE_ID } : {}),
-    ...(process.env.CHAT_GATEWAY_ZONE_NAME ? { zone_name: process.env.CHAT_GATEWAY_ZONE_NAME } : {}),
+    ...(process.env.CHAT_GATEWAY_ZONE_NAME
+      ? { zone_name: process.env.CHAT_GATEWAY_ZONE_NAME }
+      : {}),
   };
 }

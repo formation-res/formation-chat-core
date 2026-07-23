@@ -9,6 +9,7 @@ const session = {
   expiresAt: '2026-07-15T11:00:00.000Z',
   tenantId: 'tenant-1',
   siteId: 'site-1',
+  agentRef: 'support',
   principal: { kind: 'anonymous' as const, principalId: 'principal-1' },
   sessionId: 'session-1',
   browserIdentity: 'browser-1',

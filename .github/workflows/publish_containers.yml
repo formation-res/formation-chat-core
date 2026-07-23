@@ -25,7 +25,7 @@ jobs:
           POSTGRES_DB: chat_core_test
           POSTGRES_USER: chat_core
           POSTGRES_PASSWORD: chat_core
-        ports: ["5432:5432"]
+        ports: ['5432:5432']
         options: >-
           --health-cmd "pg_isready -U chat_core -d chat_core_test"
           --health-interval 2s --health-timeout 2s --health-retries 20
@@ -109,7 +109,7 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: 94.130.228.234
-          port: "22"
+          port: '22'
           username: ubuntu
           key: ${{ secrets.HETZNER_DEPLOY_KEY }}
           script: |
