@@ -78,10 +78,15 @@ describe('admin query API', () => {
       },
     });
     expect(
-      overview.json().sites.map(({ siteId, stats }: { siteId: string; stats: unknown }) => ({
-        siteId,
-        stats,
-      })),
+      overview
+        .json()
+        .sites.map(
+          ({ siteId, stats, widgets }: { siteId: string; stats: unknown; widgets: unknown }) => ({
+            siteId,
+            stats,
+            widgets,
+          }),
+        ),
     ).toEqual([
       {
         siteId: 'site-admin-a1',
@@ -92,6 +97,21 @@ describe('admin query API', () => {
           failures: 1,
           handoffs: 2,
         },
+        widgets: [
+          {
+            widgetId: 'widget-admin-a1',
+            widgetKey: 'main-chat',
+            displayName: 'Main website chat',
+            version: '2026-07-23',
+            theme: 'earth',
+            launcher: 'agent',
+            placement: 'bottom-right',
+            defaultAgentAlias: 'support',
+            agentAliases: [{ alias: 'support', label: 'Support', agentRef: 'support' }],
+            createdAt: '2026-07-16T09:00:00.000Z',
+            updatedAt: '2026-07-16T09:00:00.000Z',
+          },
+        ],
       },
       {
         siteId: 'site-admin-a2',
@@ -102,6 +122,7 @@ describe('admin query API', () => {
           failures: 1,
           handoffs: 1,
         },
+        widgets: [],
       },
     ]);
     expect(overview.json().sites[0].recentActivityAt).toBe('2026-07-16T11:22:00.000Z');
@@ -263,6 +284,7 @@ async function clearDatabase(): Promise<void> {
   await database.deleteFrom('session_bootstrap_idempotency').execute();
   await database.deleteFrom('browser_sessions').execute();
   await database.deleteFrom('principals').execute();
+  await database.deleteFrom('site_widgets').execute();
   await database.deleteFrom('sites').execute();
   await database.deleteFrom('tenants').execute();
 }
@@ -282,6 +304,24 @@ async function seedAdminData(): Promise<void> {
       site('site-admin-a2', 'tenant-admin-a'),
       site('site-admin-b1', 'tenant-admin-b'),
     ])
+    .execute();
+  await database
+    .insertInto('site_widgets')
+    .values({
+      widget_id: 'widget-admin-a1',
+      tenant_id: 'tenant-admin-a',
+      site_id: 'site-admin-a1',
+      widget_key: 'main-chat',
+      display_name: 'Main website chat',
+      version: '2026-07-23',
+      theme: 'earth',
+      launcher: 'agent',
+      placement: 'bottom-right',
+      default_agent_alias: 'support',
+      agent_aliases: JSON.stringify([{ alias: 'support', label: 'Support', agentRef: 'support' }]),
+      created_at: new Date('2026-07-16T09:00:00Z'),
+      updated_at: new Date('2026-07-16T09:00:00Z'),
+    })
     .execute();
   await database
     .insertInto('principals')

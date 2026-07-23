@@ -17,6 +17,28 @@ export interface SiteTable {
   created_at: Generated<Date>;
 }
 
+export interface SiteWidgetAgentAlias {
+  alias: string;
+  label: string;
+  agentRef: string;
+}
+
+export interface SiteWidgetTable {
+  widget_id: string;
+  tenant_id: string;
+  site_id: string;
+  widget_key: string;
+  display_name: string;
+  version: string;
+  theme: string;
+  launcher: string;
+  placement: string;
+  default_agent_alias: string;
+  agent_aliases: JSONColumnType<SiteWidgetAgentAlias[]>;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
 export interface PrincipalTable {
   principal_id: string;
   tenant_id: string;
@@ -178,6 +200,7 @@ export interface AuditEventTable {
 export interface DatabaseSchema {
   tenants: TenantTable;
   sites: SiteTable;
+  site_widgets: SiteWidgetTable;
   principals: PrincipalTable;
   browser_sessions: BrowserSessionTable;
   session_bootstrap_idempotency: SessionBootstrapIdempotencyTable;

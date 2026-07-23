@@ -1,5 +1,5 @@
 import { startTransition, useCallback, useMemo, useState } from 'react';
-import type { AdminSiteOverview } from '@formation-chat-core/protocol';
+import type { AdminOverview, AdminSiteOverview } from '@formation-chat-core/protocol';
 
 import type { AdminApi } from './admin-client.js';
 import { ConversationView } from './conversations.js';
@@ -27,7 +27,7 @@ export function Dashboard({
   const [requestedConversationId, setRequestedConversationId] = useState<string>();
   const [selectedSiteId, setSelectedSiteId] = useState<string>();
   const overviewLoader = useCallback((signal: AbortSignal) => api.getOverview(signal), [api]);
-  const overview = useResource(overviewLoader, `overview:${refreshVersion}`);
+  const overview = useResource<AdminOverview>(overviewLoader, `overview:${refreshVersion}`);
   const selectedSite = useMemo(
     () => overview.data?.sites.find((site) => site.siteId === selectedSiteId),
     [overview.data, selectedSiteId],

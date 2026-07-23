@@ -1001,6 +1001,7 @@ select:focus {
   width: 1.15rem;
 }
 .tenant-card-main,
+.tenant-card-widgets,
 .tenant-card-footer {
   min-width: 0;
 }
@@ -1022,9 +1023,22 @@ select:focus {
 .tenant-card-stats {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(4.5rem, 1fr));
   gap: 0.75rem;
   padding-top: 0.35rem;
+}
+.tenant-card-widgets {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 0.25rem;
+  padding-top: 0.25rem;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+.tenant-card-widgets span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .tenant-card-footer {
   grid-column: 1 / -1;

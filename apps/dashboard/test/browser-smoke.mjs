@@ -184,6 +184,21 @@ const overview = {
       siteKey: 'formation-web-key',
       allowedOrigins: ['https://www.tryformation.com'],
       agentRef: 'support-agent',
+      widgets: [
+        {
+          widgetId: 'widget-1',
+          widgetKey: 'main-chat',
+          displayName: 'Main chat',
+          version: '2026-07-23',
+          theme: 'earth',
+          launcher: 'agent',
+          placement: 'bottom-right',
+          defaultAgentAlias: 'support',
+          agentAliases: [{ alias: 'support', label: 'Support', agentRef: 'support-agent' }],
+          createdAt: '2026-07-16T09:00:00.000Z',
+          updatedAt: '2026-07-16T09:00:00.000Z',
+        },
+      ],
       stats: {
         conversations: 1,
         activeConversations: 1,

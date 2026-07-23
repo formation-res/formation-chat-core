@@ -41,6 +41,7 @@
           "siteKey",
           "allowedOrigins",
           "agentRef",
+          "widgets",
           "stats"
         ],
         "properties": {
@@ -75,6 +76,119 @@
             "maxLength": 128,
             "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
             "type": "string"
+          },
+          "widgets": {
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "widgetId",
+                "widgetKey",
+                "displayName",
+                "version",
+                "theme",
+                "launcher",
+                "placement",
+                "defaultAgentAlias",
+                "agentAliases",
+                "createdAt",
+                "updatedAt"
+              ],
+              "properties": {
+                "widgetId": {
+                  "minLength": 1,
+                  "maxLength": 128,
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+                  "type": "string"
+                },
+                "widgetKey": {
+                  "minLength": 1,
+                  "maxLength": 128,
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+                  "type": "string"
+                },
+                "displayName": {
+                  "minLength": 1,
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                "version": {
+                  "minLength": 1,
+                  "maxLength": 128,
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+                  "type": "string"
+                },
+                "theme": {
+                  "minLength": 1,
+                  "maxLength": 128,
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+                  "type": "string"
+                },
+                "launcher": {
+                  "minLength": 1,
+                  "maxLength": 128,
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+                  "type": "string"
+                },
+                "placement": {
+                  "minLength": 1,
+                  "maxLength": 128,
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+                  "type": "string"
+                },
+                "defaultAgentAlias": {
+                  "minLength": 1,
+                  "maxLength": 128,
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+                  "type": "string"
+                },
+                "agentAliases": {
+                  "minItems": 1,
+                  "maxItems": 20,
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "alias",
+                      "label",
+                      "agentRef"
+                    ],
+                    "properties": {
+                      "alias": {
+                        "minLength": 1,
+                        "maxLength": 128,
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+                        "type": "string"
+                      },
+                      "label": {
+                        "minLength": 1,
+                        "maxLength": 80,
+                        "type": "string"
+                      },
+                      "agentRef": {
+                        "minLength": 1,
+                        "maxLength": 128,
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "createdAt": {
+                  "format": "date-time",
+                  "pattern": "Z$",
+                  "type": "string"
+                },
+                "updatedAt": {
+                  "format": "date-time",
+                  "pattern": "Z$",
+                  "type": "string"
+                }
+              }
+            }
           },
           "stats": {
             "additionalProperties": false,

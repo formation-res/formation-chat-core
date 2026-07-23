@@ -26,6 +26,7 @@ describe('PostgreSQL persistence base', () => {
           [
             'tenants',
             'sites',
+            'site_widgets',
             'principals',
             'browser_sessions',
             'session_bootstrap_idempotency',
@@ -50,6 +51,7 @@ describe('PostgreSQL persistence base', () => {
       'messages',
       'principals',
       'session_bootstrap_idempotency',
+      'site_widgets',
       'sites',
       'tenants',
     ]);
@@ -66,6 +68,7 @@ describe('PostgreSQL persistence base', () => {
     await database.deleteFrom('session_bootstrap_idempotency').execute();
     await database.deleteFrom('browser_sessions').execute();
     await database.deleteFrom('principals').execute();
+    await database.deleteFrom('site_widgets').execute();
     await database.deleteFrom('sites').execute();
     await database.deleteFrom('tenants').execute();
     await database

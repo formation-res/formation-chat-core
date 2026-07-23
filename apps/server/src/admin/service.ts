@@ -25,6 +25,7 @@ import type {
   HandoffTable,
   MessageTable,
   SiteTable,
+  SiteWidgetTable,
 } from '../database/types.js';
 import {
   decodeSequenceCursor,
@@ -393,13 +394,15 @@ export class AdminQueryService {
   }
 
   private async siteOverview(scope: AdminScope, site: Selectable<SiteTable>) {
-    const [conversations, activeConversations, runs, failures, handoffs] = await Promise.all([
-      this.countRows('conversations', scope, site.site_id),
-      this.countActiveConversations(scope, site.site_id),
-      this.countRows('agent_runs', scope, site.site_id),
-      this.countFailedRuns(scope, site.site_id),
-      this.countRows('handoffs', scope, site.site_id),
-    ]);
+    const [conversations, activeConversations, runs, failures, handoffs, widgets] =
+      await Promise.all([
+        this.countRows('conversations', scope, site.site_id),
+        this.countActiveConversations(scope, site.site_id),
+        this.countRows('agent_runs', scope, site.site_id),
+        this.countFailedRuns(scope, site.site_id),
+        this.countRows('handoffs', scope, site.site_id),
+        this.widgetsForSite(scope, site.site_id),
+      ]);
     const recentDates = await Promise.all([
       this.latestDate('conversations', scope, site.site_id, 'updated_at'),
       this.latestDate('agent_runs', scope, site.site_id, 'updated_at'),
@@ -415,9 +418,22 @@ export class AdminQueryService {
       siteKey: site.site_key,
       allowedOrigins: normalizeOrigins(site.allowed_origins),
       agentRef: site.agent_ref,
+      widgets,
       stats: { conversations, activeConversations, runs, failures, handoffs },
       ...(recentActivity ? { recentActivityAt: recentActivity.toISOString() } : {}),
     };
+  }
+
+  private async widgetsForSite(scope: AdminScope, siteId: string) {
+    const rows = await this.database
+      .selectFrom('site_widgets')
+      .selectAll()
+      .where('tenant_id', '=', scope.tenantId)
+      .where('site_id', '=', siteId)
+      .orderBy('display_name')
+      .orderBy('widget_id')
+      .execute();
+    return rows.map(mapSiteWidget);
   }
 
   private async countRows(
@@ -497,6 +513,28 @@ export class AdminQueryService {
 
 function normalizeOrigins(value: string[] | string): string[] {
   return Array.isArray(value) ? value : (JSON.parse(value) as string[]);
+}
+
+function normalizeAgentAliases(value: Selectable<SiteWidgetTable>['agent_aliases']) {
+  return Array.isArray(value)
+    ? value
+    : (JSON.parse(value) as Selectable<SiteWidgetTable>['agent_aliases']);
+}
+
+function mapSiteWidget(row: Selectable<SiteWidgetTable>) {
+  return {
+    widgetId: row.widget_id,
+    widgetKey: row.widget_key,
+    displayName: row.display_name,
+    version: row.version,
+    theme: row.theme,
+    launcher: row.launcher,
+    placement: row.placement,
+    defaultAgentAlias: row.default_agent_alias,
+    agentAliases: normalizeAgentAliases(row.agent_aliases),
+    createdAt: row.created_at.toISOString(),
+    updatedAt: row.updated_at.toISOString(),
+  };
 }
 
 function mapConversation(

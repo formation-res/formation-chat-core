@@ -76,7 +76,17 @@ function SiteCard({ site, onSelect }: { site: AdminSiteOverview; onSelect(): voi
         <Stat label="Runs" value={site.stats.runs} compact />
         <Stat label="Failures" value={site.stats.failures} compact attention />
         <Stat label="Handoffs" value={site.stats.handoffs} compact />
+        <Stat label="Widgets" value={site.widgets.length} compact />
       </span>
+      {site.widgets.length > 0 ? (
+        <span className="tenant-card-widgets">
+          {site.widgets.map((widget) => (
+            <span key={widget.widgetId}>
+              {widget.displayName} · {widget.version}
+            </span>
+          ))}
+        </span>
+      ) : null}
       <span className="tenant-card-footer">
         <span>{site.agentRef}</span>
         {site.recentActivityAt ? (

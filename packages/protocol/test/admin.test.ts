@@ -7,6 +7,7 @@ import {
   AdminEventListSchema,
   AdminFailureListSchema,
   AdminHandoffListSchema,
+  AdminOverviewSchema,
   AdminRunListSchema,
   AdminTokenClaimsSchema,
 } from '../src/index.js';
@@ -95,5 +96,56 @@ describe('admin API contracts', () => {
     expect(
       ajv.compile(AdminFailureListSchema)({ data: [{ ...run, status: 'running' }], pagination }),
     ).toBe(false);
+  });
+
+  it('describes deployed widgets in the admin overview without private wiring', () => {
+    const timestamp = '2026-07-16T13:00:00.000Z';
+    const overview = {
+      tenant: { tenantId: 'tenant_1', displayName: 'Tenant One' },
+      sites: [
+        {
+          siteId: 'site_1',
+          displayName: 'Main website',
+          siteKey: 'public_site_key',
+          allowedOrigins: ['https://www.example.com'],
+          agentRef: 'support',
+          widgets: [
+            {
+              widgetId: 'widget_1',
+              widgetKey: 'main-chat',
+              displayName: 'Main chat',
+              version: '2026-07-23',
+              theme: 'earth',
+              launcher: 'agent',
+              placement: 'bottom-right',
+              defaultAgentAlias: 'support',
+              agentAliases: [{ alias: 'support', label: 'Support', agentRef: 'support' }],
+              createdAt: timestamp,
+              updatedAt: timestamp,
+            },
+          ],
+          stats: {
+            conversations: 1,
+            activeConversations: 1,
+            runs: 1,
+            failures: 0,
+            handoffs: 0,
+          },
+          recentActivityAt: timestamp,
+        },
+      ],
+      totals: {
+        conversations: 1,
+        activeConversations: 1,
+        runs: 1,
+        failures: 0,
+        handoffs: 0,
+      },
+    };
+
+    expect(ajv.compile(AdminOverviewSchema)(overview)).toBe(true);
+    expect(JSON.stringify(overview)).not.toContain('baseUrl');
+    expect(JSON.stringify(overview)).not.toContain('tenantKey');
+    expect(JSON.stringify(overview)).not.toContain('credential');
   });
 });

@@ -93,6 +93,34 @@ export const AdminHandoffSchema = Type.Object(
 );
 export type AdminHandoff = Static<typeof AdminHandoffSchema>;
 
+export const AdminWidgetAgentAliasSchema = Type.Object(
+  {
+    alias: OpaqueIdSchema,
+    label: Type.String({ minLength: 1, maxLength: 80 }),
+    agentRef: OpaqueIdSchema,
+  },
+  { additionalProperties: false },
+);
+export type AdminWidgetAgentAlias = Static<typeof AdminWidgetAgentAliasSchema>;
+
+export const AdminSiteWidgetSchema = Type.Object(
+  {
+    widgetId: OpaqueIdSchema,
+    widgetKey: OpaqueIdSchema,
+    displayName: Type.String({ minLength: 1, maxLength: 200 }),
+    version: OpaqueIdSchema,
+    theme: OpaqueIdSchema,
+    launcher: OpaqueIdSchema,
+    placement: OpaqueIdSchema,
+    defaultAgentAlias: OpaqueIdSchema,
+    agentAliases: Type.Array(AdminWidgetAgentAliasSchema, { minItems: 1, maxItems: 20 }),
+    createdAt: TimestampSchema,
+    updatedAt: TimestampSchema,
+  },
+  { additionalProperties: false },
+);
+export type AdminSiteWidget = Static<typeof AdminSiteWidgetSchema>;
+
 export const AdminSiteOverviewSchema = Type.Object(
   {
     siteId: OpaqueIdSchema,
@@ -100,6 +128,7 @@ export const AdminSiteOverviewSchema = Type.Object(
     siteKey: OpaqueIdSchema,
     allowedOrigins: Type.Array(Type.String({ format: 'uri' }), { minItems: 1, maxItems: 20 }),
     agentRef: OpaqueIdSchema,
+    widgets: Type.Array(AdminSiteWidgetSchema, { maxItems: 20 }),
     stats: Type.Object(
       {
         conversations: Type.Integer({ minimum: 0, maximum: Number.MAX_SAFE_INTEGER }),

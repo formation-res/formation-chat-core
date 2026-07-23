@@ -44,6 +44,21 @@ export const overview: AdminOverview = {
       siteKey: 'site-1-key',
       allowedOrigins: ['https://www.example.com'],
       agentRef: 'support-agent',
+      widgets: [
+        {
+          widgetId: 'widget-1',
+          widgetKey: 'main-chat',
+          displayName: 'Main chat',
+          version: '2026-07-23',
+          theme: 'earth',
+          launcher: 'agent',
+          placement: 'bottom-right',
+          defaultAgentAlias: 'support',
+          agentAliases: [{ alias: 'support', label: 'Support', agentRef: 'support-agent' }],
+          createdAt: '2026-07-16T09:00:00.000Z',
+          updatedAt: '2026-07-16T09:00:00.000Z',
+        },
+      ],
       stats: {
         conversations: 1,
         activeConversations: 1,
@@ -59,6 +74,7 @@ export const overview: AdminOverview = {
       siteKey: 'site-2-key',
       allowedOrigins: ['https://docs.example.com'],
       agentRef: 'docs-agent',
+      widgets: [],
       stats: {
         conversations: 2,
         activeConversations: 1,
