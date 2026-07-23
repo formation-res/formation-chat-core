@@ -22,6 +22,7 @@ Toolchain
                           -> browser client
                               -> reference UI
                               -> Cloudflare example
+                              -> shared widget registry and embed script
                           -> Haystack compatibility connector
                               -> native Haystack streaming endpoint
                                   -> email handoff
@@ -473,6 +474,40 @@ the launcher, preserving both the requested next-hover behavior and later keyboa
 - Anonymous history survives refresh in the same browser.
 - The Cloudflare gateway preserves streaming and hides service credentials.
 - Direct integration and gateway integration are both documented.
+
+### Task 12B: Add the shared widget gateway and registry
+
+**Description:** Replace the one-off direct-widget production shape with a shared stateless gateway
+that can serve widget scripts, public widget configuration, public chat routes, and protected
+dashboard assets for many websites. Add an operator-controlled widget registry that maps hostname
+and public widget key to trusted tenant, site, allowed origins, widget version/style defaults, and
+agent bindings.
+
+**Acceptance criteria:**
+
+- One Worker or equivalent gateway deployment can serve multiple websites and widgets.
+- A website can embed the widget with a script tag and public parameters for widget key, style,
+  version, placement, and optional public agent alias.
+- Browser parameters cannot select raw tenant IDs, site IDs, connector URLs, Haystack tenant keys,
+  unrestricted agent slugs, provider settings, or service credentials.
+- Public agent aliases are resolved only when configured for that hostname and widget.
+- Widget configuration distinguishes public presentation settings from private trusted wiring.
+- The dashboard lists deployed widgets/sites, supports the website switch, and opens per-site
+  conversation lists through the existing scoped admin API.
+- Public website origins cannot access admin routes, admin tokens, or protected dashboard data.
+
+**Verification:** Gateway registry unit tests, origin and alias rejection tests, widget embed browser
+smoke test, unbuffered SSE runtime test, dashboard overview/conversation browser test, secret scan,
+type checking, linting, build, and deployment dry run.
+
+**Dependencies:** Tasks 10, 11, 12, 16, and 17
+
+**Files likely touched:** `examples/cloudflare-worker/*`, widget embed package or static entry,
+protocol widget/admin schemas, server provisioning/migrations, dashboard overview cards, integration
+guide, ADR-006
+
+**Estimated scope:** Large; split into contract/registry, gateway routing, widget embed, and
+dashboard exposure slices before coding.
 
 ## Phase 4: Haystack and human handoff
 

@@ -10,7 +10,9 @@ only when the project owner confirms a change in intent.
 Build a self-hosted, open-source, headless chat service with stable APIs, tidy schemas, durable
 sessions, message streaming, synchronization, agent connectors, and detailed integration
 documentation. Applications can use the reference UI, replace it, or build directly on the
-browser client and protocol.
+browser client and protocol. Public websites can embed one configured chat widget with a script tag
+and small public configuration object, while the service keeps the trusted widget, site, and agent
+wiring server side.
 
 The core must not depend on one UI framework, deployment platform, or agent runtime. Haystack is
 the first connector, not part of the generic domain model.
@@ -38,6 +40,8 @@ users authenticated by a host application.
 ### Chat core owns
 
 - tenants and integration sites;
+- widget registrations and trusted site/widget-to-agent bindings;
+- public widget configuration served to browser embeds;
 - anonymous and externally authenticated principals;
 - browser sessions and access tokens;
 - conversations, participants, messages, and content parts;
@@ -66,6 +70,7 @@ users authenticated by a host application.
 - rendering typed public content parts;
 - structured inputs requested by the agent;
 - accessibility and integration-specific appearance.
+- public style options passed by the host page, after applying the trusted widget configuration.
 
 The browser client owns protocol state, cursor handling, deduplication, and synchronization. UI
 packages should remain thin consumers of the browser client.
@@ -76,21 +81,27 @@ Self-hosting is the only required deployment model for v1. The first deployment 
 core on the same server as the Haystack agents, typically with Docker Compose and a private network
 between the services.
 
-A public website may be hosted on Cloudflare Pages or another static host. A small Cloudflare
-Worker is the recommended website-facing gateway:
+A public website may be hosted on Cloudflare Pages or another static host. A shared Cloudflare
+Worker, or equivalent host gateway, is the recommended website-facing gateway:
 
 ```text
-browser UI
-  -> Cloudflare Worker or host backend
+browser widget
+  -> shared Cloudflare Worker or host backend
   -> Formation Chat Core
   -> Haystack connector
   -> Haystack agent
 ```
 
-The Worker is stateless. It identifies the site, exchanges host identity, applies edge controls,
-keeps service credentials out of browser code, and passes response streams through unchanged. It
-does not store chats or run agents. Cloudflare Durable Objects are not required while the chat core
-is the canonical state owner.
+The Worker is stateless. It can serve the embeddable widget script, widget assets, public widget
+configuration, public chat routes, and protected dashboard assets for many websites at once. It
+identifies the site and widget from trusted hostname and widget-key configuration, exchanges host
+identity, applies edge controls, keeps service credentials out of browser code, and passes response
+streams through unchanged. It does not store chats or run agents. Cloudflare Durable Objects are not
+required while the chat core is the canonical state owner.
+
+One Worker per website or widget is not the default. It is acceptable only for temporary pilots,
+hard isolation requirements, or operational exceptions. The scalable model is one shared gateway
+deployment with an operator-controlled widget registry.
 
 Direct browser-to-core integration may be documented as a simpler option. Production public sites
 should prefer a gateway because it provides same-origin requests, secret isolation, origin checks,
@@ -107,7 +118,8 @@ Suggested resource hierarchy:
 ```text
 Tenant
   Site
-    Agent binding
+    Widget
+      Agent binding
     Principal
       Browser session
       Conversation
@@ -205,7 +217,7 @@ Map the generic IDs onto the existing request:
 
 ```text
 tenant_key <- trusted connector configuration
-agent_slug <- trusted site agent binding
+agent_slug <- trusted widget agent binding
 user_id    <- chat principal ID
 thread_id  <- chat conversation ID
 text       <- submitted user message

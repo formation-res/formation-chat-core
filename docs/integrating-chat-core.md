@@ -9,28 +9,31 @@ This guide covers two ways to add Chat Core to an existing product:
 Both ways produce the same runtime shape:
 
 ```text
-website or app
-  -> same-origin gateway or host backend
+website widget or app
+  -> shared gateway or host backend
   -> Formation Chat Core
   -> configured connector
   -> Haystack or another agent runtime
 ```
 
-The gateway is required for a public website. It fixes the trusted site, keeps service credentials
-out of browser code, filters routes and headers, and passes SSE bodies through without buffering.
+The gateway is required for a public website. One shared gateway can serve many websites and
+widgets. It fixes the trusted site and widget, keeps service credentials out of browser code,
+filters routes and headers, and passes SSE bodies through without buffering.
 
 ## What you need
 
 Before starting, collect:
 
 1. The website's exact production origin, such as `https://www.example.com`.
-2. A stable Chat Core tenant ID, site ID, and public site key.
-3. The trusted `agentRef` for this site.
+2. A stable Chat Core tenant ID, site ID, public site key, and public widget key.
+3. The trusted `agentRef` for this widget, plus any public agent alias the website is allowed to
+   pass.
 4. The connector settings. For Haystack these are its base URL, tenant key, agent slug, response
    mode, and timeout.
 5. PostgreSQL and an HTTPS deployment for Chat Core.
-6. A same-origin backend route or edge gateway for `/v1/*`.
-7. A package delivery plan for the browser client and optional React UI.
+6. A shared backend route or edge gateway for the widget script, widget configuration, `/v1/*`, and
+   protected dashboard assets.
+7. A package delivery plan for the browser client, optional React UI, and embeddable widget bundle.
 
 The packages are private workspaces in this repository today. A separate application must consume
 them from a shared monorepo, approved internal registry, or reviewed package artifacts. Do not copy
@@ -61,10 +64,10 @@ The map key `support` is the trusted `agentRef`. Browser input must never choose
 Keep Haystack on a private network when possible. Use HTTPS when traffic crosses an untrusted
 network.
 
-### 3. Create the tenant and site
+### 3. Create the tenant, site, and widget binding
 
 Provision through an operator-controlled migration, script, or admin process. The current schema
-requires:
+stores the site and its default trusted agent binding:
 
 ```sql
 insert into tenants (tenant_id, display_name)
@@ -91,7 +94,13 @@ values (
 Use parameterized SQL in a real provisioning script. Treat tenant and site changes as operator
 actions. Do not expose them as public browser endpoints.
 
-### 4. Add a same-origin gateway
+For the shared-widget architecture, model the embeddable widget as an operator-controlled binding
+on top of the site. Until a dedicated widget table exists, the site's `siteKey`, `allowedOrigins`,
+and `agentRef` are the trusted binding. A public embed may include style, widget-version, and
+placement values. If it includes an `agent` value, that value is only a public alias that must be
+allowed for the widget's hostname and resolved server side to the trusted `agentRef`.
+
+### 4. Add the shared gateway
 
 Expose only these public routes:
 
@@ -108,7 +117,9 @@ POST /v1/conversations/{conversationId}/retry
 
 The gateway must:
 
+- serve the widget script and public widget configuration for known hostnames and widget keys;
 - inject the trusted site key during session bootstrap;
+- resolve any public agent alias to a trusted `agentRef` before core traffic is accepted;
 - preserve the browser's exact allowed origin;
 - forward `Authorization`, `Idempotency-Key`, `Last-Event-ID`, `Accept`, and `Content-Type` where
   required;
@@ -118,10 +129,28 @@ The gateway must:
 - enforce request-size, origin, method, and rate limits;
 - authenticate to Chat Core's private ingress without exposing that credential to the browser.
 
-The Cloudflare implementation in `examples/cloudflare-worker` is the reference. A host backend can
-apply the same rules with its own framework.
+The Cloudflare implementation in `examples/cloudflare-worker` is the current gateway reference. The
+target production shape is a shared deployment whose registry maps many hostnames and widgets to
+trusted site keys, allowed origins, widget style/version defaults, and agent bindings. A host
+backend can apply the same rules with its own framework.
 
-### 5. Add the browser client
+### 5. Embed the widget or add the browser client
+
+For a plain website, use a small script tag plus public configuration:
+
+```html
+<script
+  src="https://chat.example.com/widget.js"
+  data-widget-key="example-public-chat"
+  data-theme="light"
+  data-launcher="agent"
+  data-agent="support"
+  async
+></script>
+```
+
+The public `data-agent` value is an alias, not a raw connector setting. The shared gateway or core
+must reject aliases that are not configured for that hostname and widget.
 
 Use the website's own origin as the transport URL:
 
@@ -229,8 +258,8 @@ Return a small vertical-slice plan that covers:
 Call out missing information and any change that would alter Chat Core's public contract.
 ```
 
-Review the plan. Confirm the origin, site key, agent reference, gateway location, and package source
-before allowing edits.
+Review the plan. Confirm the origin, widget key, trusted agent binding, gateway location, and
+package source before allowing edits.
 
 ### Implementation prompt
 
@@ -292,7 +321,8 @@ and deployment-dry-run gates. Review the final diff for credentials and personal
 - Chat Core and PostgreSQL have backups, retention settings, metrics, and alerts.
 - Chat Core is private or protected by authenticated ingress.
 - The public gateway has exact hostname and origin mappings.
-- Every site has one trusted `agentRef` that exists in server connector configuration.
+- Every widget has one trusted `agentRef`, or an explicit allowlist of public agent aliases, that
+  exists in server connector configuration.
 - The Haystack base URL and credentials are unavailable to browser code.
 - Browser and gateway requests use HTTPS.
 - SSE buffering is disabled at every proxy layer.
