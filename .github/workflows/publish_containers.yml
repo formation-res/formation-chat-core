@@ -1,0 +1,134 @@
+name: Publish Formation Chat Core container
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  REGISTRY: europe-docker.pkg.dev
+  PROJECT_ID: formation-graphqlapi
+  ARTIFACT_REPOSITORY: formation
+  IMAGE_NAME: formation-chat-core
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: chat_core_test
+          POSTGRES_USER: chat_core
+          POSTGRES_PASSWORD: chat_core
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U chat_core -d chat_core_test"
+          --health-interval 2s --health-timeout 2s --health-retries 20
+    env:
+      DATABASE_URL: postgresql://chat_core:chat_core@127.0.0.1:5432/chat_core_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.11.1
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm audit --omit=dev --audit-level=high
+      - run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.28.0 dir /repo --config=/repo/.gitleaks.toml --no-banner --redact
+
+  build-and-push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs:
+      - verify
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GOOGLE_CLOUD_KEY }}
+
+      - name: Set up gcloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker "$REGISTRY" --quiet
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - id: current-date
+        name: Get current date
+        run: echo "now=$(date -u +'%Y-%m-%d-%H-%M')" >> "$GITHUB_OUTPUT"
+
+      - id: build-meta
+        name: Generate image tags
+        run: |
+          ts="${{ steps.current-date.outputs.now }}"
+          image="${REGISTRY}/${PROJECT_ID}/${ARTIFACT_REPOSITORY}/${IMAGE_NAME}"
+
+          {
+            echo "tags<<EOF"
+            echo "${image}:main-${ts}"
+            echo "${image}:${GITHUB_SHA}"
+            echo "${image}:main-latest"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build and push Chat Core image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          provenance: false
+          cache-from: type=gha,scope=${{ github.workflow }}-chat-core
+          cache-to: type=gha,scope=${{ github.workflow }}-chat-core,mode=max
+          tags: ${{ steps.build-meta.outputs.tags }}
+
+  deploy-clawd:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs:
+      - build-and-push
+
+    steps:
+      - name: Restart Formation Chat Core stack on clawd
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 94.130.228.234
+          port: "22"
+          username: ubuntu
+          key: ${{ secrets.HETZNER_DEPLOY_KEY }}
+          script: |
+            cd /etc/docker-compose/formation-chat-core
+            sudo docker-compose -f docker-compose.yml pull
+            sudo systemctl restart formation-chat-core
+            for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
+              if sudo /opt/formation/integrity.d/57-formation-chat-core; then
+                exit 0
+              fi
+              echo "formation-chat-core integrity attempt ${attempt}/12 failed; waiting for stack to settle"
+              sudo systemctl is-active formation-chat-core || true
+              sudo docker ps -a --filter name=formation-chat-core --format 'table {{.Names}}\t{{.Status}}\t{{.Image}}' || true
+              sleep 10
+            done
+            echo "formation-chat-core failed integrity checks after restart; collecting diagnostics"
+            sudo systemctl status formation-chat-core --no-pager || true
+            sudo journalctl -u formation-chat-core -n 200 --no-pager || true
+            sudo docker ps -a --filter name=formation-chat-core --format 'table {{.Names}}\t{{.Status}}\t{{.Image}}' || true
+            sudo docker logs formation-chat-core-api --tail 200 || true
+            sudo docker logs formation-chat-core-postgres --tail 200 || true
+            sudo /opt/formation/integrity.d/57-formation-chat-core

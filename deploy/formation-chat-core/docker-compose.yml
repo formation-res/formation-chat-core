@@ -1,0 +1,46 @@
+name: formation-chat-core
+
+x-chat-core-image: &chat-core-image ${FORMATION_CHAT_CORE_IMAGE:-europe-docker.pkg.dev/formation-graphqlapi/formation/formation-chat-core:main-latest}
+
+services:
+  api:
+    container_name: formation-chat-core-api
+    image: *chat-core-image
+    environment:
+      DATABASE_URL: postgresql://chat_core:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/chat_core
+      HOST: 0.0.0.0
+      PORT: 3000
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      TRUST_PROXY: "true"
+      CONNECTOR_MODE: ${CONNECTOR_MODE:-haystack}
+      HAYSTACK_CONNECTORS: ${HAYSTACK_CONNECTORS:?HAYSTACK_CONNECTORS is required}
+      SESSION_TOKEN_SECRET: ${SESSION_TOKEN_SECRET:?SESSION_TOKEN_SECRET is required}
+      SESSION_TOKEN_TTL_SECONDS: ${SESSION_TOKEN_TTL_SECONDS:-900}
+      SESSION_TOKEN_PREVIOUS_SECRETS: ${SESSION_TOKEN_PREVIOUS_SECRETS:-[]}
+      ADMIN_TOKEN_SECRET: ${ADMIN_TOKEN_SECRET:?ADMIN_TOKEN_SECRET is required}
+      ADMIN_TOKEN_TTL_SECONDS: ${ADMIN_TOKEN_TTL_SECONDS:-3600}
+      ADMIN_TOKEN_PREVIOUS_SECRETS: ${ADMIN_TOKEN_PREVIOUS_SECRETS:-[]}
+    ports:
+      - "${FORMATION_CHAT_CORE_PORT:-127.0.0.1:13000}:3000"
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  postgres:
+    container_name: formation-chat-core-postgres
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: chat_core
+      POSTGRES_USER: chat_core
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - formation-chat-core-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chat_core -d chat_core"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+volumes:
+  formation-chat-core-postgres:
