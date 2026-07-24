@@ -17,14 +17,14 @@
     sans-serif;
 }
 
-* {
+:host * {
   box-sizing: border-box;
 }
-button,
-textarea {
+:host button,
+:host textarea {
   font: inherit;
 }
-button {
+:host button {
   color: inherit;
 }
 
@@ -290,7 +290,7 @@ button {
 .launcher-shell-agent + .panel {
   bottom: calc(1rem + var(--chat-launcher-size, 4rem) + 0.75rem);
 }
-header {
+.panel header {
   align-items: center;
   background: var(--chat-accent);
   border-bottom: 1px solid var(--chat-line);
@@ -299,16 +299,16 @@ header {
   justify-content: space-between;
   padding: 0.6rem 0.75rem;
 }
-.header-copy {
+.panel .header-copy {
   align-items: center;
   display: flex;
   gap: 0.65rem;
   min-width: 0;
 }
-.header-copy strong {
+.panel .header-copy strong {
   font-size: 0.95rem;
 }
-.header-live-dot {
+.panel .header-live-dot {
   animation: live-pulse 2.8s ease-in-out infinite;
   background: var(--chat-accent-strong);
   border: 2px solid var(--chat-paper);
@@ -327,13 +327,13 @@ header {
     box-shadow: 0 0 0 0.4rem color-mix(in srgb, var(--chat-accent-strong) 12%, transparent);
   }
 }
-.header-actions {
+.panel .header-actions {
   align-items: center;
   display: flex;
   gap: 0.25rem;
 }
-.clear,
-.close {
+.panel .clear,
+.panel .close {
   background: transparent;
   border: 0;
   color: var(--chat-ink);
@@ -345,15 +345,15 @@ header {
     background-color 150ms ease,
     color 150ms ease;
 }
-.clear {
+.panel .clear {
   font-size: 0.75rem;
 }
-.close {
+.panel .close {
   aspect-ratio: 1;
   display: grid;
   place-items: center;
 }
-.close-icon {
+.panel .close-icon {
   display: block;
   fill: none;
   height: 0.9rem;
@@ -362,24 +362,24 @@ header {
   stroke-width: 2.5;
   width: 0.9rem;
 }
-.header-actions button:hover:not(:disabled) {
+.panel .header-actions button:hover:not(:disabled) {
   background: rgb(24 25 22 / 10%);
   color: var(--chat-ink);
 }
-.messages {
+.panel .messages {
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
   overflow: auto;
   padding: 1rem;
 }
-.welcome {
+.panel .welcome {
   color: var(--chat-muted);
   margin: auto;
   max-width: 15rem;
   text-align: center;
 }
-.message {
+.panel .message {
   border-radius: 0.75rem;
   line-height: 1.45;
   margin: 0;
@@ -388,17 +388,17 @@ header {
   padding: 0.65rem 0.8rem;
   white-space: pre-wrap;
 }
-.message.user {
+.panel .message.user {
   align-self: flex-end;
   background: var(--chat-accent);
   color: var(--chat-ink);
 }
-.message.assistant {
+.panel .message.assistant {
   align-self: flex-start;
   background: transparent;
   padding-inline: 0.1rem;
 }
-.status {
+.panel .status {
   color: var(--chat-muted);
   font-size: 0.75rem;
   margin: 0;
@@ -406,7 +406,7 @@ header {
   padding: 0.15rem 1rem;
 }
 
-form {
+.panel form {
   align-items: end;
   border-top: 1px solid var(--chat-line);
   display: grid;
@@ -414,14 +414,14 @@ form {
   grid-template-columns: 1fr auto;
   padding: 0.75rem;
 }
-label {
+.panel label {
   height: 1px;
   margin: -1px;
   overflow: hidden;
   position: absolute;
   width: 1px;
 }
-textarea {
+.panel textarea {
   background: var(--chat-paper);
   border: 1px solid var(--chat-line);
   border-radius: 0.5rem;
@@ -431,7 +431,7 @@ textarea {
   padding: 0.65rem 0.75rem;
   resize: vertical;
 }
-.send {
+.panel .send {
   background: var(--chat-accent);
   border: 0;
   border-radius: var(--chat-radius);
@@ -441,24 +441,25 @@ textarea {
   padding: 0 0.85rem;
   transition: background-color 150ms ease;
 }
-.send:hover:not(:disabled) {
+.panel .send:hover:not(:disabled) {
   background: color-mix(in srgb, var(--chat-accent) 72%, white);
 }
-button:disabled,
-textarea:disabled {
+.panel button:disabled,
+.panel textarea:disabled {
   cursor: not-allowed;
   opacity: 0.55;
 }
-button:focus-visible {
+.launcher:focus-visible,
+.panel button:focus-visible {
   outline: 2px solid #5b74ff;
   outline-offset: 2px;
 }
-textarea:focus-visible {
+.panel textarea:focus-visible {
   border-color: var(--chat-ink);
   box-shadow: inset 0 0 0 1px var(--chat-ink);
   outline: none;
 }
-small {
+.panel small {
   color: var(--chat-muted);
   font-size: 0.68rem;
   padding: 0 0.75rem 0.7rem;
@@ -483,7 +484,7 @@ small {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  * {
+  :host * {
     animation: none !important;
     scroll-behavior: auto !important;
     transition: none !important;

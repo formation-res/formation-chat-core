@@ -14,6 +14,16 @@ await build({
   entryPoints: {
     app: join(exampleDirectory, 'site/main.tsx'),
     dashboard: join(repositoryDirectory, 'apps/dashboard/src/main.tsx'),
+  },
+  bundle: true,
+  format: 'esm',
+  minify: true,
+  outdir: outputDirectory,
+  sourcemap: true,
+  target: ['es2022'],
+});
+await build({
+  entryPoints: {
     widget: join(exampleDirectory, 'site/widget.ts'),
   },
   bundle: true,

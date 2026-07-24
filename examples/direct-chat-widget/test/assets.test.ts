@@ -28,8 +28,8 @@ describe('embeddable widget asset', () => {
     expect(styles).toMatch(/\.launcher-tooltip-copy \{[\s\S]*?background: var\(--chat-accent\);/);
     expect(styles).toMatch(/\.launcher-tooltip-copy \{[^}]*color: var\(--chat-ink\);/);
     expect(styles).not.toContain('#d8ff63');
-    expect(styles).toMatch(/textarea \{[^}]*background: var\(--chat-paper\);/);
-    expect(styles).toContain('textarea:focus-visible {');
+    expect(styles).toMatch(/\.panel textarea \{[^}]*background: var\(--chat-paper\);/);
+    expect(styles).toContain('.panel textarea:focus-visible {');
     expect(styles).toContain('box-shadow: inset 0 0 0 1px var(--chat-ink);');
     expect(styles).toContain('outline: none;');
   });
@@ -79,19 +79,21 @@ describe('embeddable widget asset', () => {
     expect(styles).toContain('.launcher-tooltip');
     expect(source).toContain("classList.add('suppress-tooltip')");
     expect(styles).toContain('.launcher-shell:not(.suppress-tooltip):hover');
-    expect(styles).toMatch(/header \{[\s\S]*?background: var\(--chat-accent\);/);
-    expect(styles).toMatch(/\.message\.user \{[\s\S]*?background: var\(--chat-accent\);/);
-    expect(styles).toMatch(/\.message\.assistant \{[\s\S]*?background: transparent;/);
+    expect(styles).toMatch(/\.panel header \{[\s\S]*?background: var\(--chat-accent\);/);
+    expect(styles).toMatch(/\.panel \.message\.user \{[\s\S]*?background: var\(--chat-accent\);/);
+    expect(styles).toMatch(/\.panel \.message\.assistant \{[\s\S]*?background: transparent;/);
     expect(styles).toMatch(/\.panel \{[\s\S]*?border: 1px solid var\(--chat-line\);/);
-    expect(styles).toMatch(/header \{[\s\S]*?border-bottom: 1px solid var\(--chat-line\);/);
+    expect(styles).toMatch(/\.panel header \{[\s\S]*?border-bottom: 1px solid var\(--chat-line\);/);
     expect(styles).toMatch(
       /\.header-live-dot \{[\s\S]*?animation: live-pulse 2\.8s ease-in-out infinite;/,
     );
-    expect(styles).toContain('.header-actions button:hover:not(:disabled)');
+    expect(styles).toContain('.panel .header-actions button:hover:not(:disabled)');
     expect(source).toContain('class="close-icon"');
-    expect(styles).toContain('.close {');
-    expect(styles).toMatch(/\.close \{[\s\S]*?display: grid;/);
-    expect(styles).toMatch(/\.close \{[\s\S]*?place-items: center;/);
+    expect(styles).toContain('.panel .close {');
+    expect(styles).toMatch(/\.panel \.close \{[\s\S]*?display: grid;/);
+    expect(styles).toMatch(/\.panel \.close \{[\s\S]*?place-items: center;/);
+    expect(styles).not.toMatch(/(^|\n)(header|form|label|small|textarea|button:disabled|button:focus-visible) \{/);
+    expect(styles).not.toContain('\n.message {');
     expect(styles).not.toContain('min-height: 2.5rem;');
     expect(styles).not.toContain('min-width: 2.5rem;');
 
