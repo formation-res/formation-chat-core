@@ -18,7 +18,9 @@ describe('Cloudflare gateway static assets', () => {
     expect(buildScript).toContain("join(outputDirectory, 'dashboard.html')");
     expect(buildScript).toContain("join(outputDirectory, 'favicon.svg')");
     expect(buildScript).toContain("widget: join(exampleDirectory, 'site/widget.ts')");
-    expect(buildScript).toContain("dashboard: join(repositoryDirectory, 'apps/dashboard/src/main.tsx')");
+    expect(buildScript).toContain(
+      "dashboard: join(repositoryDirectory, 'apps/dashboard/src/main.tsx')",
+    );
     expect(dashboard).toContain('<div id="root"></div>');
     expect(dashboard).toContain('href="/dashboard.css"');
     expect(dashboard).toContain('src="/dashboard.js"');

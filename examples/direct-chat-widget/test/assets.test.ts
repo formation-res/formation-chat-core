@@ -92,7 +92,9 @@ describe('embeddable widget asset', () => {
     expect(styles).toContain('.panel .close {');
     expect(styles).toMatch(/\.panel \.close \{[\s\S]*?display: grid;/);
     expect(styles).toMatch(/\.panel \.close \{[\s\S]*?place-items: center;/);
-    expect(styles).not.toMatch(/(^|\n)(header|form|label|small|textarea|button:disabled|button:focus-visible) \{/);
+    expect(styles).not.toMatch(
+      /(^|\n)(header|form|label|small|textarea|button:disabled|button:focus-visible) \{/,
+    );
     expect(styles).not.toContain('\n.message {');
     expect(styles).not.toContain('min-height: 2.5rem;');
     expect(styles).not.toContain('min-width: 2.5rem;');
