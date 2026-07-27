@@ -177,7 +177,18 @@ const listSchema = <T extends TSchema>(item: T) =>
     { additionalProperties: false },
   );
 
-export const AdminConversationListSchema = listSchema(ConversationSchema);
+export const AdminConversationSummarySchema = Type.Composite(
+  [
+    ConversationSchema,
+    Type.Object({
+      firstUserMessagePreview: Type.Optional(Type.String({ maxLength: 500 })),
+    }),
+  ],
+  { additionalProperties: true },
+);
+export type AdminConversationSummary = Static<typeof AdminConversationSummarySchema>;
+
+export const AdminConversationListSchema = listSchema(AdminConversationSummarySchema);
 export type AdminConversationList = Static<typeof AdminConversationListSchema>;
 export const AdminMessageListSchema = listSchema(MessageSchema);
 export type AdminMessageList = Static<typeof AdminMessageListSchema>;

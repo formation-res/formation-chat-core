@@ -140,7 +140,38 @@ describe('admin query API', () => {
         .json()
         .data.map(({ conversationId }: { conversationId: string }) => conversationId),
     ).toEqual(['conversation-a2', 'conversation-a1-new', 'conversation-a1-old']);
+    expect(
+      readResponse.json().data.map(
+        ({
+          conversationId,
+          firstUserMessagePreview,
+        }: {
+          conversationId: string;
+          firstUserMessagePreview?: string;
+        }) => [conversationId, firstUserMessagePreview],
+      ),
+    ).toEqual([
+      ['conversation-a2', 'Seed'],
+      ['conversation-a1-new', 'Hello'],
+      ['conversation-a1-old', 'Seed'],
+    ]);
     expect(JSON.stringify(readResponse.json())).not.toContain('conversation-b1');
+  });
+
+  it('orders conversations by most recent activity', async () => {
+    await database
+      .updateTable('conversations')
+      .set({ updated_at: new Date('2026-07-16T14:00:00Z') })
+      .where('conversation_id', '=', 'conversation-a1-old')
+      .execute();
+
+    const response = await request('/v1/admin/conversations', readToken);
+
+    expect(
+      response
+        .json()
+        .data.map(({ conversationId }: { conversationId: string }) => conversationId),
+    ).toEqual(['conversation-a1-old', 'conversation-a2', 'conversation-a1-new']);
   });
 
   it('cursor-pages and filters conversations across every site in the tenant', async () => {

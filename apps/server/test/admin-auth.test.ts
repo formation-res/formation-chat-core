@@ -77,6 +77,7 @@ describe('admin SSO routes', () => {
       authenticated: true,
       email: 'jo@tryformation.com',
       displayName: 'Jo Formation',
+      role: 'Administrator',
     });
     await server.close();
   });

@@ -219,6 +219,10 @@
             "format": "date-time",
             "pattern": "Z$",
             "type": "string"
+          },
+          "firstUserMessagePreview": {
+            "maxLength": 500,
+            "type": "string"
           }
         }
       }

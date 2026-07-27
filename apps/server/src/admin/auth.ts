@@ -122,6 +122,7 @@ export function registerAdminAuthRoutes(server: FastifyInstance, auth: AdminAuth
         authenticated: true,
         email: claims.email ?? '',
         displayName: claims.displayName ?? claims.email ?? 'Dashboard admin',
+        role: claims.scopes.includes('admin:internal') ? 'Administrator' : 'Operator',
       };
     } catch {
       void reply.header('set-cookie', clearSessionCookie());

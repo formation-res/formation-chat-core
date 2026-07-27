@@ -106,27 +106,32 @@ export class AdminQueryService {
       const timestamp = new Date(cursor.timestamp);
       query = query.where((expression) =>
         expression.or([
-          expression('created_at', '<', timestamp),
+          expression('updated_at', '<', timestamp),
           expression.and([
-            expression('created_at', '=', timestamp),
+            expression('updated_at', '=', timestamp),
             expression('conversation_id', '<', cursor.id),
           ]),
         ]),
       );
     }
     const rows = await query
-      .orderBy('created_at', 'desc')
+      .orderBy('updated_at', 'desc')
       .orderBy('conversation_id', 'desc')
       .limit(filter.limit + 1)
       .execute();
     const page = rows.slice(0, filter.limit);
-    const participants = await this.participantsFor(
-      scope,
-      page.map(({ conversation_id }) => conversation_id),
-    );
-    const data = page.map((row) =>
-      mapConversation(row, participants.get(row.conversation_id) ?? []),
-    );
+    const conversationIds = page.map(({ conversation_id }) => conversation_id);
+    const [participants, previews] = await Promise.all([
+      this.participantsFor(scope, conversationIds),
+      this.firstUserMessagePreviews(scope, conversationIds),
+    ]);
+    const data = page.map((row) => {
+      const preview = previews.get(row.conversation_id);
+      return {
+        ...mapConversation(row, participants.get(row.conversation_id) ?? []),
+        ...(preview ? { firstUserMessagePreview: preview } : {}),
+      };
+    });
     const tail = page.at(-1);
     return {
       data,
@@ -134,7 +139,7 @@ export class AdminQueryService {
         rows.length > filter.limit && tail
           ? {
               hasMore: true,
-              nextCursor: encodeTimeCursor('conversation', tail.created_at, tail.conversation_id),
+              nextCursor: encodeTimeCursor('conversation', tail.updated_at, tail.conversation_id),
             }
           : { hasMore: false },
     };
@@ -492,6 +497,28 @@ export class AdminQueryService {
       grouped.set(row.conversation_id, group);
     }
     return grouped;
+  }
+
+  private async firstUserMessagePreviews(scope: AdminScope, conversationIds: string[]) {
+    const previews = new Map<string, string>();
+    if (conversationIds.length === 0) return previews;
+    const rows = await this.database
+      .selectFrom('messages')
+      .select(['conversation_id', 'sequence', 'parts'])
+      .where('tenant_id', '=', scope.tenantId)
+      .where('conversation_id', 'in', conversationIds)
+      .where('role', '=', 'user')
+      .orderBy('conversation_id')
+      .orderBy('sequence')
+      .execute();
+    for (const row of rows) {
+      if (previews.has(row.conversation_id)) continue;
+      const text = row.parts.find((part) => part.type === 'text')?.text;
+      if (!text) continue;
+      const preview = text.replaceAll(/\s+/g, ' ').trim().slice(0, 500);
+      if (preview) previews.set(row.conversation_id, preview);
+    }
+    return previews;
   }
 
   private invalidCursor() {
