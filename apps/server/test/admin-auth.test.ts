@@ -73,12 +73,48 @@ describe('admin SSO routes', () => {
       headers: { cookie },
     });
     expect(session.statusCode).toBe(200);
-    expect(session.json()).toEqual({
+    expect(session.json()).toMatchObject({
       authenticated: true,
       email: 'jo@tryformation.com',
       displayName: 'Jo Formation',
       role: 'Administrator',
     });
+    expect(Date.parse(session.json().expiresAt as string)).toBeGreaterThan(Date.now());
+    expect(session.headers['cache-control']).toBe('no-store');
+    expect(session.headers['set-cookie']).toMatch(
+      /^formation_chat_core_admin_session=.*Max-Age=3600.*HttpOnly.*Secure.*SameSite=Lax/,
+    );
+    await server.close();
+  });
+
+  it('renews a valid session cookie and returns the refreshed expiry', async () => {
+    const server = buildServer({
+      checkDatabase: async () => undefined,
+      logger: false,
+      adminAuth: new AdminAuthService(config, tokens, vi.fn()),
+    });
+    const original = await tokens.issue(
+      {
+        adminId: 'sso-admin',
+        tenantId: config.tenantId,
+        email: 'jo@tryformation.com',
+        displayName: 'Jo Formation',
+        scopes: ['admin:read', 'admin:internal'],
+      },
+      new Date(Date.now() - 1_800_000),
+    );
+
+    const response = await server.inject({
+      method: 'GET',
+      url: '/auth/session',
+      headers: { cookie: `formation_chat_core_admin_session=${original.token}` },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(Date.parse(response.json().expiresAt as string)).toBeGreaterThan(
+      Date.parse(original.claims.expiresAt),
+    );
+    expect(response.headers['set-cookie']).toContain('formation_chat_core_admin_session=');
     await server.close();
   });
 

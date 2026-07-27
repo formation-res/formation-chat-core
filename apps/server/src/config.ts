@@ -109,7 +109,7 @@ export function loadConfig(env: NodeJS.ProcessEnv): ServerConfig {
   const port = parseInteger(env.PORT, 3000);
   const databasePoolMax = parseInteger(env.DB_POOL_MAX, 10);
   const sessionTokenTtlSeconds = parseInteger(env.SESSION_TOKEN_TTL_SECONDS, 900);
-  const adminTokenTtlSeconds = parseInteger(env.ADMIN_TOKEN_TTL_SECONDS, 3600);
+  const adminTokenTtlSeconds = parseInteger(env.ADMIN_TOKEN_TTL_SECONDS, 28_800);
   const adminConfigured =
     env.ADMIN_TOKEN_SECRET !== undefined ||
     env.ADMIN_TOKEN_TTL_SECONDS !== undefined ||
@@ -349,7 +349,6 @@ export function loadConfig(env: NodeJS.ProcessEnv): ServerConfig {
                     callbackUrl: new URL('/auth/callback', adminPublicBaseUrl).toString(),
                     dashboardUrl: new URL('/dashboard', adminPublicBaseUrl).toString(),
                     allowedAdminEmails: adminAllowedEmails,
-                    sessionTtlSeconds: adminTokenTtlSeconds,
                   },
                 }
               : {}),

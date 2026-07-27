@@ -14,9 +14,11 @@ const directory = new URL('..', import.meta.url).pathname;
 const output = join(directory, 'dist');
 const axePath = require.resolve('axe-core/axe.min.js');
 let authenticated = false;
+let sessionChecks = 0;
 const server = createServer(async (request, response) => {
   const url = new URL(request.url ?? '/', 'http://localhost');
   if (url.pathname === '/auth/session') {
+    sessionChecks += 1;
     if (!authenticated) {
       response.statusCode = 401;
       response.end();
@@ -29,6 +31,7 @@ const server = createServer(async (request, response) => {
         email: 'jo@tryformation.com',
         displayName: 'Jo Formation',
         role: 'Administrator',
+        expiresAt: new Date(Date.now() + 28_800_000).toISOString(),
       }),
     );
     return;
@@ -98,6 +101,18 @@ async function runBrowserSmoke() {
     assert.equal(await page.locator('.nav-attention').count(), 0);
     await page.getByText('Jo Formation').waitFor();
     await page.getByText('Administrator').waitFor();
+    const sessionTimer = page.locator('[data-session-timer]');
+    await sessionTimer.waitFor();
+    const initialTimer = await sessionTimer.innerText();
+    assert.match(initialTimer, /^Session (?:8:00:00|7:59:5\d)$/);
+    await page.waitForTimeout(1_100);
+    assert.notEqual(await sessionTimer.innerText(), initialTimer);
+    await page.reload({ waitUntil: 'networkidle' });
+    assert.equal(sessionChecks, 3);
+    assert.match(
+      await page.locator('[data-session-timer]').innerText(),
+      /^Session (?:8:00:00|7:59:5\d)$/,
+    );
     await page.screenshot({ path: join(tmpdir(), 'chat-core-dashboard-home.png'), fullPage: true });
     await page.getByRole('button', { name: /Formation website/ }).click();
     await page

@@ -9,6 +9,23 @@
   "servers": [{ "url": "/" }],
   "security": [{ "sessionToken": [] }],
   "paths": {
+    "/auth/session": {
+      "get": {
+        "operationId": "renewDashboardSession",
+        "security": [{ "dashboardSessionCookie": [] }],
+        "responses": {
+          "200": {
+            "description": "Renewed dashboard session",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "../schemas/admin/dashboard-session.schema.json" }
+              }
+            }
+          },
+          "401": { "description": "Dashboard session missing or expired" }
+        }
+      }
+    },
     "/v1/sessions": {
       "post": {
         "operationId": "bootstrapAnonymousSession",
@@ -445,7 +462,12 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT",
-        "description": "Separately signed tenant- and site-bound admin token"
+        "description": "Separately signed tenant-bound admin token"
+      },
+      "dashboardSessionCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "formation_chat_core_admin_session"
       },
       "serviceCredential": { "type": "apiKey", "in": "header", "name": "X-Formation-Service-Key" }
     },

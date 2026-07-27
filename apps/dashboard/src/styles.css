@@ -429,6 +429,9 @@ select:focus {
   color: var(--text-faint);
   font-size: 0.68rem;
 }
+.session-identity [data-session-timer] {
+  font-variant-numeric: tabular-nums;
+}
 .main-shell {
   min-width: 0;
 }

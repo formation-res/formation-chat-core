@@ -1,9 +1,10 @@
-export interface AdminSession {
-  authenticated: true;
-  email: string;
-  displayName: string;
-  role: string;
-}
+import {
+  AdminDashboardSessionSchema,
+  type AdminDashboardSession,
+} from '@formation-chat-core/protocol';
+import { Value } from '@sinclair/typebox/value';
+
+export type AdminSession = AdminDashboardSession;
 
 export interface DashboardAuthApi {
   getSession(): Promise<AdminSession | undefined>;
@@ -15,6 +16,7 @@ export class DashboardAuthClient implements DashboardAuthApi {
     const response = await fetch('/auth/session', {
       headers: { accept: 'application/json' },
       credentials: 'same-origin',
+      cache: 'no-store',
     });
     if (response.status === 401) return undefined;
     if (!response.ok) throw new Error('Authentication is unavailable.');
@@ -34,12 +36,5 @@ export class DashboardAuthClient implements DashboardAuthApi {
 }
 
 function isSession(value: unknown): value is AdminSession {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    (value as Record<string, unknown>).authenticated === true &&
-    typeof (value as Record<string, unknown>).email === 'string' &&
-    typeof (value as Record<string, unknown>).displayName === 'string' &&
-    typeof (value as Record<string, unknown>).role === 'string'
-  );
+  return Value.Check(AdminDashboardSessionSchema, value);
 }
