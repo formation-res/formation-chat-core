@@ -23,6 +23,7 @@ describe('Cloudflare gateway static assets', () => {
     );
     expect(dashboard).toContain('<div id="root"></div>');
     expect(dashboard).toContain('href="/dashboard.css"');
+    expect(dashboard).toContain("img-src 'self' data: https:");
     expect(dashboard).toContain('src="/dashboard.js"');
   });
 

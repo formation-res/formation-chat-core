@@ -63,6 +63,12 @@ describe('operations dashboard', () => {
       expect.any(AbortSignal),
     );
     expect(container?.textContent).toContain('Public transcript');
+    const executionDetails = container?.querySelector<HTMLDetailsElement>('.message-details');
+    expect(executionDetails?.open).toBe(false);
+    expect(executionDetails?.querySelector('summary')?.textContent).toContain('1 source');
+    expect(executionDetails?.querySelector('summary')?.textContent).toContain('1 tool');
+    expect(executionDetails?.textContent).toContain('Web search');
+    expect(executionDetails?.textContent).toContain('Billing guide');
     await act(async () => {
       container?.querySelector<HTMLButtonElement>('[role="tab"][aria-selected="false"]')?.click();
       await settle();
@@ -109,6 +115,53 @@ describe('operations dashboard', () => {
     expect(container?.textContent).toContain('Agent runs');
   });
 
+  it('opens the selected conversation from an agent run correlation', async () => {
+    render(<App initialClient={fakeApi()} initialSession={session} />);
+    await selectMainWebsite();
+    await act(async () => {
+      [...(container?.querySelectorAll<HTMLButtonElement>('button') ?? [])]
+        .find((button) => button.textContent === 'Runs')
+        ?.click();
+      await settle();
+    });
+    await act(async () => {
+      container
+        ?.querySelector('summary')
+        ?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      [...(container?.querySelectorAll<HTMLButtonElement>('.id-link') ?? [])]
+        .find((button) => button.textContent === 'conversation-1')
+        ?.click();
+      await settle();
+      await settle();
+    });
+
+    expect(container?.querySelector('.conversation-workspace.has-selection')).not.toBeNull();
+    expect(container?.textContent).toContain('How can I change my plan?');
+  });
+
+  it('shows compact site cards, SSO identity, and useful conversation list details', async () => {
+    render(<App initialClient={fakeApi()} initialSession={session} />);
+    await waitForText('Main website');
+
+    expect(container?.querySelector('.page-heading h1')?.textContent).toBe('Home');
+    expect(container?.querySelector('.tenant-card-open')).toBeNull();
+    expect(container?.querySelector<HTMLImageElement>('.tenant-card-favicon')?.src).toBe(
+      'https://www.example.com/favicon.ico',
+    );
+    expect(container?.textContent).toContain('Jo Formation');
+    expect(container?.textContent).toContain('Administrator');
+    expect(container?.querySelector('.nav-attention')).toBeNull();
+
+    await selectMainWebsite();
+    const rows = [...(container?.querySelectorAll<HTMLButtonElement>('.record-row') ?? [])];
+    expect(rows[0]?.textContent).toContain('#1');
+    expect(rows[0]?.textContent).toContain('I need help with a recent invoice.');
+    expect(rows[1]?.textContent).toContain('#2');
+    expect(rows[1]?.textContent).toContain('How can I change my plan?');
+    expect(rows[0]?.textContent).not.toContain('support-agent');
+    expect(rows[0]?.textContent).not.toContain('site-1');
+  });
+
   it('clears the selected domain when returning home', async () => {
     render(<App initialClient={fakeApi()} initialSession={session} />);
     await selectMainWebsite();
@@ -124,7 +177,7 @@ describe('operations dashboard', () => {
     });
 
     expect(container?.querySelector<HTMLSelectElement>('.domain-selector select')?.value).toBe('');
-    expect(container?.textContent).toContain('Tenant overview');
+    expect(container?.querySelector('.page-heading h1')?.textContent).toBe('Home');
   });
 });
 
@@ -142,7 +195,7 @@ async function settle(): Promise<void> {
 async function selectMainWebsite(): Promise<void> {
   await waitForText('Main website');
   const button = [
-    ...(container?.querySelectorAll<HTMLButtonElement>('.tenant-card-open') ?? []),
+    ...(container?.querySelectorAll<HTMLButtonElement>('.tenant-card-select') ?? []),
   ].find((candidate) => candidate.textContent?.includes('Main website'));
   if (!button) throw new Error('Main website card was not rendered.');
   await act(async () => {
@@ -185,4 +238,5 @@ const session = {
   authenticated: true as const,
   email: 'jo@tryformation.com',
   displayName: 'Jo Formation',
+  role: 'Administrator',
 };

@@ -13,7 +13,8 @@ Visitor bearer tokens therefore cannot authenticate to this namespace.
 
 The dashboard signs operators in through Formation SSO. `GET /auth/login` redirects to the
 registered SSO app, `GET /auth/callback` exchanges the one-time login token, `GET /auth/session`
-reports the current dashboard session, and `POST /auth/logout` clears it. The resulting admin JWT
+reports the current dashboard session identity and authorization role, and `POST /auth/logout`
+clears it. The resulting admin JWT
 is stored only in a `Secure`, `HttpOnly`, `SameSite=Lax` cookie. The callback accepts only the
 configured app ID and callback URL, and only emails in `ADMIN_ALLOWED_EMAILS`.
 
@@ -42,8 +43,10 @@ tenant returns `404` so the endpoint does not disclose its existence.
 
 Every list accepts `cursor` and `limit` (default 20, maximum 100). Cursors are resource-specific;
 using a conversation cursor for runs, for example, returns `400 INVALID_CURSOR`. Conversation,
-run, failure, and handoff lists order by creation time and opaque ID descending. Messages and
-events order by their canonical sequence ascending.
+lists order by most recent activity (`updatedAt`) and opaque ID descending. Conversation summaries
+also include the first user text as `firstUserMessagePreview` when one exists. Run, failure, and
+handoff lists order by creation time and opaque ID descending. Messages and events order by their
+canonical sequence ascending.
 
 Top-level lists accept the relevant subset of `siteId`, `agentRef`, `status`, `createdAfter`, and
 `createdBefore`. Date windows are half-open: `createdAfter` is inclusive and `createdBefore` is

@@ -45,11 +45,15 @@ not embed an admin token into the JavaScript build.
 ## Interaction model
 
 - Conversations use a desktop list/detail layout and a mobile drill-in flow.
+- Conversation summaries are newest-first and show a running number plus the first visitor message.
 - Transcript and event tabs distinguish public, operator, and internal visibility.
+- Source, tool, file, and structured-input details remain collapsed inside messages until opened.
 - Runs, failures, and handoffs use keyboard-accessible expandable rows.
 - Correlation controls connect canonical IDs; the run ID is also sent to connectors for
   cross-system tracing. A missing connector-specific trace ID is shown as unavailable.
 - Lists request at most 100 records. Long transcripts continue through the returned cursor.
 - Initial loads use skeletons; refreshes keep existing content mounted to avoid flicker.
+- Home site headers are fully clickable, use the configured origin favicon when available, and keep
+  widget/embed details separate below. The sidebar shows the SSO session name and authorization role.
 - Light/dark themes, reduced motion, empty/error states, disabled controls, and WCAG AA contrast
   are built in.

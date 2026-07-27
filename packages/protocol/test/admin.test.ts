@@ -85,9 +85,18 @@ describe('admin API contracts', () => {
       updatedAt: timestamp,
     };
 
-    expect(ajv.compile(AdminConversationListSchema)({ data: [conversation], pagination })).toBe(
-      true,
-    );
+    expect(
+      ajv.compile(AdminConversationListSchema)({
+        data: [{ ...conversation, firstUserMessagePreview: 'How can I change my plan?' }],
+        pagination,
+      }),
+    ).toBe(true);
+    expect(
+      ajv.compile(AdminConversationListSchema)({
+        data: [{ ...conversation, firstUserMessagePreview: 'x'.repeat(501) }],
+        pagination,
+      }),
+    ).toBe(false);
     expect(ajv.compile(AdminEventListSchema)({ data: [event], pagination })).toBe(true);
     expect(ajv.compile(AdminRunListSchema)({ data: [run], pagination })).toBe(true);
     expect(ajv.compile(AdminFailureListSchema)({ data: [run], pagination })).toBe(true);

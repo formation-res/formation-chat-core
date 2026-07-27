@@ -2,6 +2,7 @@ import { startTransition, useCallback, useMemo, useState } from 'react';
 import type { AdminOverview, AdminSiteOverview } from '@formation-chat-core/protocol';
 
 import type { AdminApi } from './admin-client.js';
+import type { AdminSession } from './auth-client.js';
 import { ConversationView } from './conversations.js';
 import { DashboardHome } from './home.js';
 import { Icon, type IconName } from './icons.js';
@@ -12,11 +13,13 @@ type View = 'home' | 'conversations' | OperationsView;
 
 export function Dashboard({
   api,
+  session,
   theme,
   onToggleTheme,
   onDisconnect,
 }: {
   api: AdminApi;
+  session: AdminSession;
   theme: 'light' | 'dark';
   onToggleTheme(): void;
   onDisconnect(): void;
@@ -84,6 +87,10 @@ export function Dashboard({
           <span className="connection-state">
             <span className="health-dot" />
             Admin API connected
+          </span>
+          <span className="session-identity">
+            <strong>{session.displayName}</strong>
+            <small>{session.role}</small>
           </span>
           <button className="text-button" onClick={onDisconnect}>
             Sign out
@@ -193,9 +200,6 @@ function NavItems({
         >
           <Icon name={item.icon} />
           <span>{item.label}</span>
-          {item.id === 'failures' ? (
-            <span className="nav-attention" aria-label="Review failures" />
-          ) : null}
         </button>
       ))}
     </>
@@ -211,7 +215,7 @@ const navItems: { id: View; label: string; icon: IconName }[] = [
 ];
 
 const labels: Record<View, string> = {
-  home: 'Tenant home',
+  home: 'Home',
   conversations: 'Conversation inspector',
   runs: 'Agent runs',
   failures: 'Connector failures',

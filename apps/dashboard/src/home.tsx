@@ -32,8 +32,8 @@ export function DashboardHome({
     <section className="home-view">
       <div className="page-heading">
         <div>
-          <p className="eyebrow">Tenant overview</p>
-          <h1>{overview.tenant.displayName}</h1>
+          <p className="eyebrow">{overview.tenant.displayName}</p>
+          <h1>Home</h1>
           <p>Select a domain to inspect its conversations, runs, failures, and handoffs.</p>
         </div>
       </div>
@@ -62,22 +62,36 @@ export function DashboardHome({
 }
 
 function SiteCard({ site, onSelect }: { site: AdminSiteOverview; onSelect(): void }) {
+  const origin = site.allowedOrigins[0];
   return (
     <article className="tenant-card">
-      <span className="tenant-card-icon">
-        <Icon name="activity" />
-      </span>
-      <span className="tenant-card-main">
-        <strong>{site.displayName}</strong>
-        <span>{site.allowedOrigins[0] ?? site.siteId}</span>
-      </span>
-      <span className="tenant-card-stats">
-        <Stat label="Conversations" value={site.stats.conversations} compact />
-        <Stat label="Runs" value={site.stats.runs} compact />
-        <Stat label="Failures" value={site.stats.failures} compact attention />
-        <Stat label="Handoffs" value={site.stats.handoffs} compact />
-        <Stat label="Widgets" value={site.widgets.length} compact />
-      </span>
+      <button className="tenant-card-select" onClick={onSelect}>
+        <span className="tenant-card-icon">
+          <Icon name="activity" />
+          {origin ? (
+            <img
+              className="tenant-card-favicon"
+              src={faviconUrl(origin)}
+              alt=""
+              onError={(event) => {
+                event.currentTarget.hidden = true;
+              }}
+            />
+          ) : null}
+        </span>
+        <span className="tenant-card-main">
+          <strong>{site.displayName}</strong>
+          <span>{origin ?? site.siteId}</span>
+        </span>
+        <span className="tenant-card-stats">
+          <Stat label="Conversations" value={site.stats.conversations} compact />
+          <Stat label="Runs" value={site.stats.runs} compact />
+          <Stat label="Failures" value={site.stats.failures} compact attention />
+          <Stat label="Handoffs" value={site.stats.handoffs} compact />
+          <Stat label="Widgets" value={site.widgets.length} compact />
+        </span>
+        <Icon name="chevron" />
+      </button>
       {site.widgets.length > 0 ? (
         <span className="tenant-card-widgets">
           {site.widgets.map((widget) => (
@@ -109,11 +123,12 @@ function SiteCard({ site, onSelect }: { site: AdminSiteOverview; onSelect(): voi
           <span>No recent activity</span>
         )}
       </span>
-      <button className="button button-secondary tenant-card-open" onClick={onSelect}>
-        Open {site.displayName}
-      </button>
     </article>
   );
+}
+
+function faviconUrl(origin: string): string {
+  return new URL('/favicon.ico', origin).toString();
 }
 
 function embedSnippet(widget: AdminSiteOverview['widgets'][number], agent: string): string {
