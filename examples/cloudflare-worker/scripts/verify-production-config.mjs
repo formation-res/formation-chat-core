@@ -69,9 +69,9 @@ export function verifyProductionConfig(config, options = {}) {
 
   const runWorkerFirst = assets.run_worker_first;
   if (!Array.isArray(runWorkerFirst)) {
-    errors.push('assets.run_worker_first must include /widget/config and /v1/*.');
+    errors.push('assets.run_worker_first must include /auth/*, /widget/config, and /v1/*.');
   } else {
-    for (const route of ['/widget/config', '/v1/*']) {
+    for (const route of ['/auth/*', '/widget/config', '/v1/*']) {
       if (!runWorkerFirst.includes(route)) {
         errors.push(`assets.run_worker_first must include ${route}.`);
       }
