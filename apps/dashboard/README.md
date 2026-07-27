@@ -13,8 +13,8 @@ npm ci
 npm run dev:local
 ```
 
-Open `http://127.0.0.1:4174`, leave its same-origin Chat Core URL in place, and paste the short-lived
-admin JWT printed in the terminal. The local server proxies only `/v1/admin/*`. See the
+Open `http://127.0.0.1:4174`. The local stack provides a development admin session and proxies the
+dashboard API. See the
 [Local Chat guide](../../examples/local-chat/README.md) for start, stop, and Haystack commands.
 
 Useful commands:
@@ -31,11 +31,11 @@ The production build is written to `apps/dashboard/dist`.
 
 ## Authentication and deployment
 
-The dashboard deliberately has no login service and does not mint admin credentials. A trusted
-deployment component must issue the separately signed JWT described in
-[`docs/api/admin-queries.md`](../../docs/api/admin-queries.md). The token is held in React memory;
-it is not written to local storage, session storage, URLs, or logs. Disconnecting or closing the
-tab clears it.
+Production authentication uses Formation SSO through the same origin that serves the dashboard.
+The gateway proxies `/auth/*` and `/v1/admin/*` to Chat Core while preserving `Cookie`,
+`Set-Cookie`, `Location`, and redirect responses. Browser JavaScript never receives the admin JWT.
+Configure the server with `ADMIN_TENANT_ID`, `ADMIN_SSO_BASE_URL`, `ADMIN_SSO_UI_URL`,
+`ADMIN_SSO_APP_ID`, `ADMIN_PUBLIC_BASE_URL`, and `ADMIN_ALLOWED_EMAILS`.
 
 For production, serve the static build behind the same protected admin origin as Chat Core and
 reverse-proxy `/v1/admin/*` to the service. If separate origins are unavoidable, allow only the

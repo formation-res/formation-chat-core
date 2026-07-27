@@ -81,7 +81,7 @@ export class AdminClient implements AdminApi {
 
   constructor(
     baseUrl: string,
-    private readonly token: string,
+    private readonly token?: string,
   ) {
     const url = new URL(baseUrl);
     if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) {
@@ -165,7 +165,11 @@ export class AdminClient implements AdminApi {
     let response: Response;
     try {
       response = await fetch(url, {
-        headers: { Accept: 'application/json', Authorization: `Bearer ${this.token}` },
+        headers: {
+          Accept: 'application/json',
+          ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
+        },
+        credentials: 'same-origin',
         ...(signal ? { signal } : {}),
       });
     } catch (error) {

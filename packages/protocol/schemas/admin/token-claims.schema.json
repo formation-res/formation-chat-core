@@ -5,7 +5,6 @@
   "required": [
     "adminId",
     "tenantId",
-    "siteIds",
     "scopes",
     "issuedAt",
     "expiresAt"
@@ -23,17 +22,15 @@
       "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
       "type": "string"
     },
-    "siteIds": {
-      "minItems": 1,
-      "maxItems": 100,
-      "uniqueItems": true,
-      "type": "array",
-      "items": {
-        "minLength": 1,
-        "maxLength": 128,
-        "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
-        "type": "string"
-      }
+    "email": {
+      "minLength": 3,
+      "maxLength": 254,
+      "type": "string"
+    },
+    "displayName": {
+      "minLength": 1,
+      "maxLength": 160,
+      "type": "string"
     },
     "scopes": {
       "minItems": 1,

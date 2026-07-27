@@ -61,6 +61,7 @@ try {
     siteKey: config.siteKey,
   });
   const dashboard = createLocalChatServer({
+    adminToken,
     apiPathPrefixes: ['/v1/admin/'],
     coreBaseUrl: config.coreBaseUrl,
     rootDirectory: join(repository, 'apps/dashboard/dist'),
@@ -76,7 +77,6 @@ try {
       `Dashboard:    ${config.dashboardOrigin}\n` +
       `Chat Core:    ${config.coreBaseUrl.origin}\n` +
       `Connector:    ${config.connectorMode}\n\n` +
-      `Paste this scoped local admin token into the dashboard:\n${adminToken}\n\n` +
       `Stop with Ctrl+C here, or run npm run dev:local:stop in another terminal.\n`,
   );
 
@@ -219,7 +219,6 @@ async function issueAdminToken() {
   const { token } = await service.issue({
     adminId: 'local-operator',
     tenantId: config.tenantId,
-    siteIds: [config.siteId],
     scopes: ['admin:read', 'admin:internal'],
   });
   return token;

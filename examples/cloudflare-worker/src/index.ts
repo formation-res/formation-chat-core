@@ -5,6 +5,8 @@ const PUBLIC_TOKEN = /^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$/;
 const ANALYTICS_IDENTIFIER = /^[A-Za-z0-9_.:-]{1,128}$/;
 
 const ROUTES: readonly Route[] = [
+  { pattern: /^\/auth\/(?:login|callback|session)$/, methods: ['GET'], kind: 'auth' },
+  { pattern: /^\/auth\/logout$/, methods: ['POST'], kind: 'auth' },
   { pattern: /^\/widget\/config$/, methods: ['GET'], kind: 'widget-config' },
   { pattern: /^\/v1\/admin\/overview$/, methods: ['GET'], kind: 'admin' },
   {
@@ -42,6 +44,7 @@ const ROUTES: readonly Route[] = [
 const FORWARDED_REQUEST_HEADERS = [
   'accept',
   'authorization',
+  'cookie',
   'content-type',
   'idempotency-key',
   'last-event-id',
@@ -52,12 +55,14 @@ const FORWARDED_RESPONSE_HEADERS = [
   'content-type',
   'etag',
   'retry-after',
+  'location',
+  'set-cookie',
 ] as const;
 
 interface Route {
   pattern: RegExp;
   methods: readonly string[];
-  kind: 'admin' | 'bootstrap' | 'public' | 'widget-config';
+  kind: 'admin' | 'auth' | 'bootstrap' | 'public' | 'widget-config';
 }
 
 interface SiteConfig {
@@ -127,12 +132,18 @@ export async function handleGatewayRequest(
   const allowedOrigins =
     route.kind === 'admin' ? dashboardOrigins(site, requestUrl) : site.allowedOrigins;
   const requestOrigin = request.headers.get('origin');
-  const origin = validatedOrigin(
-    requestOrigin,
-    allowedOrigins,
-    requestUrl.origin,
-    request.headers.get('sec-fetch-site'),
-  );
+  const isAuthNavigation =
+    route.kind === 'auth' &&
+    request.method === 'GET' &&
+    (requestUrl.pathname === '/auth/login' || requestUrl.pathname === '/auth/callback');
+  const origin = isAuthNavigation
+    ? requestUrl.origin
+    : validatedOrigin(
+        requestOrigin,
+        route.kind === 'auth' ? [requestUrl.origin] : allowedOrigins,
+        requestUrl.origin,
+        request.headers.get('sec-fetch-site'),
+      );
   if (!origin) {
     return errorResponse(403, 'ORIGIN_NOT_ALLOWED', 'Origin not allowed.', correlationId);
   }
@@ -181,7 +192,7 @@ export async function handleGatewayRequest(
   }
 
   let body: string | undefined;
-  if (request.method !== 'GET' && request.method !== 'HEAD') {
+  if (request.method !== 'GET' && request.method !== 'HEAD' && route.kind !== 'auth') {
     if (!isJsonContentType(request.headers.get('content-type'))) {
       return errorResponse(
         415,
@@ -581,6 +592,7 @@ function forwardedRequestHeaders(
   const headers = new Headers();
   for (const name of FORWARDED_REQUEST_HEADERS) {
     if (kind === 'bootstrap' && name === 'authorization') continue;
+    if (name === 'cookie' && kind !== 'admin' && kind !== 'auth') continue;
     const value = incoming.get(name);
     if (value) headers.set(name, value);
   }

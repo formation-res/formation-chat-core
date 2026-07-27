@@ -86,7 +86,7 @@ export function Dashboard({
             Admin API connected
           </span>
           <button className="text-button" onClick={onDisconnect}>
-            Disconnect
+            Sign out
           </button>
         </div>
       </aside>

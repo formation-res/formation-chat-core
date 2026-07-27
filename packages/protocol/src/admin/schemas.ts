@@ -18,7 +18,8 @@ export const AdminTokenClaimsSchema = Type.Object(
   {
     adminId: OpaqueIdSchema,
     tenantId: OpaqueIdSchema,
-    siteIds: Type.Array(OpaqueIdSchema, { minItems: 1, maxItems: 100, uniqueItems: true }),
+    email: Type.Optional(Type.String({ minLength: 3, maxLength: 254 })),
+    displayName: Type.Optional(Type.String({ minLength: 1, maxLength: 160 })),
     scopes: Type.Array(AdminAccessScopeSchema, { minItems: 1, uniqueItems: true }),
     issuedAt: TimestampSchema,
     expiresAt: TimestampSchema,

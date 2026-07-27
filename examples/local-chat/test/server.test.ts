@@ -84,6 +84,7 @@ describe('createLocalChatServer', () => {
     const directory = await mkdtemp(join(tmpdir(), 'local-dashboard-proxy-'));
     await writeFile(join(directory, 'index.html'), '<h1>Dashboard</h1>');
     const server = createLocalChatServer({
+      adminToken: 'local-admin-token',
       apiPathPrefixes: ['/v1/admin/'],
       coreBaseUrl: new URL(upstreamUrl),
       rootDirectory: directory,
@@ -92,6 +93,7 @@ describe('createLocalChatServer', () => {
     const baseUrl = await listen(server);
 
     expect((await fetch(`${baseUrl}/v1/admin/conversations`)).status).toBe(200);
+    expect((await fetch(`${baseUrl}/auth/session`)).status).toBe(200);
     expect((await fetch(`${baseUrl}/v1/sessions/anonymous`, { method: 'POST' })).status).toBe(404);
     expect((await fetch(`${baseUrl}/local-chat-config.js`)).status).toBe(404);
     expect(paths).toEqual(['/v1/admin/conversations']);

@@ -1,5 +1,6 @@
 import { loadConfig } from './config.js';
 import { AdminQueryService } from './admin/service.js';
+import { AdminAuthService } from './admin/auth.js';
 import { AdminTokenService } from './admin/token.js';
 import { ConversationService } from './conversation/service.js';
 import { checkDatabase, createDatabase } from './database/database.js';
@@ -43,6 +44,10 @@ async function main(): Promise<void> {
         config.admin.tokenTtlSeconds,
       )
     : undefined;
+  const adminAuth =
+    config.admin?.sso && adminTokens
+      ? new AdminAuthService(config.admin.sso, adminTokens)
+      : undefined;
   const events = new EventService(
     new EventStore(database, { retentionMaxEvents: config.eventRetentionMaxEvents }),
     new EventBroker({ subscriberBufferSize: config.eventSubscriberBufferSize }),
@@ -79,6 +84,7 @@ async function main(): Promise<void> {
     audit: new DatabaseAuditSink(database),
     ...(config.metricsBearerToken ? { metricsBearerToken: config.metricsBearerToken } : {}),
     ...(adminTokens ? { adminService: new AdminQueryService(database), adminTokens } : {}),
+    ...(adminAuth ? { adminAuth } : {}),
     closeDatabase: async () => {
       workerAbort.abort();
       await Promise.all([

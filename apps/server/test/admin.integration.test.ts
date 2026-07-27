@@ -35,7 +35,6 @@ beforeEach(async () => {
     await adminTokens.issue({
       adminId: 'operator-read',
       tenantId: 'tenant-admin-a',
-      siteIds: ['site-admin-a1'],
       scopes: ['admin:read'],
     })
   ).token;
@@ -43,7 +42,6 @@ beforeEach(async () => {
     await adminTokens.issue({
       adminId: 'operator-internal',
       tenantId: 'tenant-admin-a',
-      siteIds: ['site-admin-a1'],
       scopes: ['admin:internal'],
     })
   ).token;
@@ -56,15 +54,7 @@ afterAll(async () => {
 
 describe('admin query API', () => {
   it('returns tenant-scoped site overview cards with safe aggregate stats', async () => {
-    const multiSiteToken = (
-      await adminTokens.issue({
-        adminId: 'operator-multi-site',
-        tenantId: 'tenant-admin-a',
-        siteIds: ['site-admin-a1', 'site-admin-a2'],
-        scopes: ['admin:read'],
-      })
-    ).token;
-    const overview = await request('/v1/admin/overview', multiSiteToken);
+    const overview = await request('/v1/admin/overview', readToken);
 
     expect(overview.statusCode).toBe(200);
     expect(overview.json()).toMatchObject({
@@ -130,7 +120,7 @@ describe('admin query API', () => {
     expect(JSON.stringify(overview.json())).not.toContain('PRIVATE_TENANT_FAILURE');
   });
 
-  it('uses separate authentication and applies tenant and site restrictions', async () => {
+  it('uses separate authentication and applies the tenant restriction', async () => {
     const publicToken = (
       await sessionTokens.issue({
         tenantId: 'tenant-admin-a',
@@ -149,28 +139,28 @@ describe('admin query API', () => {
       readResponse
         .json()
         .data.map(({ conversationId }: { conversationId: string }) => conversationId),
-    ).toEqual(['conversation-a1-new', 'conversation-a1-old']);
-    expect(JSON.stringify(readResponse.json())).not.toContain('conversation-a2');
+    ).toEqual(['conversation-a2', 'conversation-a1-new', 'conversation-a1-old']);
     expect(JSON.stringify(readResponse.json())).not.toContain('conversation-b1');
   });
 
-  it('cursor-pages and filters conversations within the token site set', async () => {
+  it('cursor-pages and filters conversations across every site in the tenant', async () => {
     const first = await request('/v1/admin/conversations?limit=1&status=active', readToken);
     const cursor = first.json().pagination.nextCursor as string;
     const second = await request(
       `/v1/admin/conversations?limit=1&status=active&cursor=${cursor}`,
       readToken,
     );
-    const forbiddenSite = await request('/v1/admin/conversations?siteId=site-admin-a2', readToken);
+    const secondSite = await request('/v1/admin/conversations?siteId=site-admin-a2', readToken);
 
     expect(
       first.json().data.map(({ conversationId }: { conversationId: string }) => conversationId),
-    ).toEqual(['conversation-a1-new']);
+    ).toEqual(['conversation-a2']);
     expect(first.json().pagination.hasMore).toBe(true);
     expect(
       second.json().data.map(({ conversationId }: { conversationId: string }) => conversationId),
-    ).toEqual(['conversation-a1-old']);
-    expect(forbiddenSite.statusCode).toBe(403);
+    ).toEqual(['conversation-a1-new']);
+    expect(secondSite.statusCode).toBe(200);
+    expect(secondSite.json().data[0].conversationId).toBe('conversation-a2');
   });
 
   it('returns scoped conversation details and canonical message pages', async () => {
@@ -179,13 +169,13 @@ describe('admin query API', () => {
       '/v1/admin/conversations/conversation-a1-new/messages?limit=1',
       readToken,
     );
-    const hidden = await request('/v1/admin/conversations/conversation-a2', readToken);
+    const secondSite = await request('/v1/admin/conversations/conversation-a2', readToken);
 
     expect(detail.statusCode).toBe(200);
     expect(detail.json().conversationId).toBe('conversation-a1-new');
     expect(messages.json().data[0]).toMatchObject({ messageId: 'message-a1-user', sequence: 1 });
     expect(messages.json().pagination.hasMore).toBe(true);
-    expect(hidden.statusCode).toBe(404);
+    expect(secondSite.statusCode).toBe(200);
   });
 
   it('filters event visibility by operator versus internal scope', async () => {
@@ -219,21 +209,22 @@ describe('admin query API', () => {
     );
 
     expect(first.json().data.map(({ runId }: { runId: string }) => runId)).toEqual([
-      'run-a1-failed',
+      'run-a2-failed',
     ]);
     expect(second.json().data.map(({ runId }: { runId: string }) => runId)).toEqual([
-      'run-a1-completed',
+      'run-a1-failed',
     ]);
     expect(billing.json().data.map(({ runId }: { runId: string }) => runId)).toEqual([
       'run-a1-completed',
     ]);
     expect(recent.json().data.map(({ runId }: { runId: string }) => runId)).toEqual([
+      'run-a2-failed',
       'run-a1-failed',
     ]);
     expect(wrongCursorKind.statusCode).toBe(400);
   });
 
-  it('lists failures separately with safe error codes and no hidden-site records', async () => {
+  it('lists failures for every tenant site with safe error codes', async () => {
     const failures = await request('/v1/admin/failures', readToken);
     const invalidRange = await request(
       '/v1/admin/failures?createdAfter=2026-07-16T12:00:00.000Z&createdBefore=2026-07-16T11:00:00.000Z',
@@ -243,12 +234,16 @@ describe('admin query API', () => {
     expect(failures.statusCode).toBe(200);
     expect(failures.json().data).toEqual([
       expect.objectContaining({
+        runId: 'run-a2-failed',
+        status: 'failed',
+        errorCode: 'PRIVATE_SITE_FAILURE',
+      }),
+      expect.objectContaining({
         runId: 'run-a1-failed',
         status: 'failed',
         errorCode: 'CONNECTOR_TIMEOUT',
       }),
     ]);
-    expect(JSON.stringify(failures.json())).not.toContain('run-a2-failed');
     expect(JSON.stringify(failures.json())).not.toContain('run-b1-failed');
     expect(invalidRange.statusCode).toBe(400);
   });
@@ -258,14 +253,16 @@ describe('admin query API', () => {
     const all = await request('/v1/admin/handoffs', readToken);
 
     expect(failed.json().data).toEqual([
+      expect.objectContaining({ handoffId: 'handoff-a2', status: 'failed' }),
       expect.objectContaining({ handoffId: 'handoff-a1-failed', status: 'failed' }),
     ]);
     expect(all.json().data.map(({ handoffId }: { handoffId: string }) => handoffId)).toEqual([
+      'handoff-a2',
       'handoff-a1-failed',
       'handoff-a1-completed',
     ]);
     expect(JSON.stringify(all.json())).not.toContain('visitor@example.com');
-    expect(JSON.stringify(all.json())).not.toContain('handoff-a2');
+    expect(JSON.stringify(all.json())).not.toContain('handoff-b1');
   });
 });
 

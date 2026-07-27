@@ -68,7 +68,6 @@ try {
     ).issue({
       adminId: 'browser-smoke',
       tenantId: 'local-tenant',
-      siteIds: ['local-site'],
       scopes: ['admin:read', 'admin:internal'],
     });
     const dashboard = await browser.newPage({ viewport: { width: 1280, height: 800 } });

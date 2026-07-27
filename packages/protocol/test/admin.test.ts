@@ -16,19 +16,18 @@ const ajv = new Ajv2020({ allErrors: true, strict: true });
 formatsPlugin.default(ajv);
 
 describe('admin API contracts', () => {
-  it('binds admin tokens to one tenant, explicit sites, and read visibility scopes', () => {
+  it('binds admin tokens to one tenant and read visibility scopes', () => {
     const validate = ajv.compile(AdminTokenClaimsSchema);
     const claims = {
       adminId: 'operator_1',
       tenantId: 'tenant_1',
-      siteIds: ['site_1'],
       scopes: ['admin:read'],
       issuedAt: '2026-07-16T13:00:00.000Z',
       expiresAt: '2026-07-16T14:00:00.000Z',
     };
 
     expect(validate(claims)).toBe(true);
-    expect(validate({ ...claims, siteIds: [] })).toBe(false);
+    expect(validate({ ...claims, siteIds: ['site_1'] })).toBe(false);
     expect(validate({ ...claims, scopes: ['events:read'] })).toBe(false);
     expect(validate({ ...claims, tenantId: ['tenant_1', 'tenant_2'] })).toBe(false);
   });

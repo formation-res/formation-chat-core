@@ -9,6 +9,7 @@ import {
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 
 import { setAuditActor } from '../security/audit.js';
+import { adminTokenFromRequest } from './auth.js';
 import { AdminApiError, AdminQueryService } from './service.js';
 import { AdminTokenService } from './token.js';
 
@@ -172,10 +173,10 @@ const failureFilterSchema = {
 } as const;
 
 async function authenticateAdmin(request: FastifyRequest, tokens: AdminTokenService) {
-  const authorization = request.headers.authorization;
-  if (!authorization?.startsWith('Bearer ')) throw new AdminAuthorizationError(401);
+  const token = adminTokenFromRequest(request);
+  if (!token) throw new AdminAuthorizationError(401);
   try {
-    const claims = await tokens.verify(authorization.slice(7));
+    const claims = await tokens.verify(token);
     if (!claims.scopes.some((scope) => scope === 'admin:read' || scope === 'admin:internal')) {
       throw new AdminAuthorizationError(403);
     }
@@ -183,7 +184,6 @@ async function authenticateAdmin(request: FastifyRequest, tokens: AdminTokenServ
       actorKind: 'admin',
       actorId: claims.adminId,
       tenantId: claims.tenantId,
-      ...(claims.siteIds.length === 1 ? { siteId: claims.siteIds[0] } : {}),
     });
     return claims;
   } catch (error) {

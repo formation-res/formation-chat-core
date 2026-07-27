@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import Fastify, { type FastifyServerOptions } from 'fastify';
 
 import { registerAdminRoutes } from './admin/route.js';
+import { registerAdminAuthRoutes, type AdminAuthService } from './admin/auth.js';
 import type { AdminQueryService } from './admin/service.js';
 import type { AdminTokenService } from './admin/token.js';
 import { registerConversationRoutes } from './conversation/route.js';
@@ -32,6 +33,7 @@ export interface BuildServerOptions {
   sessionTokens?: SessionTokenService;
   adminService?: AdminQueryService;
   adminTokens?: AdminTokenService;
+  adminAuth?: AdminAuthService;
   audit?: AuditSink;
   metricsBearerToken?: string;
   logger?: FastifyServerOptions['logger'];
@@ -76,12 +78,13 @@ export function buildServer(options: BuildServerOptions) {
 
   server.addHook('onRequest', async (request, reply) => {
     metrics.start(request);
-    if (!request.url.startsWith('/v1/')) return;
-    const group = request.url.startsWith('/v1/admin')
-      ? 'admin'
-      : request.url.startsWith('/v1/sessions')
-        ? 'bootstrap'
-        : 'public';
+    if (!request.url.startsWith('/v1/') && !request.url.startsWith('/auth/')) return;
+    const group =
+      request.url.startsWith('/v1/admin') || request.url.startsWith('/auth/')
+        ? 'admin'
+        : request.url.startsWith('/v1/sessions')
+          ? 'bootstrap'
+          : 'public';
     const result = limiters[group].consume(`${group}:${request.ip}`);
     void reply.header('ratelimit-limit', result.limit);
     void reply.header('ratelimit-remaining', result.remaining);
@@ -192,6 +195,7 @@ export function buildServer(options: BuildServerOptions) {
   if (options.adminService && options.adminTokens) {
     registerAdminRoutes(server, options.adminService, options.adminTokens);
   }
+  if (options.adminAuth) registerAdminAuthRoutes(server, options.adminAuth);
 
   return server;
 }

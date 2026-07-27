@@ -377,6 +377,36 @@ describe('Cloudflare chat gateway', () => {
     expect(write.status).toBe(405);
     expect(fetchUpstream).toHaveBeenCalledTimes(1);
   });
+
+  it('proxies SSO navigation and HTTP-only session cookies on the dashboard origin', async () => {
+    let upstreamRequest: Request | undefined;
+    const fetchUpstream = vi.fn(async (request: Request) => {
+      upstreamRequest = request;
+      return new Response(null, {
+        status: 303,
+        headers: {
+          location: '/dashboard',
+          'set-cookie':
+            'formation_chat_core_admin_session=signed; Path=/; HttpOnly; Secure; SameSite=Lax',
+        },
+      });
+    });
+
+    const response = await handleGatewayRequest(
+      new Request(
+        'https://chat.example.test/auth/callback?app=formation-chat-core-dashboard&logintoken=one-time-token',
+        { headers: { Cookie: 'pre_auth=value', 'Sec-Fetch-Site': 'cross-site' } },
+      ),
+      env,
+      { fetch: fetchUpstream },
+    );
+
+    expect(response.status).toBe(303);
+    expect(response.headers.get('location')).toBe('/dashboard');
+    expect(response.headers.get('set-cookie')).toContain('HttpOnly');
+    expect(upstreamRequest?.url).toContain('/auth/callback?app=formation-chat-core-dashboard');
+    expect(upstreamRequest?.headers.get('cookie')).toBe('pre_auth=value');
+  });
 });
 
 function request(path: string, init: RequestInit = {}, baseUrl = 'https://chat.example.test') {

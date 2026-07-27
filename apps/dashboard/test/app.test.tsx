@@ -31,36 +31,23 @@ afterEach(() => {
 });
 
 describe('operations dashboard', () => {
-  it('requires an in-memory admin credential before querying the API', async () => {
+  it('requires an SSO session before querying the API', async () => {
     const createClient = vi.fn(() => fakeApi());
-    render(<App createClient={createClient} />);
+    const auth = {
+      getSession: vi.fn(async () => undefined),
+      logout: vi.fn(async () => undefined),
+    };
+    render(<App createClient={createClient} auth={auth} />);
+    await act(settle);
 
-    expect(container?.textContent).toContain('Connect to Chat Core');
+    expect(container?.textContent).toContain('Sign in to Chat Core');
     expect(createClient).not.toHaveBeenCalled();
-    const token = container?.querySelector<HTMLInputElement>('input[name="token"]');
-    if (!token) throw new Error('Missing token input.');
-    await act(async () => {
-      setInput(token, 'test-admin-token');
-      container
-        ?.querySelector('form')
-        ?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
-      await settle();
-    });
-
-    expect(createClient).toHaveBeenCalledWith(window.location.origin, 'test-admin-token');
-    expect(container?.textContent).toContain('Operations');
-    expect(container?.textContent).toContain('Tenant One');
-    expect(container?.textContent).toContain('Main website');
-    expect(container?.textContent).toContain('data-widget-key="main-chat"');
-    expect(container?.textContent).toContain('data-agent="support"');
-    expect(container?.textContent).toContain('data-agent="sales"');
-    expect(container?.textContent).toContain('data-placement="bottom-right"');
-    expect(container?.querySelector('input[name="token"]')).toBeNull();
+    expect(container?.querySelector<HTMLAnchorElement>('a[href="/auth/login"]')).not.toBeNull();
   });
 
   it('shows a detailed transcript and visibility-aware event timeline', async () => {
     const api = fakeApi();
-    render(<App initialClient={api} />);
+    render(<App initialClient={api} initialSession={session} />);
     await selectMainWebsite();
     await act(settle);
     await act(async () => {
@@ -89,7 +76,7 @@ describe('operations dashboard', () => {
       deferred<ReturnType<AdminApi['listConversations']> extends Promise<infer T> ? T : never>();
     const api = fakeApi();
     api.listConversations = vi.fn(() => pending.promise);
-    render(<App initialClient={api} />);
+    render(<App initialClient={api} initialSession={session} />);
     await selectMainWebsite();
 
     expect(container?.querySelector('[aria-busy="true"]')).not.toBeNull();
@@ -104,7 +91,7 @@ describe('operations dashboard', () => {
   });
 
   it('navigates from a handoff correlation to its agent run', async () => {
-    render(<App initialClient={fakeApi()} />);
+    render(<App initialClient={fakeApi()} initialSession={session} />);
     await selectMainWebsite();
     await act(async () => {
       [...(container?.querySelectorAll<HTMLButtonElement>('button') ?? [])]
@@ -123,7 +110,7 @@ describe('operations dashboard', () => {
   });
 
   it('clears the selected domain when returning home', async () => {
-    render(<App initialClient={fakeApi()} />);
+    render(<App initialClient={fakeApi()} initialSession={session} />);
     await selectMainWebsite();
     expect(container?.querySelector<HTMLSelectElement>('.domain-selector select')?.value).toBe(
       'site-1',
@@ -146,12 +133,6 @@ function render(node: React.ReactNode): void {
   document.body.append(container);
   root = createRoot(container);
   act(() => root?.render(node));
-}
-
-function setInput(input: HTMLInputElement, value: string): void {
-  const setter = Object.getOwnPropertyDescriptor(input.constructor.prototype, 'value')?.set;
-  setter?.call(input, value);
-  input.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
 async function settle(): Promise<void> {
@@ -199,3 +180,9 @@ function fakeApi(): AdminApi {
     listHandoffs: vi.fn(async () => handoffPage),
   };
 }
+
+const session = {
+  authenticated: true as const,
+  email: 'jo@tryformation.com',
+  displayName: 'Jo Formation',
+};

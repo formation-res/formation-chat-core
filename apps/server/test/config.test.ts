@@ -144,6 +144,32 @@ describe('loadConfig', () => {
     ).toThrow('Invalid configuration: ADMIN_TOKEN_SECRET, ADMIN_TOKEN_TTL_SECONDS');
   });
 
+  it('validates and normalizes Formation SSO admin configuration', () => {
+    const config = loadConfig({
+      DATABASE_URL: 'postgres://localhost/chat',
+      SESSION_TOKEN_SECRET: '0123456789abcdef0123456789abcdef',
+      ADMIN_TOKEN_SECRET: 'admin-secret-0123456789abcdef0123456789abcdef',
+      ADMIN_TENANT_ID: 'formationxyz_com',
+      ADMIN_SSO_BASE_URL: 'https://api.tryformation.com/',
+      ADMIN_SSO_UI_URL: 'https://sso.tryformation.com/',
+      ADMIN_SSO_APP_ID: 'formation-chat-core-dashboard',
+      ADMIN_PUBLIC_BASE_URL: 'https://chat.formationxyz.com/',
+      ADMIN_ALLOWED_EMAILS: ' JO@tryformation.com, jvg@tryformation.com,jo@tryformation.com ',
+    });
+
+    expect(config.admin?.sso).toEqual({
+      tenantId: 'formationxyz_com',
+      ssoBaseUrl: 'https://api.tryformation.com',
+      ssoUiUrl: 'https://sso.tryformation.com/',
+      ssoAppId: 'formation-chat-core-dashboard',
+      appLabel: 'Chat Core Dashboard',
+      callbackUrl: 'https://chat.formationxyz.com/auth/callback',
+      dashboardUrl: 'https://chat.formationxyz.com/dashboard',
+      allowedAdminEmails: ['jo@tryformation.com', 'jvg@tryformation.com'],
+      sessionTtlSeconds: 3600,
+    });
+  });
+
   it('rejects invalid event retention and subscriber buffer limits', () => {
     expect(() =>
       loadConfig({

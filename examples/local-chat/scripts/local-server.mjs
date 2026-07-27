@@ -33,7 +33,7 @@ const FORWARDED_RESPONSE_HEADERS = [
 ];
 
 /**
- * @param {{ apiPathPrefixes?: string[], coreBaseUrl: URL, rootDirectory: string, siteKey?: string }} options
+ * @param {{ adminToken?: string, apiPathPrefixes?: string[], coreBaseUrl: URL, rootDirectory: string, siteKey?: string }} options
  */
 export function createLocalChatServer(options) {
   return createServer((request, response) => {
@@ -48,13 +48,29 @@ export function createLocalChatServer(options) {
 /**
  * @param {import('node:http').IncomingMessage} request
  * @param {import('node:http').ServerResponse} response
- * @param {{ apiPathPrefixes?: string[], coreBaseUrl: URL, rootDirectory: string, siteKey?: string }} options
+ * @param {{ adminToken?: string, apiPathPrefixes?: string[], coreBaseUrl: URL, rootDirectory: string, siteKey?: string }} options
  */
 async function handleRequest(request, response, options) {
   const url = new URL(request.url ?? '/', 'http://local-chat.invalid');
+  if (url.pathname === '/auth/session' && options.adminToken) {
+    response.writeHead(200, securityHeaders('application/json; charset=utf-8'));
+    response.end(
+      JSON.stringify({
+        authenticated: true,
+        email: 'local-admin@localhost',
+        displayName: 'Local admin',
+      }),
+    );
+    return;
+  }
+  if (url.pathname === '/auth/logout' && options.adminToken && request.method === 'POST') {
+    response.writeHead(204, securityHeaders('application/json; charset=utf-8'));
+    response.end();
+    return;
+  }
   const apiPathPrefixes = options.apiPathPrefixes ?? ['/v1/'];
   if (apiPathPrefixes.some((prefix) => url.pathname.startsWith(prefix))) {
-    proxyRequest(request, response, options.coreBaseUrl);
+    proxyRequest(request, response, options.coreBaseUrl, options.adminToken);
     return;
   }
   if (url.pathname.startsWith('/v1/')) {
@@ -93,10 +109,12 @@ async function handleRequest(request, response, options) {
  * @param {import('node:http').IncomingMessage} incoming
  * @param {import('node:http').ServerResponse} outgoing
  * @param {URL} coreBaseUrl
+ * @param {string | undefined} adminToken
  */
-function proxyRequest(incoming, outgoing, coreBaseUrl) {
+function proxyRequest(incoming, outgoing, coreBaseUrl, adminToken) {
   const target = new URL(incoming.url ?? '/', coreBaseUrl);
   const headers = forwardedHeaders(incoming.headers, FORWARDED_REQUEST_HEADERS);
+  if (adminToken) headers.authorization = `Bearer ${adminToken}`;
   headers.host = target.host;
   const request = target.protocol === 'https:' ? httpsRequest : httpRequest;
   const upstream = request(target, { headers, method: incoming.method }, (response) => {

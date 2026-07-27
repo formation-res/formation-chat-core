@@ -2,6 +2,7 @@ import {
   type HaystackConnectorMap,
   parseHaystackConnectorMap,
 } from '@formation-chat-core/haystack-connector';
+import type { AdminSsoConfig } from './admin/auth.js';
 
 export type LogLevel = 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace' | 'silent';
 
@@ -14,7 +15,12 @@ export interface ServerConfig {
   sessionTokenSecret: string;
   sessionTokenPreviousSecrets: string[];
   sessionTokenTtlSeconds: number;
-  admin?: { tokenSecret: string; previousTokenSecrets: string[]; tokenTtlSeconds: number };
+  admin?: {
+    tokenSecret: string;
+    previousTokenSecrets: string[];
+    tokenTtlSeconds: number;
+    sso?: AdminSsoConfig;
+  };
   eventRetentionMaxEvents: number;
   eventSubscriberBufferSize: number;
   connectorMode: 'disabled' | 'mock' | 'haystack';
@@ -79,6 +85,25 @@ const parsePreviousSecrets = (value: string | undefined): string[] | undefined =
   }
 };
 
+const parseHttpsUrl = (value: string | undefined): string | undefined => {
+  if (!value) return undefined;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && !url.username && !url.password ? url.toString() : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+const parseEmails = (value: string | undefined): string[] => [
+  ...new Set(
+    (value ?? '')
+      .split(',')
+      .map((email) => email.trim().toLowerCase())
+      .filter(Boolean),
+  ),
+];
+
 export function loadConfig(env: NodeJS.ProcessEnv): ServerConfig {
   const invalid: string[] = [];
   const port = parseInteger(env.PORT, 3000);
@@ -89,6 +114,14 @@ export function loadConfig(env: NodeJS.ProcessEnv): ServerConfig {
     env.ADMIN_TOKEN_SECRET !== undefined ||
     env.ADMIN_TOKEN_TTL_SECONDS !== undefined ||
     env.ADMIN_TOKEN_PREVIOUS_SECRETS !== undefined;
+  const adminSsoConfigured = [
+    env.ADMIN_TENANT_ID,
+    env.ADMIN_SSO_BASE_URL,
+    env.ADMIN_SSO_UI_URL,
+    env.ADMIN_SSO_APP_ID,
+    env.ADMIN_PUBLIC_BASE_URL,
+    env.ADMIN_ALLOWED_EMAILS,
+  ].some((value) => value !== undefined);
   const sessionTokenPreviousSecrets = parsePreviousSecrets(env.SESSION_TOKEN_PREVIOUS_SECRETS);
   const adminTokenPreviousSecrets = parsePreviousSecrets(env.ADMIN_TOKEN_PREVIOUS_SECRETS);
   const eventRetentionMaxEvents = parseInteger(env.EVENT_RETENTION_MAX_EVENTS, 1000);
@@ -111,6 +144,10 @@ export function loadConfig(env: NodeJS.ProcessEnv): ServerConfig {
   const contactValueRetentionHours = parseInteger(env.CONTACT_VALUE_RETENTION_HOURS, 24);
   const retentionSweepIntervalMs = parseInteger(env.RETENTION_SWEEP_INTERVAL_MS, 3_600_000);
   const metricsConfigured = env.METRICS_BEARER_TOKEN !== undefined;
+  const adminSsoBaseUrl = parseHttpsUrl(env.ADMIN_SSO_BASE_URL);
+  const adminSsoUiUrl = parseHttpsUrl(env.ADMIN_SSO_UI_URL);
+  const adminPublicBaseUrl = parseHttpsUrl(env.ADMIN_PUBLIC_BASE_URL);
+  const adminAllowedEmails = parseEmails(env.ADMIN_ALLOWED_EMAILS);
 
   if (!isDatabaseUrl(env.DATABASE_URL)) invalid.push('DATABASE_URL');
   if (!Number.isInteger(port) || port < 1 || port > 65_535) invalid.push('PORT');
@@ -153,6 +190,27 @@ export function loadConfig(env: NodeJS.ProcessEnv): ServerConfig {
       adminTokenTtlSeconds > 86_400)
   ) {
     invalid.push('ADMIN_TOKEN_TTL_SECONDS');
+  }
+  if (adminSsoConfigured) {
+    if (!adminConfigured) invalid.push('ADMIN_TOKEN_SECRET');
+    if (!env.ADMIN_TENANT_ID || !/^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$/.test(env.ADMIN_TENANT_ID)) {
+      invalid.push('ADMIN_TENANT_ID');
+    }
+    if (!adminSsoBaseUrl) invalid.push('ADMIN_SSO_BASE_URL');
+    if (!adminSsoUiUrl) invalid.push('ADMIN_SSO_UI_URL');
+    if (
+      !env.ADMIN_SSO_APP_ID ||
+      !/^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$/.test(env.ADMIN_SSO_APP_ID)
+    ) {
+      invalid.push('ADMIN_SSO_APP_ID');
+    }
+    if (!adminPublicBaseUrl) invalid.push('ADMIN_PUBLIC_BASE_URL');
+    if (
+      adminAllowedEmails.length === 0 ||
+      adminAllowedEmails.some((email) => !email.includes('@') || email.length > 254)
+    ) {
+      invalid.push('ADMIN_ALLOWED_EMAILS');
+    }
   }
   if (
     !Number.isInteger(eventRetentionMaxEvents) ||
@@ -280,6 +338,21 @@ export function loadConfig(env: NodeJS.ProcessEnv): ServerConfig {
             tokenSecret: env.ADMIN_TOKEN_SECRET as string,
             previousTokenSecrets: adminTokenPreviousSecrets as string[],
             tokenTtlSeconds: adminTokenTtlSeconds,
+            ...(adminSsoConfigured
+              ? {
+                  sso: {
+                    tenantId: env.ADMIN_TENANT_ID as string,
+                    ssoBaseUrl: (adminSsoBaseUrl as string).replace(/\/$/, ''),
+                    ssoUiUrl: adminSsoUiUrl as string,
+                    ssoAppId: env.ADMIN_SSO_APP_ID as string,
+                    appLabel: 'Chat Core Dashboard',
+                    callbackUrl: new URL('/auth/callback', adminPublicBaseUrl).toString(),
+                    dashboardUrl: new URL('/dashboard', adminPublicBaseUrl).toString(),
+                    allowedAdminEmails: adminAllowedEmails,
+                    sessionTtlSeconds: adminTokenTtlSeconds,
+                  },
+                }
+              : {}),
           },
         }
       : {}),

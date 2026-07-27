@@ -1,24 +1,52 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { AdminClient, type AdminApi } from './admin-client.js';
+import { DashboardAuthClient, type AdminSession, type DashboardAuthApi } from './auth-client.js';
 import { Dashboard } from './dashboard.js';
 import { Icon } from './icons.js';
 
 export interface AppProps {
-  createClient?: (baseUrl: string, token: string) => AdminApi;
+  createClient?: () => AdminApi;
+  auth?: DashboardAuthApi;
   initialClient?: AdminApi;
+  initialSession?: AdminSession;
 }
 
+const defaultAuth = new DashboardAuthClient();
+const createDefaultClient = () => new AdminClient(window.location.origin);
+
 export function App({
-  createClient = (baseUrl, token) => new AdminClient(baseUrl, token),
+  createClient = createDefaultClient,
+  auth = defaultAuth,
   initialClient,
+  initialSession,
 }: AppProps) {
+  const [session, setSession] = useState<AdminSession | undefined>(initialSession);
+  const [checking, setChecking] = useState(!initialClient && !initialSession);
   const [api, setApi] = useState<AdminApi | undefined>(initialClient);
   const [theme, setTheme] = useTheme();
-  if (!api)
+  useEffect(() => {
+    if (!checking) return;
+    void auth
+      .getSession()
+      .then((next) => {
+        setSession(next);
+        if (next) setApi(createClient());
+      })
+      .catch(() => setSession(undefined))
+      .finally(() => setChecking(false));
+  }, [auth, checking, createClient]);
+  if (checking)
     return (
-      <ConnectionScreen
-        onConnect={(baseUrl, token) => setApi(createClient(baseUrl, token))}
+      <LoginScreen
+        theme={theme}
+        onToggleTheme={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+        checking
+      />
+    );
+  if (!api || !session)
+    return (
+      <LoginScreen
         theme={theme}
         onToggleTheme={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
       />
@@ -28,31 +56,26 @@ export function App({
       api={api}
       theme={theme}
       onToggleTheme={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-      onDisconnect={() => setApi(undefined)}
+      onDisconnect={() => {
+        void auth.logout().finally(() => {
+          setApi(undefined);
+          setSession(undefined);
+        });
+      }}
     />
   );
 }
 
-function ConnectionScreen({
-  onConnect,
+function LoginScreen({
   theme,
   onToggleTheme,
+  checking = false,
 }: {
-  onConnect(baseUrl: string, token: string): void;
   theme: 'light' | 'dark';
   onToggleTheme(): void;
+  checking?: boolean;
 }) {
-  const [baseUrl, setBaseUrl] = useState(window.location.origin);
-  const [token, setToken] = useState('');
-  const [error, setError] = useState('');
-  const submit = (event: React.FormEvent) => {
-    event.preventDefault();
-    try {
-      onConnect(baseUrl.trim(), token.trim());
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Check the connection settings.');
-    }
-  };
+  const error = new URLSearchParams(window.location.search).get('authError');
   return (
     <main className="connection-page">
       <button
@@ -67,49 +90,29 @@ function ConnectionScreen({
           <Icon name="activity" />
         </span>
         <p className="eyebrow">Formation Chat Core</p>
-        <h1>Connect to Chat Core</h1>
+        <h1>{checking ? 'Checking your session' : 'Sign in to Chat Core'}</h1>
         <p className="connection-intro">
-          Inspect conversations and agent operations through the scoped, read-only admin API.
+          Inspect conversations and agent operations for every configured site.
         </p>
-        <form onSubmit={submit}>
-          <label>
-            Chat Core URL
-            <input
-              name="baseUrl"
-              type="url"
-              required
-              value={baseUrl}
-              onChange={(event) => setBaseUrl(event.target.value)}
-              autoComplete="url"
-            />
-          </label>
-          <label>
-            Admin token
-            <input
-              name="token"
-              type="password"
-              required
-              value={token}
-              onChange={(event) => setToken(event.target.value)}
-              autoComplete="off"
-            />
-          </label>
-          <p className="security-note">
-            The token stays in memory and is cleared when you disconnect or close this tab.
+        {checking ? (
+          <p className="security-note" role="status">
+            Please wait…
           </p>
-          {error ? (
-            <p className="form-error" role="alert">
-              {error}
-            </p>
-          ) : null}
-          <button
-            className="button button-primary"
-            type="submit"
-            disabled={!baseUrl.trim() || !token.trim()}
-          >
-            Open dashboard <Icon name="chevron" />
-          </button>
-        </form>
+        ) : (
+          <>
+            {error ? (
+              <p className="form-error" role="alert">
+                {error === 'access_denied'
+                  ? 'This Formation account does not have dashboard access.'
+                  : 'Sign-in could not be completed. Please try again.'}
+              </p>
+            ) : null}
+            <a className="button button-primary connection-login" href="/auth/login">
+              Sign in with Formation <Icon name="chevron" />
+            </a>
+            <p className="security-note">Your session is stored in a secure HTTP-only cookie.</p>
+          </>
+        )}
       </section>
     </main>
   );

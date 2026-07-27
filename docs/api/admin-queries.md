@@ -11,19 +11,23 @@ Admin routes are disabled unless `ADMIN_TOKEN_SECRET` is configured with at leas
 JWT audience (`formation-chat-core-admin`), and claims are separate from visitor session tokens.
 Visitor bearer tokens therefore cannot authenticate to this namespace.
 
-A trusted deployment component issues claims matching the published `admin/token-claims` schema:
+The dashboard signs operators in through Formation SSO. `GET /auth/login` redirects to the
+registered SSO app, `GET /auth/callback` exchanges the one-time login token, `GET /auth/session`
+reports the current dashboard session, and `POST /auth/logout` clears it. The resulting admin JWT
+is stored only in a `Secure`, `HttpOnly`, `SameSite=Lax` cookie. The callback accepts only the
+configured app ID and callback URL, and only emails in `ADMIN_ALLOWED_EMAILS`.
+
+Trusted tooling may still issue claims matching the published `admin/token-claims` schema:
 
 - `adminId`: operator or service identity;
 - `tenantId`: the only tenant the token may query;
-- `siteIds`: the explicit non-empty set of sites the token may query;
 - `scopes`: `admin:read`, `admin:internal`, or both;
 - `issuedAt` and `expiresAt`: bounded token lifetime.
 
 `admin:read` includes public and operator events. `admin:internal` additionally includes internal
-events. Tenant and site restrictions are applied inside every database query. A requested `siteId`
-outside the token's set returns `403 FORBIDDEN_SITE`; a resource outside the set returns `404` so
-the endpoint does not disclose its existence. Tenant filtering is mandatory and implicit in the
-token rather than caller-selectable.
+events. Tenant filtering is applied inside every database query. Admins automatically see every
+site in that tenant, including sites added after the session was issued. A resource outside the
+tenant returns `404` so the endpoint does not disclose its existence.
 
 ## Endpoints and filters
 
@@ -48,9 +52,8 @@ exclusive. `createdAfter` must be earlier than `createdBefore`.
 Failure records contain only stable `errorCode` values. Handoff records contain lifecycle status
 and correlation IDs, not the submitted email address or provider response.
 
-`GET /v1/admin/overview` returns the token's tenant, the authorized site/domain cards, aggregate
-counts, and each site's most recent activity timestamp. It is tenant-scoped by the admin token and
-never lists sites outside the token's `siteIds`.
+`GET /v1/admin/overview` returns the token's tenant, all site/domain cards in that tenant, aggregate
+counts, and each site's most recent activity timestamp.
 
 ## Operations dashboard
 
@@ -60,6 +63,6 @@ runs, failures, and handoffs. It does not read Haystack storage or configure age
 production, serve its static build behind the same trusted admin origin as the API (or a narrowly
 configured reverse proxy) so browsers do not need broad cross-origin access.
 
-Operators enter a short-lived admin JWT when connecting. The dashboard keeps the token in memory,
-never local storage, and clears it on disconnect or tab close. Theme preference is the only value
-stored in local storage. See `apps/dashboard/README.md` for local commands and deployment guidance.
+Operators use the Formation SSO button. Browser JavaScript never reads or stores the admin token;
+signing out clears the HTTP-only cookie. Theme preference is the only value stored in local storage.
+See `apps/dashboard/README.md` for local commands and deployment guidance.

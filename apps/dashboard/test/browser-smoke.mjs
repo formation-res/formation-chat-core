@@ -13,16 +13,28 @@ const require = createRequire(import.meta.url);
 const directory = new URL('..', import.meta.url).pathname;
 const output = join(directory, 'dist');
 const axePath = require.resolve('axe-core/axe.min.js');
+let authenticated = false;
 const server = createServer(async (request, response) => {
   const url = new URL(request.url ?? '/', 'http://localhost');
+  if (url.pathname === '/auth/session') {
+    if (!authenticated) {
+      response.statusCode = 401;
+      response.end();
+      return;
+    }
+    response.setHeader('content-type', 'application/json');
+    response.end(
+      JSON.stringify({
+        authenticated: true,
+        email: 'jo@tryformation.com',
+        displayName: 'Jo Formation',
+      }),
+    );
+    return;
+  }
   if (url.pathname.startsWith('/v1/admin/')) {
     response.setHeader('content-type', 'application/json');
     response.setHeader('cache-control', 'no-store');
-    if (request.headers.authorization !== 'Bearer browser-admin-token') {
-      response.statusCode = 401;
-      response.end(JSON.stringify({ error: { code: 'UNAUTHORIZED' } }));
-      return;
-    }
     response.end(JSON.stringify(apiResponse(url.pathname)));
     return;
   }
@@ -70,9 +82,14 @@ async function runBrowserSmoke() {
     });
     page.on('pageerror', (error) => browserMessages.push(error.message));
     await page.goto(baseUrl, { waitUntil: 'networkidle' });
-    await page.getByLabel('Chat Core URL').fill(baseUrl);
-    await page.getByLabel('Admin token').fill('browser-admin-token');
-    await page.getByRole('button', { name: 'Open dashboard' }).click();
+    await page.getByRole('heading', { name: 'Sign in to Chat Core' }).waitFor();
+    assert.equal(
+      await page.getByRole('link', { name: /Sign in with Formation/ }).getAttribute('href'),
+      '/auth/login',
+    );
+    browserMessages.length = 0;
+    authenticated = true;
+    await page.reload({ waitUntil: 'networkidle' });
     assert.equal(await page.getByText('data-widget-key="main-chat"').count(), 2);
     await page.getByText('data-agent="sales"').waitFor();
     await page.getByRole('button', { name: /Open Formation website/ }).click();
@@ -94,6 +111,7 @@ async function runBrowserSmoke() {
     await page.getByText('How can I change my plan?').waitFor();
     await page.getByRole('tab', { name: /Event timeline/ }).click();
     assert.equal(await page.getByText('Internal diagnostic').count(), 1);
+    await page.waitForTimeout(250);
     await page.screenshot({ path: join(tmpdir(), 'chat-core-dashboard-wide.png'), fullPage: true });
     await page.addScriptTag({ url: `${baseUrl}/axe.js` });
     const lightViolations = await accessibilityViolations(page);

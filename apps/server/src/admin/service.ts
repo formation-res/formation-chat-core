@@ -34,7 +34,7 @@ import {
   encodeTimeCursor,
 } from './cursor.js';
 
-type AdminScope = Pick<AdminTokenClaims, 'tenantId' | 'siteIds' | 'scopes'>;
+type AdminScope = Pick<AdminTokenClaims, 'tenantId' | 'scopes'>;
 
 export class AdminApiError extends Error {
   constructor(
@@ -62,7 +62,6 @@ export class AdminQueryService {
       .selectFrom('sites')
       .selectAll()
       .where('tenant_id', '=', scope.tenantId)
-      .where('site_id', 'in', scope.siteIds)
       .orderBy('display_name')
       .orderBy('site_id')
       .execute();
@@ -96,8 +95,7 @@ export class AdminQueryService {
     let query = this.database
       .selectFrom('conversations')
       .selectAll()
-      .where('tenant_id', '=', scope.tenantId)
-      .where('site_id', 'in', scope.siteIds);
+      .where('tenant_id', '=', scope.tenantId);
     if (filter.siteId) query = query.where('site_id', '=', filter.siteId);
     if (filter.agentRef) query = query.where('agent_ref', '=', filter.agentRef);
     if (filter.status) query = query.where('status', '=', filter.status);
@@ -160,7 +158,6 @@ export class AdminQueryService {
       .selectFrom('messages')
       .selectAll()
       .where('tenant_id', '=', scope.tenantId)
-      .where('site_id', 'in', scope.siteIds)
       .where('conversation_id', '=', conversationId);
     if (cursor) query = query.where('sequence', '>', cursor);
     const rows = await query
@@ -190,7 +187,6 @@ export class AdminQueryService {
       .selectFrom('conversation_events')
       .selectAll()
       .where('tenant_id', '=', scope.tenantId)
-      .where('site_id', 'in', scope.siteIds)
       .where('conversation_id', '=', conversationId);
     if (!scope.scopes.includes('admin:internal')) {
       query = query.where('visibility', 'in', ['public', 'operator']);
@@ -221,8 +217,7 @@ export class AdminQueryService {
     let query = this.database
       .selectFrom('agent_runs')
       .selectAll()
-      .where('tenant_id', '=', scope.tenantId)
-      .where('site_id', 'in', scope.siteIds);
+      .where('tenant_id', '=', scope.tenantId);
     if (filter.siteId) query = query.where('site_id', '=', filter.siteId);
     if (filter.agentRef) query = query.where('agent_ref', '=', filter.agentRef);
     if (filter.status) query = query.where('status', '=', filter.status);
@@ -268,7 +263,6 @@ export class AdminQueryService {
       .selectFrom('agent_runs')
       .selectAll()
       .where('tenant_id', '=', scope.tenantId)
-      .where('site_id', 'in', scope.siteIds)
       .where('status', '=', 'failed');
     if (filter.siteId) query = query.where('site_id', '=', filter.siteId);
     if (filter.agentRef) query = query.where('agent_ref', '=', filter.agentRef);
@@ -321,8 +315,7 @@ export class AdminQueryService {
       .selectFrom('handoffs as handoff')
       .innerJoin('agent_runs as run', 'run.run_id', 'handoff.run_id')
       .selectAll('handoff')
-      .where('handoff.tenant_id', '=', scope.tenantId)
-      .where('handoff.site_id', 'in', scope.siteIds);
+      .where('handoff.tenant_id', '=', scope.tenantId);
     if (filter.siteId) query = query.where('handoff.site_id', '=', filter.siteId);
     if (filter.agentRef) query = query.where('run.agent_ref', '=', filter.agentRef);
     if (filter.status) query = query.where('handoff.status', '=', filter.status);
@@ -365,9 +358,6 @@ export class AdminQueryService {
     scope: AdminScope,
     filter: Pick<AdminConversationFilter, 'siteId' | 'createdAfter' | 'createdBefore'>,
   ): void {
-    if (filter.siteId && !scope.siteIds.includes(filter.siteId)) {
-      throw new AdminApiError('FORBIDDEN_SITE', 403, 'The token does not allow this site.');
-    }
     if (
       filter.createdAfter &&
       filter.createdBefore &&
@@ -386,7 +376,6 @@ export class AdminQueryService {
       .selectFrom('conversations')
       .selectAll()
       .where('tenant_id', '=', scope.tenantId)
-      .where('site_id', 'in', scope.siteIds)
       .where('conversation_id', '=', conversationId)
       .executeTakeFirst();
     if (!row) throw new AdminApiError('NOT_FOUND', 404, 'The resource was not found.');
@@ -494,7 +483,6 @@ export class AdminQueryService {
       .selectFrom('conversation_participants')
       .selectAll()
       .where('tenant_id', '=', scope.tenantId)
-      .where('site_id', 'in', scope.siteIds)
       .where('conversation_id', 'in', conversationIds)
       .orderBy('created_at')
       .execute();

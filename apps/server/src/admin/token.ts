@@ -8,7 +8,8 @@ const issuer = 'formation-chat-core';
 export interface AdminTokenSubject {
   adminId: OpaqueId;
   tenantId: OpaqueId;
-  siteIds: OpaqueId[];
+  email?: string;
+  displayName?: string;
   scopes: AdminAccessScope[];
 }
 
@@ -38,7 +39,6 @@ export class AdminTokenService {
     const expiresAtSeconds = issuedAtSeconds + this.ttlSeconds;
     const claims: AdminTokenClaims = {
       ...subject,
-      siteIds: [...subject.siteIds],
       scopes: [...subject.scopes],
       issuedAt: new Date(issuedAtSeconds * 1000).toISOString(),
       expiresAt: new Date(expiresAtSeconds * 1000).toISOString(),
@@ -69,7 +69,8 @@ export class AdminTokenService {
     const claims: AdminTokenClaims = {
       adminId: payload.adminId as string,
       tenantId: payload.tenantId as string,
-      siteIds: payload.siteIds as string[],
+      ...(typeof payload.email === 'string' ? { email: payload.email } : {}),
+      ...(typeof payload.displayName === 'string' ? { displayName: payload.displayName } : {}),
       scopes: payload.scopes as AdminAccessScope[],
       issuedAt: payload.issuedAt as string,
       expiresAt: payload.expiresAt as string,
@@ -93,11 +94,10 @@ function isValidSubject(subject: AdminTokenSubject): boolean {
   return (
     opaqueId.test(subject.adminId) &&
     opaqueId.test(subject.tenantId) &&
-    Array.isArray(subject.siteIds) &&
-    subject.siteIds.length >= 1 &&
-    subject.siteIds.length <= 100 &&
-    subject.siteIds.every((siteId) => opaqueId.test(siteId)) &&
-    new Set(subject.siteIds).size === subject.siteIds.length &&
+    (subject.email === undefined ||
+      (subject.email.length >= 3 && subject.email.length <= 254 && subject.email.includes('@'))) &&
+    (subject.displayName === undefined ||
+      (subject.displayName.trim().length >= 1 && subject.displayName.length <= 160)) &&
     Array.isArray(subject.scopes) &&
     subject.scopes.length >= 1 &&
     subject.scopes.every((scope) => scope === 'admin:read' || scope === 'admin:internal') &&
