@@ -18,6 +18,7 @@ const output = join(directory, 'dist/site');
 const executablePath =
   process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const requests = [];
+const analyticsEvents = [];
 let baseUrl = '';
 let env;
 const certificateDirectory = mkdtempSync(join(tmpdir(), 'formation-worker-widget-cert-'));
@@ -61,6 +62,15 @@ const server = createServer(
         outgoing.end();
         return;
       }
+      if (url.pathname === '/analytics/collect') {
+        analyticsEvents.push({
+          body: JSON.parse((await Array.fromAsync(incoming)).join('')),
+          origin: incoming.headers.origin,
+        });
+        outgoing.statusCode = 202;
+        outgoing.end();
+        return;
+      }
       if (url.pathname === '/widget/config' || url.pathname.startsWith('/v1/')) {
         const response = await handleGatewayRequest(await toRequest(incoming, url), env, {
           fetch: coreFetch,
@@ -93,6 +103,10 @@ try {
         siteKey: 'trusted-site',
         allowedOrigins: [baseUrl],
         dashboardOrigins: [baseUrl],
+        analytics: {
+          endpoint: `${baseUrl}/analytics/collect`,
+          siteId: 'widget-browser-smoke',
+        },
         widget: {
           widgetKey: 'main-chat',
           version: '2026-07-23',
@@ -131,6 +145,27 @@ try {
           !('siteId' in body) &&
           !('agentRef' in body) &&
           !('connectorToken' in body)),
+    ),
+  );
+  assert.deepEqual(analyticsEvents.map(({ body }) => body.type).sort(), [
+    'chat_conversation_length',
+    'chat_conversation_length',
+    'chat_conversation_started',
+    'chat_conversation_started',
+    'chat_message_sent',
+    'chat_message_sent',
+    'chat_session_started',
+    'chat_session_started',
+  ]);
+  assert.ok(
+    analyticsEvents.every(
+      ({ body, origin }) =>
+        origin === baseUrl &&
+        body.site_id === 'widget-browser-smoke' &&
+        body.payload.widget_id === 'main-chat' &&
+        body.payload.website_id === 'widget-browser-smoke' &&
+        body.payload.message_count >= 0 &&
+        !JSON.stringify(body.payload).match(/session-|conversation-|handoff-/),
     ),
   );
   process.stdout.write(

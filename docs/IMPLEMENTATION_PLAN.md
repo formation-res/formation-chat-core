@@ -419,6 +419,15 @@ dry-run, startup, public HTTP, public SSE, and deployed-browser smoke checks pas
 mock preview is deployed on Cloudflare; production Haystack configuration remains intentionally
 unset until the first website and agent are selected.
 
+**Widget analytics follow-up:** 2026-07-27. The shared Worker widget optionally receives a trusted
+Formation analytics endpoint and the embedding website's existing analytics site ID through
+`CHAT_SITES`. It uses `@tryformation/formation-web-analytics-client` with automatic page views
+disabled. Session, conversation, message-count, message-send, and handoff lifecycle events carry
+the shared website ID plus the trusted widget key, agent alias, and widget version. Conversation
+length is represented by total, user, and assistant message counts rather than elapsed duration.
+The analytics request originates from the embedding website document, so an already-authorized
+website origin does not require a separate Chat Gateway analytics origin entry.
+
 **Runtime fix:** 2026-07-21. Outbound Haystack requests use manual redirect handling and invoke the
 native fetch function with the Worker global receiver. Non-success redirects remain unavailable
 responses and are never followed with the connector bearer token. Regression assertions cover both

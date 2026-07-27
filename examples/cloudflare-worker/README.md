@@ -39,11 +39,55 @@ Edit non-secret values in `wrangler.jsonc`:
 - `CHAT_CORE_BASE_URL` must be an HTTPS origin without a path.
 - `CHAT_SITES` is a JSON object keyed by lowercase public hostname. Each entry contains a trusted
   `siteKey`, one or more exact HTTPS `allowedOrigins`, optional exact HTTPS `dashboardOrigins`, and
-  optional widget configuration.
+  optional analytics and widget configuration.
 - `widget.agentAliases` maps public aliases such as `support` to labels for this site. Browser
   embeds may pass an alias; Chat Core validates it against the widget registry and resolves the
   trusted `agentRef`. Browser embeds never pass raw connector URLs, Haystack tenant keys,
   unrestricted agent slugs, or credentials.
+
+### Widget analytics
+
+Add the website's existing Formation analytics collector and site identifier to its `CHAT_SITES`
+entry:
+
+```json
+{
+  "www.example.com": {
+    "siteKey": "example-site",
+    "allowedOrigins": ["https://www.example.com"],
+    "analytics": {
+      "endpoint": "https://analytics.example.com/collect",
+      "siteId": "example-website"
+    },
+    "widget": {
+      "widgetKey": "main-chat"
+    }
+  }
+}
+```
+
+The remaining widget fields are omitted above only for brevity. Analytics is disabled when the
+`analytics` object is absent. The widget uses
+`@tryformation/formation-web-analytics-client` with automatic page views disabled and sends:
+
+- `chat_session_started`;
+- `chat_conversation_started`;
+- `chat_conversation_length`;
+- `chat_message_sent`;
+- `chat_handoff_requested`; and
+- `chat_handoff_completed`.
+
+Every event uses `analytics.siteId` as the collector's top-level `site_id`. Its payload also
+contains `website_id`, `widget_id` (the trusted `widgetKey`), `agent_alias`, `widget_version`, and
+the current `message_count`, `user_message_count`, and `assistant_message_count`. This lets the
+website and widget data share the same website identifier while retaining a clean widget
+dimension.
+
+The analytics request is made by the widget code running in the embedding website's document. Its
+browser `Origin` is therefore the website origin, not the Chat Gateway origin. If that website
+origin is already allowed by the analytics collector, no additional origin or site-map entry is
+needed for the gateway. The host website's Content Security Policy must still allow the collector
+under `connect-src`.
 
 Declare the production credential interactively; never put its value in the config or shell
 history:

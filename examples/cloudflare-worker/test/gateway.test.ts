@@ -9,6 +9,10 @@ const env: GatewayEnv = {
       siteKey: 'trusted-site',
       allowedOrigins: ['https://chat.example.test'],
       dashboardOrigins: ['https://dashboard.example.test'],
+      analytics: {
+        endpoint: 'https://analytics.example.test/collect',
+        siteId: 'chat-example',
+      },
       widget: {
         widgetKey: 'main-chat',
         version: '2026-07-23',
@@ -234,8 +238,51 @@ describe('Cloudflare chat gateway', () => {
       launcher: 'text',
       placement: 'bottom-right',
       transportBaseUrl: 'https://chat.example.test',
+      analytics: {
+        endpoint: 'https://analytics.example.test/collect',
+        siteId: 'chat-example',
+      },
     });
     expect(fetchUpstream).not.toHaveBeenCalled();
+  });
+
+  it('rejects invalid trusted analytics configuration', async () => {
+    const fetchUpstream = vi.fn<typeof fetch>();
+    const invalidEnv: GatewayEnv = {
+      ...env,
+      CHAT_SITES: JSON.stringify({
+        'chat.example.test': {
+          siteKey: 'trusted-site',
+          allowedOrigins: ['https://chat.example.test'],
+          analytics: {
+            endpoint: 'http://analytics.example.test/collect',
+            siteId: 'chat-example',
+          },
+        },
+      }),
+    };
+
+    const response = await handleGatewayRequest(request('/v1/conversations'), invalidEnv, {
+      fetch: fetchUpstream,
+    });
+
+    expect(response.status).toBe(500);
+    expect(fetchUpstream).not.toHaveBeenCalled();
+
+    const invalidSiteIdEnv: GatewayEnv = {
+      ...invalidEnv,
+      CHAT_SITES: invalidEnv.CHAT_SITES.replace(
+        '"http://analytics.example.test/collect"',
+        '"https://analytics.example.test/collect"',
+      ).replace('"chat-example"', '"chat~example"'),
+    };
+    expect(
+      (
+        await handleGatewayRequest(request('/v1/conversations'), invalidSiteIdEnv, {
+          fetch: fetchUpstream,
+        })
+      ).status,
+    ).toBe(500);
   });
 
   it('rejects unknown widget keys and unauthorized public agent aliases', async () => {

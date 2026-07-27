@@ -2,6 +2,7 @@ const MAX_REQUEST_BYTES = 131_072;
 const SERVICE_TOKEN_HEADER = 'X-Formation-Chat-Service-Token';
 const OPAQUE_ID = '[A-Za-z0-9][A-Za-z0-9._~-]{0,127}';
 const PUBLIC_TOKEN = /^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$/;
+const ANALYTICS_IDENTIFIER = /^[A-Za-z0-9_.:-]{1,128}$/;
 
 const ROUTES: readonly Route[] = [
   { pattern: /^\/widget\/config$/, methods: ['GET'], kind: 'widget-config' },
@@ -63,7 +64,13 @@ interface SiteConfig {
   siteKey: string;
   allowedOrigins: readonly string[];
   dashboardOrigins?: readonly string[];
+  analytics?: AnalyticsConfig;
   widget?: WidgetConfig;
+}
+
+interface AnalyticsConfig {
+  endpoint: string;
+  siteId: string;
 }
 
 interface WidgetConfig {
@@ -276,6 +283,7 @@ function parseConfiguration(env: GatewayEnv): GatewayConfiguration {
       ...(candidate.dashboardOrigins
         ? { dashboardOrigins: candidate.dashboardOrigins.map(normalizeConfiguredOrigin) }
         : {}),
+      ...(candidate.analytics ? { analytics: candidate.analytics } : {}),
       ...(candidate.widget ? { widget: candidate.widget } : {}),
     };
   }
@@ -296,8 +304,31 @@ function isSiteConfig(value: unknown): value is SiteConfig {
         value.dashboardOrigins.length > 0 &&
         value.dashboardOrigins.length <= 20 &&
         value.dashboardOrigins.every((origin) => typeof origin === 'string'))) &&
+    (value.analytics === undefined || isAnalyticsConfig(value.analytics)) &&
     (value.widget === undefined || isWidgetConfig(value.widget))
   );
+}
+
+function isAnalyticsConfig(value: unknown): value is AnalyticsConfig {
+  if (
+    !isRecord(value) ||
+    typeof value.endpoint !== 'string' ||
+    typeof value.siteId !== 'string' ||
+    !ANALYTICS_IDENTIFIER.test(value.siteId)
+  ) {
+    return false;
+  }
+  try {
+    const endpoint = new URL(value.endpoint);
+    return (
+      endpoint.protocol === 'https:' &&
+      endpoint.username === '' &&
+      endpoint.password === '' &&
+      endpoint.hash === ''
+    );
+  } catch {
+    return false;
+  }
 }
 
 function dashboardOrigins(site: SiteConfig, requestUrl: URL): readonly string[] {
@@ -498,6 +529,7 @@ function widgetConfigurationResponse(
       launcher: publicTokenParam(requestUrl, 'launcher') ?? widget.launcher,
       placement: publicTokenParam(requestUrl, 'placement') ?? widget.placement,
       transportBaseUrl: requestUrl.origin,
+      ...(site.analytics ? { analytics: site.analytics } : {}),
     }),
     { headers },
   );

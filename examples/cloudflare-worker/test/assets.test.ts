@@ -33,6 +33,7 @@ describe('Cloudflare gateway static assets', () => {
     expect(source).toContain("this.getAttribute('artwork-key')");
     expect(source).toContain("new URL('./agent-shadow-tooltip-blue.webp'");
     expect(source).toContain('createChatClient');
+    expect(source).toContain('createWidgetAnalytics');
     expect(source).toContain("url.searchParams.set('widgetKey', config.widgetKey)");
     expect(await readFile(new URL('../site/widget.css', import.meta.url), 'utf8')).toContain(
       '.panel .message.user',

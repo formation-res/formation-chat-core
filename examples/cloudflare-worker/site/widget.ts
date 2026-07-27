@@ -9,6 +9,7 @@ import {
 import type { ContentPart, Message } from '@formation-chat-core/protocol';
 
 import styles from './widget.css';
+import { createWidgetAnalytics, type WidgetAnalyticsReporter } from './widget-analytics.js';
 
 const earthTooltipArtworkUrl = new URL('./agent-shadow-tooltip-earth.webp', import.meta.url).href;
 const tooltipArtworkUrls: ReadonlyMap<string, string> = new Map([
@@ -25,10 +26,15 @@ interface WidgetConfiguration {
   siteKey: string;
   agent: string;
   agentLabel: string;
+  version: string;
   theme: string;
   launcher: string;
   placement: string;
   transportBaseUrl: string;
+  analytics?: {
+    endpoint: string;
+    siteId: string;
+  };
 }
 
 class FormationChatWidget extends HTMLElement {
@@ -37,6 +43,7 @@ class FormationChatWidget extends HTMLElement {
   private unsubscribe: (() => void) | undefined;
   private state: ChatState | undefined;
   private storageKey: string | undefined;
+  private analytics: WidgetAnalyticsReporter | undefined;
   private open = false;
   private tooltipExpanded = false;
   private busy = false;
@@ -185,8 +192,12 @@ class FormationChatWidget extends HTMLElement {
     this.updateControls();
     try {
       const client = await this.ensureClient();
-      if (!client.getState().conversation) await client.createConversation();
+      if (!client.getState().conversation) {
+        const conversation = await client.createConversation();
+        this.analytics?.conversationStarted(conversation.conversationId, client.getState());
+      }
       await client.sendMessage({ parts: [{ type: 'text', text }] });
+      this.analytics?.messageSent(client.getState());
     } catch (error) {
       this.setStatus(error instanceof Error ? error.message : 'The chat request failed.');
     } finally {
@@ -199,6 +210,15 @@ class FormationChatWidget extends HTMLElement {
   private async ensureClient(): Promise<ChatClient> {
     if (this.client) return this.client;
     const config = await this.loadConfiguration();
+    this.analytics = config.analytics
+      ? createWidgetAnalytics({
+          endpoint: config.analytics.endpoint,
+          siteId: config.analytics.siteId,
+          widgetId: config.widgetKey,
+          agentAlias: config.agent,
+          widgetVersion: config.version,
+        })
+      : undefined;
     const transport = createHttpChatTransport({
       baseUrl: config.transportBaseUrl,
       fetch: (input, init) => {
@@ -219,10 +239,12 @@ class FormationChatWidget extends HTMLElement {
     });
     this.unsubscribe = client.subscribe((state) => {
       this.state = state;
+      this.analytics?.observe(state);
       this.renderMessages();
       this.updateStatusFromState(state);
     });
     await client.start();
+    this.analytics?.sessionStarted(client.getState());
     this.client = client;
     this.state = client.getState();
     this.renderMessages();
@@ -255,6 +277,7 @@ class FormationChatWidget extends HTMLElement {
     this.client = undefined;
     this.unsubscribe = undefined;
     this.state = undefined;
+    this.analytics = undefined;
     this.setStatus('');
     this.renderMessages();
     this.input.focus();
