@@ -59,6 +59,8 @@ async function handleRequest(request, response, options) {
         authenticated: true,
         email: 'local-admin@localhost',
         displayName: 'Local admin',
+        role: 'Administrator',
+        expiresAt: new Date(Date.now() + 28_800_000).toISOString(),
       }),
     );
     return;

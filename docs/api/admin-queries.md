@@ -7,14 +7,15 @@ returns structured contact values.
 ## Authentication and visibility
 
 Admin routes are disabled unless `ADMIN_TOKEN_SECRET` is configured with at least 32 bytes.
-`ADMIN_TOKEN_TTL_SECONDS` defaults to 3600 and accepts 60 through 86400 seconds. The admin secret,
+`ADMIN_TOKEN_TTL_SECONDS` defaults to 28800 (eight hours) and accepts 60 through 86400 seconds. The admin secret,
 JWT audience (`formation-chat-core-admin`), and claims are separate from visitor session tokens.
 Visitor bearer tokens therefore cannot authenticate to this namespace.
 
 The dashboard signs operators in through Formation SSO. `GET /auth/login` redirects to the
 registered SSO app, `GET /auth/callback` exchanges the one-time login token, `GET /auth/session`
-reports the current dashboard session identity and authorization role, and `POST /auth/logout`
-clears it. The resulting admin JWT
+renews a valid session and reports the dashboard identity, authorization role, and refreshed
+expiry, and `POST /auth/logout` clears it. Reloading the dashboard therefore starts a fresh session
+window without exposing the token to JavaScript. The resulting admin JWT
 is stored only in a `Secure`, `HttpOnly`, `SameSite=Lax` cookie. The callback accepts only the
 configured app ID and callback URL, and only emails in `ADMIN_ALLOWED_EMAILS`.
 

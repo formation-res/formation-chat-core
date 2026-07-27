@@ -710,6 +710,12 @@ fully-clickable site headers with origin favicon fallback, keeps widget/embed de
 shows the SSO display name and authorization role beside sign-out. The permanent failures
 notification dot was removed.
 
+**Dashboard session follow-up:** 2026-07-27. Dashboard SSO sessions now default to eight hours.
+Loading or reloading the dashboard rotates the signed HTTP-only cookie and restarts the session
+window without exposing the token to JavaScript. The sidebar counts down the authoritative expiry
+beside the SSO identity, and expiry returns the app to sign-in instead of leaving each data view in
+an authorization error state.
+
 ### Task 18: Harden and document the first release
 
 **Description:** Complete rate limits, request limits, audit events, PII retention, deletion,

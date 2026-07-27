@@ -27,6 +27,9 @@ HAYSTACK_CONNECTORS=
 `SESSION_TOKEN_SECRET` and `ADMIN_TOKEN_SECRET` must each be at least 32 bytes. `HAYSTACK_CONNECTORS`
 is the Chat Core connector map JSON for the deployed Haystack agent endpoint, for example:
 
+Dashboard SSO sessions default to eight hours and renew when the dashboard is loaded.
+Set `ADMIN_TOKEN_TTL_SECONDS` to a value from 60 through 86400 seconds to override the window.
+
 ```json
 {
   "mailfront": {

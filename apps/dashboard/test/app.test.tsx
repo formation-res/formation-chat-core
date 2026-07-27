@@ -28,6 +28,7 @@ afterEach(() => {
   root = undefined;
   container = undefined;
   window.localStorage.clear();
+  vi.useRealTimers();
 });
 
 describe('operations dashboard', () => {
@@ -43,6 +44,50 @@ describe('operations dashboard', () => {
     expect(container?.textContent).toContain('Sign in to Chat Core');
     expect(createClient).not.toHaveBeenCalled();
     expect(container?.querySelector<HTMLAnchorElement>('a[href="/auth/login"]')).not.toBeNull();
+  });
+
+  it('shows a live session countdown beside the signed-in user', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-07-27T12:00:00.000Z'));
+    render(
+      <App
+        initialClient={fakeApi()}
+        initialSession={{ ...session, expiresAt: '2026-07-27T13:00:00.000Z' }}
+      />,
+    );
+
+    expect(container?.querySelector('[data-session-timer]')?.textContent).toBe('Session 1:00:00');
+    await act(async () => {
+      vi.advanceTimersByTime(1_000);
+    });
+    expect(container?.querySelector('[data-session-timer]')?.textContent).toBe('Session 59:59');
+    vi.useRealTimers();
+  });
+
+  it('returns to sign-in when the visible session expires', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-07-27T12:00:00.000Z'));
+    const auth = {
+      getSession: vi.fn(async () => undefined),
+      logout: vi.fn(async () => undefined),
+    };
+    render(
+      <App
+        auth={auth}
+        initialClient={fakeApi()}
+        initialSession={{ ...session, expiresAt: '2026-07-27T12:00:01.000Z' }}
+      />,
+    );
+
+    await act(async () => {
+      vi.advanceTimersByTime(1_000);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(auth.logout).toHaveBeenCalledOnce();
+    expect(container?.textContent).toContain('Sign in to Chat Core');
+    vi.useRealTimers();
   });
 
   it('shows a detailed transcript and visibility-aware event timeline', async () => {
@@ -238,5 +283,6 @@ const session = {
   authenticated: true as const,
   email: 'jo@tryformation.com',
   displayName: 'Jo Formation',
-  role: 'Administrator',
+  role: 'Administrator' as const,
+  expiresAt: '2099-07-27T13:00:00.000Z',
 };

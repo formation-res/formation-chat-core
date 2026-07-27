@@ -18,7 +18,7 @@ export class AdminTokenService {
 
   constructor(
     secrets: string | [string, ...string[]],
-    private readonly ttlSeconds: number,
+    readonly ttlSeconds: number,
   ) {
     const values = typeof secrets === 'string' ? [secrets] : secrets;
     if (values.some((secret) => Buffer.byteLength(secret) < 32)) {

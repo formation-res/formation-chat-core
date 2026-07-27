@@ -1,4 +1,4 @@
-import { startTransition, useCallback, useMemo, useState } from 'react';
+import { startTransition, useCallback, useEffect, useMemo, useState } from 'react';
 import type { AdminOverview, AdminSiteOverview } from '@formation-chat-core/protocol';
 
 import type { AdminApi } from './admin-client.js';
@@ -29,6 +29,7 @@ export function Dashboard({
   const [requestedRunId, setRequestedRunId] = useState<string>();
   const [requestedConversationId, setRequestedConversationId] = useState<string>();
   const [selectedSiteId, setSelectedSiteId] = useState<string>();
+  const sessionRemaining = useSessionRemaining(session.expiresAt, onDisconnect);
   const overviewLoader = useCallback((signal: AbortSignal) => api.getOverview(signal), [api]);
   const overview = useResource<AdminOverview>(overviewLoader, `overview:${refreshVersion}`);
   const selectedSite = useMemo(
@@ -91,6 +92,9 @@ export function Dashboard({
           <span className="session-identity">
             <strong>{session.displayName}</strong>
             <small>{session.role}</small>
+            <small data-session-timer role="timer">
+              Session {formatRemaining(sessionRemaining)}
+            </small>
           </span>
           <button className="text-button" onClick={onDisconnect}>
             Sign out
@@ -224,4 +228,32 @@ const labels: Record<View, string> = {
 
 function siteLabel(site: AdminSiteOverview): string {
   return site.allowedOrigins[0]?.replace(/^https:\/\//, '') ?? site.displayName;
+}
+
+function useSessionRemaining(expiresAt: string, onExpired: () => void): number {
+  const expiry = Date.parse(expiresAt);
+  const calculate = useCallback(
+    () => Math.max(0, Math.ceil((expiry - Date.now()) / 1000)),
+    [expiry],
+  );
+  const [remaining, setRemaining] = useState(calculate);
+  useEffect(() => {
+    setRemaining(calculate());
+    const interval = window.setInterval(() => {
+      const next = calculate();
+      setRemaining(next);
+      if (next === 0) onExpired();
+    }, 1_000);
+    return () => window.clearInterval(interval);
+  }, [calculate, onExpired]);
+  return remaining;
+}
+
+function formatRemaining(seconds: number): string {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remainder = seconds % 60;
+  return hours > 0
+    ? `${hours}:${String(minutes).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`
+    : `${minutes}:${String(remainder).padStart(2, '0')}`;
 }

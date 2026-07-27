@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   AdminConversationListSchema,
+  AdminDashboardSessionSchema,
   AdminEventListSchema,
   AdminFailureListSchema,
   AdminHandoffListSchema,
@@ -16,6 +17,21 @@ const ajv = new Ajv2020({ allErrors: true, strict: true });
 formatsPlugin.default(ajv);
 
 describe('admin API contracts', () => {
+  it('defines the renewable dashboard session identity and expiry', () => {
+    const validate = ajv.compile(AdminDashboardSessionSchema);
+    const session = {
+      authenticated: true,
+      email: 'jo@tryformation.com',
+      displayName: 'Jo Formation',
+      role: 'Administrator',
+      expiresAt: '2026-07-27T20:00:00.000Z',
+    };
+
+    expect(validate(session)).toBe(true);
+    expect(validate({ ...session, expiresAt: 'soon' })).toBe(false);
+    expect(validate({ ...session, accessToken: 'must-not-be-exposed' })).toBe(false);
+  });
+
   it('binds admin tokens to one tenant and read visibility scopes', () => {
     const validate = ajv.compile(AdminTokenClaimsSchema);
     const claims = {

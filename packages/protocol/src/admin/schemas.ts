@@ -28,6 +28,18 @@ export const AdminTokenClaimsSchema = Type.Object(
 );
 export type AdminTokenClaims = Static<typeof AdminTokenClaimsSchema>;
 
+export const AdminDashboardSessionSchema = Type.Object(
+  {
+    authenticated: Type.Literal(true),
+    email: Type.String({ minLength: 3, maxLength: 254 }),
+    displayName: Type.String({ minLength: 1, maxLength: 160 }),
+    role: Type.Union([Type.Literal('Administrator'), Type.Literal('Operator')]),
+    expiresAt: TimestampSchema,
+  },
+  { additionalProperties: false },
+);
+export type AdminDashboardSession = Static<typeof AdminDashboardSessionSchema>;
+
 export const AdminAgentRunStatusSchema = Type.Union([
   Type.Literal('queued'),
   Type.Literal('running'),

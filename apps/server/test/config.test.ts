@@ -166,8 +166,8 @@ describe('loadConfig', () => {
       callbackUrl: 'https://chat.formationxyz.com/auth/callback',
       dashboardUrl: 'https://chat.formationxyz.com/dashboard',
       allowedAdminEmails: ['jo@tryformation.com', 'jvg@tryformation.com'],
-      sessionTtlSeconds: 3600,
     });
+    expect(config.admin?.tokenTtlSeconds).toBe(28_800);
   });
 
   it('rejects invalid event retention and subscriber buffer limits', () => {

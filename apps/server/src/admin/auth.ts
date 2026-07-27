@@ -15,7 +15,6 @@ export interface AdminSsoConfig {
   callbackUrl: string;
   dashboardUrl: string;
   allowedAdminEmails: string[];
-  sessionTtlSeconds?: number;
 }
 
 type Fetch = (input: string | URL | Request, init?: RequestInit) => Promise<Response>;
@@ -26,6 +25,10 @@ export class AdminAuthService {
     private readonly tokens: AdminTokenService,
     private readonly fetch: Fetch = globalThis.fetch,
   ) {}
+
+  get tokenTtlSeconds(): number {
+    return this.tokens.ttlSeconds;
+  }
 
   loginUrl(): string {
     const url = new URL(this.config.ssoUiUrl);
@@ -77,8 +80,15 @@ export class AdminAuthService {
     return { token: issued.token, email, displayName };
   }
 
-  verify(token: string) {
-    return this.tokens.verify(token);
+  async renew(token: string) {
+    const claims = await this.tokens.verify(token);
+    return this.tokens.issue({
+      adminId: claims.adminId,
+      tenantId: claims.tenantId,
+      ...(claims.email ? { email: claims.email } : {}),
+      ...(claims.displayName ? { displayName: claims.displayName } : {}),
+      scopes: claims.scopes,
+    });
   }
 }
 
@@ -101,10 +111,7 @@ export function registerAdminAuthRoutes(server: FastifyInstance, auth: AdminAuth
     }
     try {
       const session = await auth.exchange(loginToken);
-      void reply.header(
-        'set-cookie',
-        sessionCookie(session.token, auth.config.sessionTtlSeconds ?? 3600),
-      );
+      void reply.header('set-cookie', sessionCookie(session.token, auth.tokenTtlSeconds));
       return reply.redirect('/dashboard', 303);
     } catch (error) {
       const reason =
@@ -114,15 +121,19 @@ export function registerAdminAuthRoutes(server: FastifyInstance, auth: AdminAuth
   });
 
   server.get('/auth/session', async (request, reply) => {
+    void reply.header('cache-control', 'no-store');
     const token = cookieValue(request, ADMIN_SESSION_COOKIE);
     if (!token) return reply.code(401).send({ authenticated: false });
     try {
-      const claims = await auth.verify(token);
+      const renewed = await auth.renew(token);
+      const claims = renewed.claims;
+      void reply.header('set-cookie', sessionCookie(renewed.token, auth.tokenTtlSeconds));
       return {
         authenticated: true,
         email: claims.email ?? '',
         displayName: claims.displayName ?? claims.email ?? 'Dashboard admin',
         role: claims.scopes.includes('admin:internal') ? 'Administrator' : 'Operator',
+        expiresAt: claims.expiresAt,
       };
     } catch {
       void reply.header('set-cookie', clearSessionCookie());

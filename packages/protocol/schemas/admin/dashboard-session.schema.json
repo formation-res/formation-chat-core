@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "authenticated",
+    "email",
+    "displayName",
+    "role",
+    "expiresAt"
+  ],
+  "properties": {
+    "authenticated": {
+      "const": true,
+      "type": "boolean"
+    },
+    "email": {
+      "minLength": 3,
+      "maxLength": 254,
+      "type": "string"
+    },
+    "displayName": {
+      "minLength": 1,
+      "maxLength": 160,
+      "type": "string"
+    },
+    "role": {
+      "anyOf": [
+        {
+          "const": "Administrator",
+          "type": "string"
+        },
+        {
+          "const": "Operator",
+          "type": "string"
+        }
+      ]
+    },
+    "expiresAt": {
+      "format": "date-time",
+      "pattern": "Z$",
+      "type": "string"
+    }
+  }
+}

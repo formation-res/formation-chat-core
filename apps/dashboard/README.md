@@ -35,7 +35,9 @@ Production authentication uses Formation SSO through the same origin that serves
 The gateway proxies `/auth/*` and `/v1/admin/*` to Chat Core while preserving `Cookie`,
 `Set-Cookie`, `Location`, and redirect responses. Browser JavaScript never receives the admin JWT.
 Configure the server with `ADMIN_TENANT_ID`, `ADMIN_SSO_BASE_URL`, `ADMIN_SSO_UI_URL`,
-`ADMIN_SSO_APP_ID`, `ADMIN_PUBLIC_BASE_URL`, and `ADMIN_ALLOWED_EMAILS`.
+`ADMIN_SSO_APP_ID`, `ADMIN_PUBLIC_BASE_URL`, and `ADMIN_ALLOWED_EMAILS`. The default dashboard
+session lasts eight hours. Each dashboard load renews the secure session cookie and resets the
+visible session countdown; set `ADMIN_TOKEN_TTL_SECONDS` to override that window.
 
 For production, serve the static build behind the same protected admin origin as Chat Core and
 reverse-proxy `/v1/admin/*` to the service. If separate origins are unavoidable, allow only the
