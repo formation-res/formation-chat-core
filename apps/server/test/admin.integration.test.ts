@@ -141,15 +141,17 @@ describe('admin query API', () => {
         .data.map(({ conversationId }: { conversationId: string }) => conversationId),
     ).toEqual(['conversation-a2', 'conversation-a1-new', 'conversation-a1-old']);
     expect(
-      readResponse.json().data.map(
-        ({
-          conversationId,
-          firstUserMessagePreview,
-        }: {
-          conversationId: string;
-          firstUserMessagePreview?: string;
-        }) => [conversationId, firstUserMessagePreview],
-      ),
+      readResponse
+        .json()
+        .data.map(
+          ({
+            conversationId,
+            firstUserMessagePreview,
+          }: {
+            conversationId: string;
+            firstUserMessagePreview?: string;
+          }) => [conversationId, firstUserMessagePreview],
+        ),
     ).toEqual([
       ['conversation-a2', 'Seed'],
       ['conversation-a1-new', 'Hello'],
@@ -168,9 +170,7 @@ describe('admin query API', () => {
     const response = await request('/v1/admin/conversations', readToken);
 
     expect(
-      response
-        .json()
-        .data.map(({ conversationId }: { conversationId: string }) => conversationId),
+      response.json().data.map(({ conversationId }: { conversationId: string }) => conversationId),
     ).toEqual(['conversation-a1-old', 'conversation-a2', 'conversation-a1-new']);
   });
 
