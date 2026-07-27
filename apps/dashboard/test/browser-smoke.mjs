@@ -28,6 +28,7 @@ const server = createServer(async (request, response) => {
         authenticated: true,
         email: 'jo@tryformation.com',
         displayName: 'Jo Formation',
+        role: 'Administrator',
       }),
     );
     return;
@@ -48,7 +49,7 @@ const server = createServer(async (request, response) => {
     response.setHeader('content-type', contentType(file));
     response.setHeader(
       'content-security-policy',
-      "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:",
+      "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data: https:",
     );
     response.setHeader('x-content-type-options', 'nosniff');
     response.setHeader('x-frame-options', 'DENY');
@@ -92,9 +93,15 @@ async function runBrowserSmoke() {
     await page.reload({ waitUntil: 'networkidle' });
     assert.equal(await page.getByText('data-widget-key="main-chat"').count(), 2);
     await page.getByText('data-agent="sales"').waitFor();
-    await page.getByRole('button', { name: /Open Formation website/ }).click();
+    assert.equal(await page.locator('.tenant-card-open').count(), 0);
+    assert.equal(await page.locator('.tenant-card-favicon').count(), 1);
+    assert.equal(await page.locator('.nav-attention').count(), 0);
+    await page.getByText('Jo Formation').waitFor();
+    await page.getByText('Administrator').waitFor();
+    await page.screenshot({ path: join(tmpdir(), 'chat-core-dashboard-home.png'), fullPage: true });
+    await page.getByRole('button', { name: /Formation website/ }).click();
     await page
-      .getByText('Support agent conversation')
+      .getByText('How can I change my plan?')
       .waitFor({ timeout: 5_000 })
       .catch(async () => {
         throw new Error(
@@ -107,8 +114,12 @@ async function runBrowserSmoke() {
         .evaluate((element) => globalThis.getComputedStyle(element).fontFamily),
       /Inter/,
     );
-    await page.getByRole('button', { name: /Support agent conversation/ }).click();
-    await page.getByText('How can I change my plan?').waitFor();
+    await page.getByRole('button', { name: /How can I change my plan/ }).click();
+    await page.getByRole('tab', { name: /Public transcript/ }).waitFor();
+    assert.equal(await page.locator('.message-details').count(), 1);
+    assert.equal(await page.locator('.message-details').getAttribute('open'), null);
+    await page.locator('.message-details summary').click();
+    await page.getByText('Tool · Account lookup').waitFor();
     await page.getByRole('tab', { name: /Event timeline/ }).click();
     assert.equal(await page.getByText('Internal diagnostic').count(), 1);
     await page.waitForTimeout(250);
@@ -126,6 +137,8 @@ async function runBrowserSmoke() {
         .count(),
       1,
     );
+    await page.getByRole('button', { name: 'conversation-1', exact: true }).click();
+    await page.locator('.conversation-workspace.has-selection').waitFor();
     await page.getByRole('button', { name: 'Switch to dark mode' }).click();
     await page.locator('html[data-theme="dark"]').waitFor();
     await page.waitForTimeout(250);
@@ -136,8 +149,8 @@ async function runBrowserSmoke() {
     assert.deepEqual(browserMessages, []);
 
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.getByRole('button', { name: 'Conversations', exact: true }).last().click();
-    await page.getByRole('button', { name: /Support agent conversation/ }).click();
+    await page.getByRole('button', { name: 'Back to conversations' }).click();
+    await page.getByRole('button', { name: /How can I change my plan/ }).click();
     await page.getByRole('button', { name: 'Back to conversations' }).waitFor();
     await page.waitForTimeout(250);
     await page.screenshot({
@@ -177,7 +190,11 @@ async function accessibilityViolations(page) {
 function apiResponse(path) {
   const pagination = { hasMore: false };
   if (path === '/v1/admin/overview') return overview;
-  if (path === '/v1/admin/conversations') return { data: [conversation], pagination };
+  if (path === '/v1/admin/conversations')
+    return {
+      data: [{ ...conversation, firstUserMessagePreview: 'How can I change my plan?' }],
+      pagination,
+    };
   if (path === '/v1/admin/conversations/conversation-1') return conversation;
   if (path.endsWith('/messages')) return { data: messages, pagination };
   if (path.endsWith('/events')) return { data: events, pagination };

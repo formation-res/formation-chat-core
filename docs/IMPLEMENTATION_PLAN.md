@@ -702,6 +702,14 @@ Light and dark themes, reduced-motion support, responsive desktop/mobile layouts
 disabled/loading/error/empty states, and WCAG contrast are covered by component and real-browser
 tests with realistic fixtures.
 
+**Dashboard usability follow-up:** 2026-07-27. Conversation summaries now order by `updatedAt`,
+include the first user-message preview, and render numbered, site-scoped rows without repeated site
+or agent labels. Run correlations select the exact conversation. Message sources, tools, files, and
+structured-input metadata are compact summaries that expand on demand. Home uses compact,
+fully-clickable site headers with origin favicon fallback, keeps widget/embed details below, and
+shows the SSO display name and authorization role beside sign-out. The permanent failures
+notification dot was removed.
+
 ### Task 18: Harden and document the first release
 
 **Description:** Complete rate limits, request limits, audit events, PII retention, deletion,

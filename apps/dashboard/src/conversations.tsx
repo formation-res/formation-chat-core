@@ -40,11 +40,8 @@ export function ConversationView({
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   useEffect(() => {
-    if (requestedConversationId) setSelectedId(requestedConversationId);
-  }, [requestedConversationId]);
-  useEffect(() => {
-    setSelectedId(undefined);
-  }, [selectedSiteId]);
+    setSelectedId(requestedConversationId);
+  }, [requestedConversationId, selectedSiteId]);
   const loader = useCallback(
     (signal: AbortSignal) =>
       api.listConversations(
@@ -63,10 +60,16 @@ export function ConversationView({
   );
   const visible = useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) return conversations.data?.data ?? [];
-    return (conversations.data?.data ?? []).filter((conversation) =>
+    const sorted = [...(conversations.data?.data ?? [])].sort(
+      (left, right) =>
+        new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime() ||
+        right.conversationId.localeCompare(left.conversationId),
+    );
+    if (!query) return sorted;
+    return sorted.filter((conversation) =>
       [
         titleOf(conversation),
+        conversation.firstUserMessagePreview ?? '',
         conversation.conversationId,
         conversation.agentRef,
         conversation.siteId,
@@ -119,17 +122,20 @@ export function ConversationView({
           />
         ) : (
           <ul className="record-list">
-            {visible.map((conversation) => (
+            {visible.map((conversation, index) => (
               <li key={conversation.conversationId}>
                 <button
                   className={`record-row ${selectedId === conversation.conversationId ? 'selected' : ''}`}
                   data-conversation-id={conversation.conversationId}
                   onClick={() => select(conversation.conversationId)}
                 >
+                  <span className="record-row-number">#{index + 1}</span>
                   <span className="record-row-main">
-                    <strong>{titleOf(conversation)}</strong>
+                    <strong>
+                      {conversation.firstUserMessagePreview ?? 'No visitor message yet'}
+                    </strong>
                     <span>
-                      {conversation.agentRef} · {conversation.siteId}
+                      {conversation.conversationId} · started {relativeTime(conversation.createdAt)}
                     </span>
                   </span>
                   <span className="record-row-meta">
@@ -362,9 +368,12 @@ function Transcript({
             <StatusBadge status={message.status} />
           </div>
           <div className="message-body">
-            {message.parts.map((part, index) => (
-              <ContentPart key={`${message.messageId}-${index}`} part={part} />
-            ))}
+            {message.parts
+              .filter((part) => part.type === 'text')
+              .map((part, index) => (
+                <p key={`${message.messageId}-text-${index}`}>{part.text}</p>
+              ))}
+            <MessageDetails message={message} />
           </div>
           <CorrelationId label="Message" value={message.messageId} />
         </li>
@@ -373,12 +382,48 @@ function Transcript({
   );
 }
 
-function ContentPart({ part }: { part: Message['parts'][number] }) {
-  if (part.type === 'text') return <p>{part.text}</p>;
+function MessageDetails({ message }: { message: Message }) {
+  const parts = message.parts.filter((part) => part.type !== 'text');
+  if (parts.length === 0) return null;
+  const counts = [
+    countLabel(parts, 'citation', 'source'),
+    countLabel(parts, 'tool_status', 'tool'),
+    countLabel(parts, 'file_reference', 'file'),
+    countLabel(parts, 'structured_input', 'request'),
+  ].filter(Boolean);
+  return (
+    <details className="message-details">
+      <summary>
+        <Icon name="activity" />
+        <span>{counts.join(' · ')}</span>
+        <Icon name="chevron" />
+      </summary>
+      <div className="message-details-content">
+        {parts.map((part, index) => (
+          <ContentPart key={`${message.messageId}-detail-${index}`} part={part} />
+        ))}
+      </div>
+    </details>
+  );
+}
+
+function countLabel(
+  parts: Message['parts'],
+  type: Message['parts'][number]['type'],
+  label: string,
+): string {
+  const count = parts.filter((part) => part.type === type).length;
+  return count ? `${count} ${label}${count === 1 ? '' : 's'}` : '';
+}
+
+function ContentPart({ part }: { part: Exclude<Message['parts'][number], { type: 'text' }> }) {
   if (part.type === 'citation')
     return (
       <div className="content-part">
         <strong>{part.title ?? 'Citation'}</strong>
+        <span>
+          Source {part.sourceId} · citation {part.citationId}
+        </span>
         {part.excerpt ? <p>{part.excerpt}</p> : null}
         {part.url ? (
           <a href={part.url} target="_blank" rel="noreferrer">
@@ -391,20 +436,31 @@ function ContentPart({ part }: { part: Message['parts'][number] }) {
     return (
       <div className="content-part">
         <strong>File · {part.name}</strong>
-        <span>{part.mediaType}</span>
+        <span>
+          {part.mediaType ?? 'Unknown media type'} · {part.fileId}
+        </span>
+        {part.url ? (
+          <a href={part.url} target="_blank" rel="noreferrer">
+            Open file
+          </a>
+        ) : null}
       </div>
     );
   if (part.type === 'tool_status')
     return (
       <div className="content-part">
-        <span>Tool · {part.label}</span>
+        <strong>Tool · {part.label}</strong>
         <StatusBadge status={part.status} />
+        <code>{part.toolCallId}</code>
       </div>
     );
   return (
     <div className="content-part">
-      <span>Structured input · {part.label}</span>
+      <strong>Structured input · {part.label}</strong>
       <StatusBadge status={part.status} />
+      <span>
+        {part.required ? 'Required' : 'Optional'} · {part.requestId}
+      </span>
     </div>
   );
 }

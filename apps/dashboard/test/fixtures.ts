@@ -24,7 +24,17 @@ export const conversation: Conversation = {
 };
 
 export const conversationPage: AdminConversationList = {
-  data: [conversation],
+  data: [
+    {
+      ...conversation,
+      conversationId: 'conversation-2',
+      principalId: 'principal-2',
+      createdAt: '2026-07-16T11:00:00.000Z',
+      updatedAt: '2026-07-16T11:02:00.000Z',
+      firstUserMessagePreview: 'I need help with a recent invoice.',
+    },
+    { ...conversation, firstUserMessagePreview: 'How can I change my plan?' },
+  ],
   pagination: { hasMore: false },
 };
 
@@ -110,7 +120,23 @@ export const messagePage: AdminMessageList = {
       participantId: 'agent-1',
       role: 'assistant',
       status: 'completed',
-      parts: [{ type: 'text', text: 'I can help with that.' }],
+      parts: [
+        { type: 'text', text: 'I can help with that.' },
+        {
+          type: 'tool_status',
+          toolCallId: 'tool-1',
+          label: 'Web search',
+          status: 'completed',
+        },
+        {
+          type: 'citation',
+          citationId: 'citation-1',
+          sourceId: 'source-1',
+          title: 'Billing guide',
+          url: 'https://docs.example.com/billing',
+          excerpt: 'Plan and billing details.',
+        },
+      ],
       createdAt: '2026-07-16T10:01:00.000Z',
       completedAt: '2026-07-16T10:01:01.000Z',
     },

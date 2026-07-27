@@ -54,6 +54,7 @@ export function App({
   return (
     <Dashboard
       api={api}
+      session={session}
       theme={theme}
       onToggleTheme={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
       onDisconnect={() => {

@@ -2,6 +2,7 @@ export interface AdminSession {
   authenticated: true;
   email: string;
   displayName: string;
+  role: string;
 }
 
 export interface DashboardAuthApi {
@@ -38,6 +39,7 @@ function isSession(value: unknown): value is AdminSession {
     value !== null &&
     (value as Record<string, unknown>).authenticated === true &&
     typeof (value as Record<string, unknown>).email === 'string' &&
-    typeof (value as Record<string, unknown>).displayName === 'string'
+    typeof (value as Record<string, unknown>).displayName === 'string' &&
+    typeof (value as Record<string, unknown>).role === 'string'
   );
 }
