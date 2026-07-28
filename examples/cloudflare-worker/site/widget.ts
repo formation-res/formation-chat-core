@@ -169,8 +169,12 @@ class FormationChatWidget extends HTMLElement {
     this.panel.hidden = !value;
     this.launcher.setAttribute('aria-expanded', String(value));
     this.launcher.setAttribute('aria-label', value ? 'Close chat' : 'Open chat');
-    if (value) this.input.focus();
-    else this.launcher.focus();
+    if (value) {
+      this.input.focus();
+      void this.ensureClient().catch((error: unknown) => {
+        this.setStatus(error instanceof Error ? error.message : 'The chat could not be loaded.');
+      });
+    } else this.launcher.focus();
   }
 
   private setTooltipExpanded(value: boolean): void {
@@ -317,8 +321,9 @@ class FormationChatWidget extends HTMLElement {
 
   private updateStatusFromState(state: ChatState): void {
     if (this.busy) return;
-    if (state.phase === 'streaming') this.setStatus('Thinking…');
-    else if (state.phase === 'reconnecting') this.setStatus('Reconnecting…');
+    if (state.contactRequest) this.setStatus('Enter your email address to complete the handoff.');
+    else if (state.phase === 'streaming') this.setStatus('Thinking…');
+    else if (state.phase === 'reconnecting' && isActiveRun(state)) this.setStatus('Reconnecting…');
     else if (state.error) this.setStatus(state.error.message);
     else this.setStatus('');
   }
@@ -496,4 +501,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) && value.length <= 320;
+}
+
+function isActiveRun(state: ChatState): boolean {
+  return state.run?.status === 'queued' || state.run?.status === 'running';
 }

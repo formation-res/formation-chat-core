@@ -104,7 +104,7 @@ function receiveEvent(state: ChatState, event: PublicConversationEvent): ChatSta
       error: { code: event.data.code, message: 'The agent run failed.', retryable: true },
     };
   } else if (event.type === 'contact.requested') {
-    next = { ...next, contactRequest: event.data };
+    next = { ...withoutError(next), phase: 'ready', contactRequest: event.data };
   } else if (event.type === 'handoff.requested') {
     next = {
       ...next,

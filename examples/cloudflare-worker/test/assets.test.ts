@@ -35,8 +35,11 @@ describe('Cloudflare gateway static assets', () => {
     expect(source).toContain("new URL('./agent-shadow-tooltip-blue.webp'");
     expect(source).toContain('createChatClient');
     expect(source).toContain('createWidgetAnalytics');
+    expect(source).toContain('void this.ensureClient().catch');
     expect(source).toContain('submitStructuredInput');
     expect(source).toContain('state.contactRequest.prompt');
+    expect(source).toContain('Enter your email address to complete the handoff.');
+    expect(source).toContain('function isActiveRun');
     expect(source).toContain("url.searchParams.set('widgetKey', config.widgetKey)");
     expect(await readFile(new URL('../site/widget.css', import.meta.url), 'utf8')).toContain(
       '.panel .message.user',

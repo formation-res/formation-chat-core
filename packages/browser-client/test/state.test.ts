@@ -134,6 +134,7 @@ describe('chat state reducer', () => {
       },
     });
     expect(state.contactRequest).toMatchObject({ requestId: 'request-1', inputKind: 'email' });
+    expect(state.phase).toBe('ready');
 
     state = reduceChatState(state, {
       type: 'event.received',
