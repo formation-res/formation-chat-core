@@ -641,6 +641,12 @@ injection paths.
   with the visitor in CC.
 - Core and Haystack dashboards can correlate the run through stable IDs.
 
+**Updated:** 2026-07-28 after the MailFront widget handoff check. Production Haystack-backed
+connectors should configure `connectorToken` so Chat Core uses the native streaming
+`/api/connectors/v1/runs` endpoint. The older compatibility endpoint remains available for basic
+answers and safe metadata translation, but it cannot complete the widget contact-input and handoff
+delivery lifecycle.
+
 ## Phase 5: Operations and release
 
 ### Task 16: Add admin query APIs

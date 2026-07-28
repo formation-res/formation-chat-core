@@ -1,5 +1,10 @@
-import type { ConnectorEvent } from '@formation-chat-core/protocol';
+import {
+  ConnectorEventSchema,
+  type ConnectorEvent,
+  type ConnectorExecutionRequest,
+} from '@formation-chat-core/protocol';
 import type { ChatConnector, ConnectorExecution } from '@formation-chat-core/server-sdk';
+import { Value } from '@sinclair/typebox/value';
 
 import {
   type HaystackAgentRequest,
@@ -50,6 +55,69 @@ export class HaystackConnector implements ChatConnector {
 
   async *run(execution: ConnectorExecution): AsyncIterable<ConnectorEvent> {
     if (execution.signal.aborted) return;
+    if (this.config.connectorToken) {
+      yield* this.runNative(execution);
+      return;
+    }
+    yield* this.runCompatibility(execution);
+  }
+
+  private async *runNative(execution: ConnectorExecution): AsyncIterable<ConnectorEvent> {
+    const payload = nativePayload(execution, this.config);
+    const timeout = new AbortController();
+    const timer = setTimeout(() => timeout.abort(), this.config.timeoutMs ?? 120_000);
+    const signal = AbortSignal.any([execution.signal, timeout.signal]);
+    try {
+      let response: Response;
+      try {
+        response = await this.dependencies.fetch(
+          new Request(`${this.config.baseUrl}/api/connectors/v1/runs`, {
+            method: 'POST',
+            headers: {
+              Accept: 'text/event-stream',
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${this.config.connectorToken}`,
+            },
+            body: JSON.stringify(payload),
+            redirect: 'error',
+            signal,
+          }),
+        );
+      } catch {
+        if (execution.signal.aborted) return;
+        yield failedEvent(
+          execution,
+          timeout.signal.aborted ? 'HAYSTACK_TIMEOUT' : 'HAYSTACK_UNAVAILABLE',
+        );
+        return;
+      }
+      if (execution.signal.aborted) return;
+      if (!response.ok) {
+        yield failedEvent(
+          execution,
+          response.status === 401 ? 'HAYSTACK_UNAUTHORIZED' : 'HAYSTACK_HTTP_ERROR',
+        );
+        return;
+      }
+      if (!response.headers.get('content-type')?.toLowerCase().startsWith('text/event-stream')) {
+        yield failedEvent(execution, 'HAYSTACK_INVALID_RESPONSE');
+        return;
+      }
+      if (!response.body) {
+        yield failedEvent(execution, 'HAYSTACK_INVALID_RESPONSE');
+        return;
+      }
+      try {
+        for await (const event of parseConnectorEventStream(response.body, signal)) yield event;
+      } catch {
+        if (!execution.signal.aborted) yield failedEvent(execution, 'HAYSTACK_INVALID_RESPONSE');
+      }
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  private async *runCompatibility(execution: ConnectorExecution): AsyncIterable<ConnectorEvent> {
     const base = {
       visibility: 'public' as const,
       conversationId: execution.request.conversationId,
@@ -125,6 +193,24 @@ export class HaystackConnector implements ChatConnector {
     }
     for (const event of completedEvents(execution, body)) yield event;
   }
+}
+
+function nativePayload(
+  execution: ConnectorExecution,
+  config: HaystackConnectorConfig,
+): ConnectorExecutionRequest {
+  return {
+    assistantMessageId: execution.assistantMessageId,
+    request: {
+      ...execution.request,
+      trustedMetadata: {
+        ...execution.request.trustedMetadata,
+        'haystack.tenant_key': config.tenantKey,
+        'haystack.agent_slug': config.agentSlug,
+        ...(config.responseMode ? { 'haystack.response_mode': config.responseMode } : {}),
+      },
+    },
+  };
 }
 
 function requestPayload(
@@ -219,6 +305,69 @@ async function readBoundedText(response: Response, signal: AbortSignal): Promise
     offset += chunk.byteLength;
   }
   return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+}
+
+async function* parseConnectorEventStream(
+  stream: ReadableStream<Uint8Array>,
+  signal: AbortSignal,
+): AsyncIterable<ConnectorEvent> {
+  const reader = stream.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let frameBytes = 0;
+  let dataLines: string[] = [];
+  const dispatch = function* (): Iterable<ConnectorEvent> {
+    if (dataLines.length === 0) return;
+    const raw = dataLines.join('\n');
+    dataLines = [];
+    frameBytes = 0;
+    let value: unknown;
+    try {
+      value = JSON.parse(raw);
+    } catch {
+      throw new Error('Invalid connector event JSON.');
+    }
+    if (!Value.Check(ConnectorEventSchema, value)) throw new Error('Invalid connector event.');
+    yield value as ConnectorEvent;
+  };
+  const consumeLine = function* (line: string): Iterable<ConnectorEvent> {
+    if (line === '') {
+      yield* dispatch();
+      return;
+    }
+    if (line.startsWith(':')) return;
+    const separator = line.indexOf(':');
+    const field = separator < 0 ? line : line.slice(0, separator);
+    let value = separator < 0 ? '' : line.slice(separator + 1);
+    if (value.startsWith(' ')) value = value.slice(1);
+    if (field === 'data') dataLines.push(value);
+  };
+
+  try {
+    for (;;) {
+      const { done, value } = await abortableRead(reader, signal);
+      if (done) break;
+      frameBytes += value.byteLength;
+      if (frameBytes > RESPONSE_LIMIT_BYTES) throw new Error('Connector event frame is too large.');
+      buffer += decoder.decode(value, { stream: true });
+      let newline = buffer.indexOf('\n');
+      while (newline >= 0) {
+        let line = buffer.slice(0, newline);
+        buffer = buffer.slice(newline + 1);
+        if (line.endsWith('\r')) line = line.slice(0, -1);
+        yield* consumeLine(line);
+        newline = buffer.indexOf('\n');
+      }
+    }
+    buffer += decoder.decode();
+    if (buffer) {
+      const line = buffer.endsWith('\r') ? buffer.slice(0, -1) : buffer;
+      yield* consumeLine(line);
+    }
+    yield* dispatch();
+  } finally {
+    reader.releaseLock();
+  }
 }
 
 async function abortableRead(reader: ReadableStreamDefaultReader<Uint8Array>, signal: AbortSignal) {

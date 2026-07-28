@@ -191,6 +191,19 @@ class FormationChatWidget extends HTMLElement {
     this.updateControls();
     try {
       const client = await this.ensureClient();
+      const contactRequest = client.getState().contactRequest;
+      if (contactRequest) {
+        if (!isEmail(text)) {
+          this.setStatus('Enter an email address so our team can follow up.');
+          return;
+        }
+        await client.submitStructuredInput(contactRequest.requestId, {
+          value: text,
+          consent: true,
+        });
+        this.input.value = '';
+        return;
+      }
       if (!client.getState().conversation) {
         const conversation = await client.createConversation();
         this.analytics?.conversationStarted(conversation.conversationId, client.getState());
@@ -314,6 +327,9 @@ class FormationChatWidget extends HTMLElement {
     this.input.disabled = this.busy;
     this.sendButton.disabled = this.busy;
     this.clearButton.disabled = this.busy;
+    const awaitingContact = Boolean(this.state?.contactRequest);
+    this.input.placeholder = awaitingContact ? 'Email address' : 'Type your question…';
+    this.sendButton.textContent = awaitingContact ? 'Share' : 'Send';
   }
 
   private setStatus(value: string): void {
@@ -366,6 +382,9 @@ function renderedMessages(state: ChatState | undefined): Array<{ role: string; t
   }));
   for (const live of Object.values(state.liveMessages)) {
     messages.push({ role: 'assistant', text: live.text });
+  }
+  if (state.contactRequest) {
+    messages.push({ role: 'assistant', text: state.contactRequest.prompt });
   }
   return messages.filter((message) => message.text.trim()).slice(-30);
 }
@@ -473,4 +492,8 @@ function isPersistedChatState(value: unknown): value is PersistedChatState {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) && value.length <= 320;
 }

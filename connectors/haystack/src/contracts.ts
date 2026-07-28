@@ -14,6 +14,7 @@ export const HaystackConnectorConfigSchema = Type.Object(
     baseUrl: Type.String({ minLength: 1, maxLength: 2_048, pattern: '^https?://' }),
     tenantKey: Type.String({ minLength: 1, maxLength: 200 }),
     agentSlug: Type.String({ minLength: 1, maxLength: 200 }),
+    connectorToken: Type.Optional(Type.String({ minLength: 1, maxLength: 4_096 })),
     responseMode: Type.Optional(Type.Union(responseModes.map((value) => Type.Literal(value)))),
     timeoutMs: Type.Optional(Type.Integer({ minimum: 1, maximum: 300_000 })),
   },

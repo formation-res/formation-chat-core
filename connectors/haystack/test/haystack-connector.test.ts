@@ -121,6 +121,124 @@ describe('HaystackConnector', () => {
     });
   });
 
+  it('uses the native connector stream when a connector token is configured', async () => {
+    let received: Request | undefined;
+    const streamedEvents: ConnectorEvent[] = [
+      {
+        type: 'run.started',
+        visibility: 'public',
+        conversationId: 'conversation-1',
+        runId: 'run-1',
+        data: { agentRef: 'public-support' },
+      },
+      {
+        type: 'handoff.requested',
+        visibility: 'public',
+        conversationId: 'conversation-1',
+        runId: 'run-1',
+        data: { handoffId: 'run-1' },
+      },
+      {
+        type: 'contact.requested',
+        visibility: 'public',
+        conversationId: 'conversation-1',
+        runId: 'run-1',
+        data: {
+          requestId: 'run-1',
+          inputKind: 'email',
+          purpose: 'handoff_email_delivery',
+          prompt: 'Where can our team reach you?',
+          required: true,
+        },
+      },
+    ];
+    const connector = new HaystackConnector(
+      {
+        baseUrl: 'http://haystack:8080',
+        tenantKey: 'formationxyz_com',
+        agentSlug: 'support',
+        connectorToken: 'connector-secret',
+        responseMode: 'support_chat',
+      },
+      {
+        fetch: async (request) => {
+          received = request;
+          return new Response(streamedEvents.map(sseFrame).join(''), {
+            headers: { 'Content-Type': 'text/event-stream' },
+          });
+        },
+      },
+    );
+
+    const events = await collect(connector.run(execution()));
+
+    expect(events).toEqual(streamedEvents);
+    expect(received?.url).toBe('http://haystack:8080/api/connectors/v1/runs');
+    expect(received?.headers.get('authorization')).toBe('Bearer connector-secret');
+    expect(await received?.json()).toMatchObject({
+      assistantMessageId: 'assistant-message-1',
+      request: {
+        runId: 'run-1',
+        history: expect.arrayContaining([expect.objectContaining({ messageId: 'user-message-1' })]),
+        trustedMetadata: {
+          'haystack.tenant_key': 'formationxyz_com',
+          'haystack.agent_slug': 'support',
+          'haystack.response_mode': 'support_chat',
+          origin: 'https://www.example.com',
+        },
+      },
+    });
+  });
+
+  it('forwards resolved handoff inputs to the native connector stream', async () => {
+    let body: unknown;
+    const resumed = execution();
+    resumed.request.resolvedInputs = [
+      {
+        requestId: 'run-1',
+        inputKind: 'email',
+        purpose: 'handoff_email_delivery',
+        status: 'submitted',
+        value: 'visitor@example.com',
+        consent: { status: 'granted', recordedAt: '2026-07-16T08:01:00.000Z' },
+      },
+    ];
+    const connector = new HaystackConnector(
+      {
+        baseUrl: 'http://haystack:8080',
+        tenantKey: 'formationxyz_com',
+        agentSlug: 'support',
+        connectorToken: 'connector-secret',
+      },
+      {
+        fetch: async (request) => {
+          body = await request.json();
+          return new Response(
+            sseFrame({
+              type: 'handoff.completed',
+              visibility: 'public',
+              conversationId: 'conversation-1',
+              runId: 'run-1',
+              data: { handoffId: 'run-1', status: 'completed' },
+            }),
+            { headers: { 'Content-Type': 'text/event-stream' } },
+          );
+        },
+      },
+    );
+
+    const events = await collect(connector.run(resumed));
+
+    expect(events.map(({ type }) => type)).toEqual(['handoff.completed']);
+    expect(body).toMatchObject({
+      request: {
+        resolvedInputs: [
+          expect.objectContaining({ status: 'submitted', value: 'visitor@example.com' }),
+        ],
+      },
+    });
+  });
+
   it('emits a failed run without starting a message when Haystack times out', async () => {
     const fetch = vi.fn(
       (request: Request) =>
@@ -230,6 +348,10 @@ const collect = async (events: AsyncIterable<ConnectorEvent>): Promise<Connector
   for await (const event of events) collected.push(event);
   return collected;
 };
+
+function sseFrame(event: ConnectorEvent): string {
+  return `event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`;
+}
 
 const successResponse = () => ({
   request_id: 'haystack-request-1',

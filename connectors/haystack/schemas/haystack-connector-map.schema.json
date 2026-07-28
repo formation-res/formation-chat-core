@@ -29,6 +29,11 @@
           "maxLength": 200,
           "type": "string"
         },
+        "connectorToken": {
+          "minLength": 1,
+          "maxLength": 4096,
+          "type": "string"
+        },
         "responseMode": {
           "anyOf": [
             {
