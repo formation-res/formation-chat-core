@@ -1,7 +1,7 @@
 import type { Message, PublicConversationEvent } from '@formation-chat-core/protocol';
 import { describe, expect, it, vi } from 'vitest';
 
-import { createHttpChatTransport, parseEventStream } from '../src/index.js';
+import { createHttpChatTransport, isAuthenticationError, parseEventStream } from '../src/index.js';
 
 const session = {
   accessToken: 'secret-token',
@@ -86,6 +86,22 @@ describe('HTTP chat transport', () => {
     await expect(
       transport.bootstrap({ siteKey: 'missing', idempotencyKey: 'key-1' }),
     ).rejects.toMatchObject({ code: 'SITE_NOT_FOUND', status: 404 });
+  });
+
+  it('classifies 401 responses for client-side renewal', async () => {
+    const transport = createHttpChatTransport({
+      baseUrl: 'https://chat.example',
+      fetch: vi.fn(async () =>
+        Response.json(
+          { error: { code: 'UNAUTHORIZED', message: 'Authentication is required.' } },
+          { status: 401 },
+        ),
+      ),
+    });
+
+    await expect(
+      transport.bootstrap({ siteKey: 'site-key', idempotencyKey: 'key-1' }),
+    ).rejects.toSatisfy(isAuthenticationError);
   });
 
   it('submits structured input with authentication and idempotency', async () => {

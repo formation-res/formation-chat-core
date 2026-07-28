@@ -138,6 +138,7 @@ export interface ChatClientOptions {
   storage?: ChatStorage;
   createId?: () => string;
   reconnectDelay?: (attempt: number) => number;
+  renewalLeadMs?: number;
   setTimer?: (callback: () => void, delayMs: number) => unknown;
   clearTimer?: (timer: unknown) => void;
 }

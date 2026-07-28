@@ -428,6 +428,13 @@ length is represented by total, user, and assistant message counts rather than e
 The analytics request originates from the embedding website document, so an already-authorized
 website origin does not require a separate Chat Gateway analytics origin entry.
 
+**Browser-session renewal follow-up:** 2026-07-28. The shared browser client renews short-lived
+visitor sessions in memory before expiry, on tab focus/visibility/online recovery, and once after
+authenticated 401 responses. A single renewal promise prevents concurrent refreshes, HTTP commands
+reuse their original idempotency keys after renewal, SSE 401s renew immediately and resume with the
+saved cursor, and the shared Worker widget keeps draft textarea content until message submission is
+confirmed.
+
 **Runtime fix:** 2026-07-21. Outbound Haystack requests use manual redirect handling and invoke the
 native fetch function with the Worker global receiver. Non-success redirects remain unavailable
 responses and are never followed with the connector bearer token. Regression assertions cover both

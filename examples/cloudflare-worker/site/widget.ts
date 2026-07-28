@@ -187,7 +187,6 @@ class FormationChatWidget extends HTMLElement {
     const text = this.input.value.trim();
     if (!text || this.busy) return;
     this.busy = true;
-    this.input.value = '';
     this.setStatus('Thinking…');
     this.updateControls();
     try {
@@ -197,6 +196,7 @@ class FormationChatWidget extends HTMLElement {
         this.analytics?.conversationStarted(conversation.conversationId, client.getState());
       }
       await client.sendMessage({ parts: [{ type: 'text', text }] });
+      this.input.value = '';
       this.analytics?.messageSent(client.getState());
     } catch (error) {
       this.setStatus(error instanceof Error ? error.message : 'The chat request failed.');

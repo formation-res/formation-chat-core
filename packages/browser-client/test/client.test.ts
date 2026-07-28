@@ -10,6 +10,7 @@ import {
   createChatClient,
   createMemoryStorage,
   type ChatTransport,
+  HttpChatError,
   type StreamEventsRequest,
 } from '../src/index.js';
 
@@ -31,7 +32,7 @@ const conversation: Conversation = {
 const bootstrap: SessionBootstrapResponse = {
   accessToken: 'memory-only-token',
   tokenType: 'Bearer',
-  expiresAt: '2026-07-15T11:00:00.000Z',
+  expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
   tenantId: 'tenant-1',
   siteId: 'site-1',
   agentRef: 'agent-1',
@@ -40,8 +41,20 @@ const bootstrap: SessionBootstrapResponse = {
   browserIdentity: 'browser-1',
 };
 
+const message: Message = {
+  messageId: 'message-1',
+  conversationId: 'conversation-1',
+  sequence: 1,
+  participantId: 'user-1',
+  role: 'user',
+  status: 'completed',
+  parts: [{ type: 'text', text: 'Hello' }],
+  createdAt: '2026-07-15T10:00:00.000Z',
+  completedAt: '2026-07-15T10:00:00.000Z',
+};
+
 class FakeTransport implements ChatTransport {
-  readonly bootstrap = vi.fn(async () => bootstrap);
+  readonly bootstrap = vi.fn(async () => this.sessions.shift() ?? bootstrap);
   readonly createConversation = vi.fn(async () => conversation);
   readonly getConversation = vi.fn(async () => conversation);
   readonly listMessages = vi.fn(async () => this.messages);
@@ -65,9 +78,13 @@ class FakeTransport implements ChatTransport {
   }));
   readonly retry = vi.fn(async () => undefined);
   readonly streams = new Set<StreamEventsRequest>();
+  readonly streamFailures: unknown[] = [];
+  sessions: SessionBootstrapResponse[] = [];
   messages: Message[] = [];
 
   async streamEvents(request: StreamEventsRequest): Promise<void> {
+    const failure = this.streamFailures.shift();
+    if (failure) throw failure;
     this.streams.add(request);
     await new Promise<void>((resolve) =>
       request.signal.addEventListener('abort', () => resolve(), { once: true }),
@@ -211,5 +228,151 @@ describe('framework-neutral chat client', () => {
     expect(client.getState().contactRequest).toBeUndefined();
     expect(JSON.stringify(client.getState())).not.toContain('visitor@example.com');
     client.destroy();
+  });
+
+  it('renews an expired session before sending and keeps the same message idempotency key', async () => {
+    const transport = new FakeTransport();
+    transport.sessions = [
+      { ...bootstrap, expiresAt: new Date(Date.now() - 1_000).toISOString() },
+      { ...bootstrap, accessToken: 'renewed-token', sessionId: 'session-2' },
+    ];
+    transport.messages = [message];
+    const ids = ['bootstrap-key', 'conversation-key', 'renew-key', 'message-key'];
+    const client = createChatClient({
+      siteKey: 'site-key',
+      transport,
+      createId: () => ids.shift() ?? 'extra-key',
+      setTimer: () => 0,
+      clearTimer: () => undefined,
+    });
+    await client.start();
+    await client.createConversation();
+    await client.sendMessage({ parts: [{ type: 'text', text: 'Hello' }] });
+
+    expect(transport.bootstrap).toHaveBeenCalledTimes(2);
+    expect(transport.bootstrap).toHaveBeenLastCalledWith(
+      expect.objectContaining({ browserIdentity: 'browser-1', idempotencyKey: 'renew-key' }),
+    );
+    expect(transport.submitMessage).toHaveBeenCalledWith(
+      'conversation-1',
+      { parts: [{ type: 'text', text: 'Hello' }] },
+      'message-key',
+    );
+    client.destroy();
+  });
+
+  it('renews once and replays a 401 send with the original idempotency key', async () => {
+    const transport = new FakeTransport();
+    transport.sessions = [{ ...bootstrap, accessToken: 'renewed-token', sessionId: 'session-2' }];
+    transport.messages = [message];
+    transport.submitMessage.mockRejectedValueOnce(
+      new HttpChatError('UNAUTHORIZED', 'Authentication is required.', 401),
+    );
+    const ids = ['bootstrap-key', 'conversation-key', 'message-key', 'renew-key'];
+    const client = createChatClient({
+      siteKey: 'site-key',
+      transport,
+      createId: () => ids.shift() ?? 'extra-key',
+    });
+    await client.start();
+    await client.createConversation();
+    await client.sendMessage({ parts: [{ type: 'text', text: 'Hello' }] });
+
+    expect(transport.bootstrap).toHaveBeenCalledTimes(2);
+    expect(transport.submitMessage).toHaveBeenCalledTimes(2);
+    expect(
+      transport.submitMessage.mock.calls.map(
+        (call) => (call as unknown as Parameters<ChatTransport['submitMessage']>)[2],
+      ),
+    ).toEqual(['message-key', 'message-key']);
+    client.destroy();
+  });
+
+  it('uses one shared renewal when concurrent authenticated requests return 401', async () => {
+    const transport = new FakeTransport();
+    transport.sessions = [{ ...bootstrap, accessToken: 'renewed-token', sessionId: 'session-2' }];
+    transport.getConversation.mockRejectedValueOnce(
+      new HttpChatError('UNAUTHORIZED', 'Authentication is required.', 401),
+    );
+    transport.listMessages.mockRejectedValueOnce(
+      new HttpChatError('UNAUTHORIZED', 'Authentication is required.', 401),
+    );
+    const client = createChatClient({ siteKey: 'site-key', transport });
+    await client.start();
+    await client.selectConversation('conversation-1');
+
+    expect(transport.bootstrap).toHaveBeenCalledTimes(2);
+    expect(transport.getConversation).toHaveBeenCalledTimes(2);
+    expect(transport.listMessages).toHaveBeenCalledTimes(2);
+    client.destroy();
+  });
+
+  it('renews immediately for an SSE 401 and resumes from the saved cursor', async () => {
+    const storage = createMemoryStorage();
+    await storage.save('site-key', {
+      version: 1,
+      browserIdentity: 'browser-1',
+      conversationId: 'conversation-1',
+      lastEventId: 'event-4',
+      lastEventSequence: 4,
+    });
+    const transport = new FakeTransport();
+    transport.sessions = [{ ...bootstrap, accessToken: 'renewed-token', sessionId: 'session-2' }];
+    transport.streamFailures.push(
+      new HttpChatError('UNAUTHORIZED', 'Authentication is required.', 401),
+    );
+    const client = createChatClient({ siteKey: 'site-key', storage, transport });
+    await client.start();
+    await tick();
+
+    expect(transport.bootstrap).toHaveBeenCalledTimes(2);
+    expect([...transport.streams][0]?.lastEventId).toBe('event-4');
+    expect(client.getState().phase).not.toBe('reconnecting');
+    client.destroy();
+  });
+
+  it('checks expiry and resumes the stream when a sleeping tab becomes visible', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-07-15T10:00:00.000Z'));
+    const documentTarget = new EventTarget() as EventTarget & {
+      visibilityState: DocumentVisibilityState;
+    };
+    Object.defineProperty(documentTarget, 'visibilityState', {
+      configurable: true,
+      value: 'visible',
+    });
+    const windowTarget = {
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    };
+    vi.stubGlobal('document', documentTarget);
+    vi.stubGlobal('addEventListener', windowTarget.addEventListener);
+    vi.stubGlobal('removeEventListener', windowTarget.removeEventListener);
+    const transport = new FakeTransport();
+    transport.sessions = [
+      { ...bootstrap, expiresAt: new Date(Date.now() + 120_000).toISOString() },
+      { ...bootstrap, accessToken: 'renewed-token', sessionId: 'session-2' },
+    ];
+    const client = createChatClient({
+      siteKey: 'site-key',
+      transport,
+      renewalLeadMs: 60_000,
+      setTimer: () => 0,
+      clearTimer: () => undefined,
+    });
+    await client.start();
+    await client.createConversation();
+
+    vi.setSystemTime(new Date('2026-07-15T10:01:10.000Z'));
+    documentTarget.dispatchEvent(new Event('visibilitychange'));
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(transport.bootstrap).toHaveBeenCalledTimes(2);
+    expect(transport.streams.size).toBe(1);
+    expect(windowTarget.addEventListener).toHaveBeenCalledWith('focus', expect.any(Function));
+    client.destroy();
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
   });
 });

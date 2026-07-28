@@ -10,10 +10,12 @@ import type {
 
 import { initialChatState, reduceChatState } from './state.js';
 import { createBrowserStorage, createMemoryStorage } from './storage.js';
+import { isAuthenticationError } from './http-transport.js';
 import type {
   ChatClient,
   ChatClientError,
   ChatClientOptions,
+  ChatTransport,
   ChatState,
   ChatStateAction,
   ChatStorage,
@@ -26,6 +28,7 @@ export function createChatClient(options: ChatClientOptions): ChatClient {
   const createId = options.createId ?? (() => crypto.randomUUID());
   const reconnectDelay =
     options.reconnectDelay ?? ((attempt) => Math.min(1_000 * 2 ** attempt, 30_000));
+  const renewalLeadMs = options.renewalLeadMs ?? 60_000;
   const setTimer = options.setTimer ?? ((callback, delay) => setTimeout(callback, delay));
   const clearTimer = options.clearTimer ?? ((timer) => clearTimeout(timer as number));
   const listeners = new Set<(state: ChatState) => void>();
@@ -35,12 +38,17 @@ export function createChatClient(options: ChatClientOptions): ChatClient {
   let started = false;
   let streamAbort: AbortController | undefined;
   let reconnectTimer: unknown;
+  let renewalTimer: unknown;
+  let renewalPromise: Promise<PublicSession> | undefined;
   let reconnectAttempt = 0;
   let ignoreStorage = false;
   let externalUpdate = Promise.resolve();
   const unsubscribeStorage = storage.subscribe?.(options.siteKey, (next) => {
     if (destroyed || ignoreStorage || !next) return;
     externalUpdate = externalUpdate.then(() => applyExternalState(next)).catch(raiseError);
+  });
+  const unsubscribeLifecycle = subscribeLifecycle(() => {
+    void recoverActiveSession().catch(raiseError);
   });
 
   const dispatch = (action: ChatStateAction) => {
@@ -54,16 +62,7 @@ export function createChatClient(options: ChatClientOptions): ChatClient {
     dispatch({ type: 'phase.changed', phase: 'bootstrapping' });
     try {
       persisted = (await storage.load(options.siteKey)) ?? { version: 1 };
-      const session = await options.transport.bootstrap({
-        siteKey: options.siteKey,
-        ...(persisted.browserIdentity ? { browserIdentity: persisted.browserIdentity } : {}),
-        idempotencyKey: createId(),
-      });
-      persisted = {
-        ...persisted,
-        ...(session.browserIdentity ? { browserIdentity: session.browserIdentity } : {}),
-      };
-      dispatch({ type: 'session.loaded', session: publicSession(session) });
+      await bootstrapSession(createId());
       if (persisted.lastEventId) {
         dispatch({
           type: 'cursor.restored',
@@ -81,7 +80,10 @@ export function createChatClient(options: ChatClientOptions): ChatClient {
 
   async function createConversation(): Promise<Conversation> {
     requireStarted();
-    const conversation = await runCommand(() => options.transport.createConversation(createId()));
+    const idempotencyKey = createId();
+    const conversation = await runCommand(() =>
+      options.transport.createConversation(idempotencyKey),
+    );
     if (state.conversation?.conversationId !== conversation.conversationId) {
       dispatch({ type: 'conversation.cleared' });
     }
@@ -104,8 +106,9 @@ export function createChatClient(options: ChatClientOptions): ChatClient {
 
   async function sendMessage(request: SubmitMessageRequest): Promise<Message> {
     const conversation = requireConversation();
+    const idempotencyKey = createId();
     const message = await runCommand(() =>
-      options.transport.submitMessage(conversation.conversationId, request, createId()),
+      options.transport.submitMessage(conversation.conversationId, request, idempotencyKey),
     );
     dispatch({ type: 'message.submitted', message });
     openStream();
@@ -114,8 +117,9 @@ export function createChatClient(options: ChatClientOptions): ChatClient {
 
   async function cancel(): Promise<CancelRunResponse> {
     const conversation = requireConversation();
+    const idempotencyKey = createId();
     const outcome = await runCommand(() =>
-      options.transport.cancel(conversation.conversationId, createId()),
+      options.transport.cancel(conversation.conversationId, idempotencyKey),
     );
     dispatch({
       type: 'run.cancelled',
@@ -133,12 +137,13 @@ export function createChatClient(options: ChatClientOptions): ChatClient {
     if (state.contactRequest?.requestId !== requestId) {
       throw new Error('The structured input request is not active.');
     }
+    const idempotencyKey = createId();
     const result = await runCommand(() =>
       options.transport.submitStructuredInput(
         conversation.conversationId,
         requestId,
         request,
-        createId(),
+        idempotencyKey,
       ),
     );
     dispatch({ type: 'structured-input.submitted', requestId });
@@ -148,7 +153,8 @@ export function createChatClient(options: ChatClientOptions): ChatClient {
 
   async function retryRun(): Promise<void> {
     const conversation = requireConversation();
-    await runCommand(() => options.transport.retry(conversation.conversationId, createId()));
+    const idempotencyKey = createId();
+    await runCommand(() => options.transport.retry(conversation.conversationId, idempotencyKey));
     dispatch({ type: 'run.retrying' });
     openStream();
   }
@@ -157,26 +163,14 @@ export function createChatClient(options: ChatClientOptions): ChatClient {
     if (!started) throw new Error('Start the chat client before retrying it.');
     streamAbort?.abort();
     dispatch({ type: 'phase.changed', phase: 'bootstrapping' });
-    const session = await runCommand(() =>
-      options.transport.bootstrap({
-        siteKey: options.siteKey,
-        ...(persisted.browserIdentity ? { browserIdentity: persisted.browserIdentity } : {}),
-        idempotencyKey: createId(),
-      }),
-    );
-    persisted = {
-      ...persisted,
-      ...(session.browserIdentity ? { browserIdentity: session.browserIdentity } : {}),
-    };
-    dispatch({ type: 'session.loaded', session: publicSession(session) });
-    await persist();
+    await runCommand(() => renewSession());
     if (persisted.conversationId) await loadConversation(persisted.conversationId);
   }
 
   async function loadConversation(conversationId: string): Promise<void> {
     const [conversation, messages] = await Promise.all([
-      options.transport.getConversation(conversationId),
-      options.transport.listMessages(conversationId),
+      runAuthenticated(() => options.transport.getConversation(conversationId)),
+      runAuthenticated(() => options.transport.listMessages(conversationId)),
     ]);
     if (state.conversation && state.conversation.conversationId !== conversationId) {
       dispatch({ type: 'conversation.cleared' });
@@ -191,8 +185,8 @@ export function createChatClient(options: ChatClientOptions): ChatClient {
     const conversationId = persisted.conversationId;
     if (!conversationId) return;
     const [conversation, messages] = await Promise.all([
-      options.transport.getConversation(conversationId),
-      options.transport.listMessages(conversationId),
+      runAuthenticated(() => options.transport.getConversation(conversationId)),
+      runAuthenticated(() => options.transport.listMessages(conversationId)),
     ]);
     dispatch({ type: 'snapshot.loaded', conversation, messages });
   }
@@ -205,13 +199,12 @@ export function createChatClient(options: ChatClientOptions): ChatClient {
     const controller = new AbortController();
     streamAbort = controller;
     const lastEventId = state.lastEventId;
-    void options.transport
-      .streamEvents({
-        conversationId: conversation.conversationId,
-        ...(lastEventId ? { lastEventId } : {}),
-        signal: controller.signal,
-        onEvent: handleEvent,
-      })
+    void streamEvents(controller, {
+      conversationId: conversation.conversationId,
+      ...(lastEventId ? { lastEventId } : {}),
+      signal: controller.signal,
+      onEvent: handleEvent,
+    })
       .then(() => {
         if (!controller.signal.aborted) scheduleReconnect();
       })
@@ -243,6 +236,23 @@ export function createChatClient(options: ChatClientOptions): ChatClient {
     if (cause) dispatch({ type: 'connection.failed', error: toClientError(cause, true) });
     else dispatch({ type: 'phase.changed', phase: 'reconnecting' });
     reconnectTimer = setTimer(openStream, reconnectDelay(reconnectAttempt++));
+  }
+
+  async function streamEvents(
+    controller: AbortController,
+    request: Parameters<ChatTransport['streamEvents']>[0],
+  ): Promise<void> {
+    await ensureFreshSession();
+    try {
+      await options.transport.streamEvents(request);
+    } catch (error) {
+      if (!controller.signal.aborted && isAuthenticationError(error)) {
+        await renewSession();
+        if (!controller.signal.aborted) openStream();
+        return;
+      }
+      throw error;
+    }
   }
 
   async function applyExternalState(next: PersistedChatState): Promise<void> {
@@ -281,11 +291,69 @@ export function createChatClient(options: ChatClientOptions): ChatClient {
 
   async function runCommand<T>(command: () => Promise<T>): Promise<T> {
     try {
-      return await command();
+      return await runAuthenticated(command);
     } catch (error) {
       raiseError(error);
       throw error;
     }
+  }
+
+  async function runAuthenticated<T>(command: () => Promise<T>): Promise<T> {
+    await ensureFreshSession();
+    try {
+      return await command();
+    } catch (error) {
+      if (!isAuthenticationError(error)) throw error;
+      await renewSession();
+      return command();
+    }
+  }
+
+  async function ensureFreshSession(): Promise<void> {
+    if (!started || destroyed || !state.session) return;
+    if (Date.parse(state.session.expiresAt) - Date.now() > renewalLeadMs) return;
+    await renewSession();
+  }
+
+  async function recoverActiveSession(): Promise<void> {
+    await ensureFreshSession();
+    if (!destroyed && state.conversation) openStream();
+  }
+
+  async function renewSession(): Promise<PublicSession> {
+    if (renewalPromise) return renewalPromise;
+    if (!persisted.browserIdentity) {
+      throw new Error('Cannot renew the chat session before browser identity is available.');
+    }
+    renewalPromise = bootstrapSession(createId()).finally(() => {
+      renewalPromise = undefined;
+    });
+    return renewalPromise;
+  }
+
+  async function bootstrapSession(idempotencyKey: string): Promise<PublicSession> {
+    const session = await options.transport.bootstrap({
+      siteKey: options.siteKey,
+      ...(persisted.browserIdentity ? { browserIdentity: persisted.browserIdentity } : {}),
+      idempotencyKey,
+    });
+    persisted = {
+      ...persisted,
+      ...(session.browserIdentity ? { browserIdentity: session.browserIdentity } : {}),
+    };
+    const publicValue = publicSession(session);
+    dispatch({ type: 'session.loaded', session: publicValue });
+    await persist();
+    scheduleRenewal(publicValue);
+    return publicValue;
+  }
+
+  function scheduleRenewal(session: PublicSession): void {
+    if (renewalTimer !== undefined) clearTimer(renewalTimer);
+    const delay = Math.max(0, Date.parse(session.expiresAt) - Date.now() - renewalLeadMs);
+    renewalTimer = setTimer(() => {
+      void renewSession().catch(raiseError);
+    }, delay);
   }
 
   function raiseError(error: unknown): void {
@@ -296,7 +364,9 @@ export function createChatClient(options: ChatClientOptions): ChatClient {
     destroyed = true;
     streamAbort?.abort();
     if (reconnectTimer !== undefined) clearTimer(reconnectTimer);
+    if (renewalTimer !== undefined) clearTimer(renewalTimer);
     unsubscribeStorage?.();
+    unsubscribeLifecycle();
     listeners.clear();
   }
 
@@ -351,6 +421,40 @@ function defaultStorage(): ChatStorage {
   return typeof globalThis.localStorage === 'undefined'
     ? createMemoryStorage()
     : createBrowserStorage();
+}
+
+function subscribeLifecycle(callback: () => void): () => void {
+  const subscriptions: Array<() => void> = [];
+  const target = globalThis as EventTarget & {
+    addEventListener?: EventTarget['addEventListener'];
+    removeEventListener?: EventTarget['removeEventListener'];
+    document?: Document;
+  };
+  const subscribe = (
+    eventTarget: EventTarget | undefined,
+    eventName: string,
+    listener: EventListener,
+  ) => {
+    if (
+      !eventTarget ||
+      typeof eventTarget.addEventListener !== 'function' ||
+      typeof eventTarget.removeEventListener !== 'function'
+    ) {
+      return;
+    }
+    eventTarget.addEventListener(eventName, listener);
+    subscriptions.push(() => eventTarget.removeEventListener(eventName, listener));
+  };
+
+  subscribe(target, 'focus', callback);
+  subscribe(target, 'online', callback);
+  subscribe(target.document, 'visibilitychange', () => {
+    if (target.document?.visibilityState === 'visible') callback();
+  });
+
+  return () => {
+    for (const unsubscribe of subscriptions.splice(0)) unsubscribe();
+  };
 }
 
 function toClientError(error: unknown, retryable: boolean): ChatClientError {

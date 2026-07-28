@@ -40,6 +40,10 @@ export class HttpChatError extends Error implements ChatClientError {
   }
 }
 
+export function isAuthenticationError(error: unknown): boolean {
+  return error instanceof HttpChatError && error.status === 401;
+}
+
 export function createHttpChatTransport(options: HttpChatTransportOptions): ChatTransport {
   const baseUrl = normalizeBaseUrl(options.baseUrl);
   const fetchAdapter = options.fetch ?? globalThis.fetch;
