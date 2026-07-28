@@ -145,6 +145,16 @@ describe('PostgreSQL persistence base', () => {
       ...config,
       widget: { ...config.widget, displayName: 'Updated chat', theme: 'blue' },
     });
+    await database
+      .insertInto('principals')
+      .values({
+        principal_id: 'principal-widget',
+        tenant_id: 'tenant-widget',
+        site_id: 'site-widget',
+        kind: 'anonymous',
+        browser_identity: 'browser-widget',
+      })
+      .execute();
     await provisionWidgetRegistry(database, {
       ...config,
       tenant: { tenantId: 'tenant-widget-renamed', displayName: 'Renamed widget tenant' },
@@ -185,6 +195,11 @@ describe('PostgreSQL persistence base', () => {
       .where('widget_key', '=', 'main-chat')
       .orderBy('site_id')
       .execute();
+    const principal = await database
+      .selectFrom('principals')
+      .select(['tenant_id', 'site_id'])
+      .where('principal_id', '=', 'principal-widget')
+      .executeTakeFirstOrThrow();
 
     expect(site).toEqual({
       tenant_id: 'tenant-widget-renamed',
@@ -195,6 +210,10 @@ describe('PostgreSQL persistence base', () => {
       { site_id: 'site-widget', widget_key: 'main-chat' },
       { site_id: 'site-widget-two', widget_key: 'main-chat' },
     ]);
+    expect(principal).toEqual({
+      tenant_id: 'tenant-widget-renamed',
+      site_id: 'site-widget',
+    });
     expect(widget).toEqual({
       display_name: 'Updated chat',
       theme: 'blue',

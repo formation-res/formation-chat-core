@@ -1,4 +1,4 @@
-import type { Insertable } from 'kysely';
+import { sql, type Insertable } from 'kysely';
 
 import type { Database } from '../database/database.js';
 import type { SiteWidgetAgentAlias, SiteWidgetTable } from '../database/types.js';
@@ -81,8 +81,76 @@ export async function provisionWidgetRegistry(
       .where('site_key', '=', config.site.siteKey)
       .executeTakeFirst();
     if (existingSite && existingSite.tenant_id !== config.tenant.tenantId) {
+      await sql`set constraints all deferred`.execute(transaction);
       await transaction
-        .deleteFrom('site_widgets')
+        .updateTable('browser_sessions')
+        .set({ tenant_id: config.tenant.tenantId })
+        .where('tenant_id', '=', existingSite.tenant_id)
+        .where('site_id', '=', existingSite.site_id)
+        .execute();
+      await transaction
+        .updateTable('command_idempotency')
+        .set({ tenant_id: config.tenant.tenantId })
+        .where('tenant_id', '=', existingSite.tenant_id)
+        .where('site_id', '=', existingSite.site_id)
+        .execute();
+      await transaction
+        .updateTable('messages')
+        .set({ tenant_id: config.tenant.tenantId })
+        .where('tenant_id', '=', existingSite.tenant_id)
+        .where('site_id', '=', existingSite.site_id)
+        .execute();
+      await transaction
+        .updateTable('conversation_events')
+        .set({ tenant_id: config.tenant.tenantId })
+        .where('tenant_id', '=', existingSite.tenant_id)
+        .where('site_id', '=', existingSite.site_id)
+        .execute();
+      await transaction
+        .updateTable('conversation_participants')
+        .set({ tenant_id: config.tenant.tenantId })
+        .where('tenant_id', '=', existingSite.tenant_id)
+        .where('site_id', '=', existingSite.site_id)
+        .execute();
+      await transaction
+        .updateTable('agent_runs')
+        .set({ tenant_id: config.tenant.tenantId })
+        .where('tenant_id', '=', existingSite.tenant_id)
+        .where('site_id', '=', existingSite.site_id)
+        .execute();
+      await transaction
+        .updateTable('handoffs')
+        .set({ tenant_id: config.tenant.tenantId })
+        .where('tenant_id', '=', existingSite.tenant_id)
+        .where('site_id', '=', existingSite.site_id)
+        .execute();
+      await transaction
+        .updateTable('structured_input_requests')
+        .set({ tenant_id: config.tenant.tenantId })
+        .where('tenant_id', '=', existingSite.tenant_id)
+        .where('site_id', '=', existingSite.site_id)
+        .execute();
+      await transaction
+        .updateTable('conversations')
+        .set({ tenant_id: config.tenant.tenantId })
+        .where('tenant_id', '=', existingSite.tenant_id)
+        .where('site_id', '=', existingSite.site_id)
+        .execute();
+      await transaction
+        .updateTable('principals')
+        .set({ tenant_id: config.tenant.tenantId })
+        .where('tenant_id', '=', existingSite.tenant_id)
+        .where('site_id', '=', existingSite.site_id)
+        .execute();
+      await transaction
+        .updateTable('site_widgets')
+        .set({ tenant_id: config.tenant.tenantId })
+        .where('tenant_id', '=', existingSite.tenant_id)
+        .where('site_id', '=', existingSite.site_id)
+        .execute();
+      await transaction
+        .updateTable('audit_events')
+        .set({ tenant_id: config.tenant.tenantId })
         .where('tenant_id', '=', existingSite.tenant_id)
         .where('site_id', '=', existingSite.site_id)
         .execute();

@@ -10,6 +10,7 @@ import * as createAdminQueryIndexes from './migrations/007_create_admin_query_in
 import * as createAuditEvents from './migrations/008_create_audit_events.js';
 import * as createSiteWidgets from './migrations/009_create_site_widgets.js';
 import * as scopeWidgetKeysToSite from './migrations/010_scope_widget_keys_to_site.js';
+import * as makeSiteScopeForeignKeysDeferrable from './migrations/011_make_site_scope_foreign_keys_deferrable.js';
 import type { Database } from './database.js';
 
 const migrations: Record<string, Migration> = {
@@ -23,6 +24,7 @@ const migrations: Record<string, Migration> = {
   '008_create_audit_events': createAuditEvents,
   '009_create_site_widgets': createSiteWidgets,
   '010_scope_widget_keys_to_site': scopeWidgetKeysToSite,
+  '011_make_site_scope_foreign_keys_deferrable': makeSiteScopeForeignKeysDeferrable,
 };
 
 export class DatabaseMigrationError extends Error {
