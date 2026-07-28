@@ -75,6 +75,19 @@ export async function provisionWidgetRegistry(
       )
       .execute();
 
+    const existingSite = await transaction
+      .selectFrom('sites')
+      .select(['tenant_id', 'site_id'])
+      .where('site_key', '=', config.site.siteKey)
+      .executeTakeFirst();
+    if (existingSite && existingSite.tenant_id !== config.tenant.tenantId) {
+      await transaction
+        .deleteFrom('site_widgets')
+        .where('tenant_id', '=', existingSite.tenant_id)
+        .where('site_id', '=', existingSite.site_id)
+        .execute();
+    }
+
     await transaction
       .insertInto('sites')
       .values({
@@ -87,6 +100,7 @@ export async function provisionWidgetRegistry(
       })
       .onConflict((conflict) =>
         conflict.column('site_key').doUpdateSet({
+          tenant_id: config.tenant.tenantId,
           display_name: config.site.displayName,
           allowed_origins: JSON.stringify(config.site.allowedOrigins),
           agent_ref: config.site.agentRef as string,

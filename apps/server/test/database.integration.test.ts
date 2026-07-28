@@ -146,7 +146,12 @@ describe('PostgreSQL persistence base', () => {
       widget: { ...config.widget, displayName: 'Updated chat', theme: 'blue' },
     });
     await provisionWidgetRegistry(database, {
-      tenant: { tenantId: 'tenant-widget', displayName: 'Widget tenant' },
+      ...config,
+      tenant: { tenantId: 'tenant-widget-renamed', displayName: 'Renamed widget tenant' },
+      widget: { ...config.widget, displayName: 'Updated chat', theme: 'blue' },
+    });
+    await provisionWidgetRegistry(database, {
+      tenant: { tenantId: 'tenant-widget-renamed', displayName: 'Renamed widget tenant' },
       site: {
         siteId: 'site-widget-two',
         siteKey: 'site-widget-two-key',
@@ -166,7 +171,7 @@ describe('PostgreSQL persistence base', () => {
 
     const site = await database
       .selectFrom('sites')
-      .select(['agent_ref', 'allowed_origins'])
+      .select(['tenant_id', 'agent_ref', 'allowed_origins'])
       .where('site_key', '=', 'site-widget-key')
       .executeTakeFirstOrThrow();
     const widget = await database
@@ -182,6 +187,7 @@ describe('PostgreSQL persistence base', () => {
       .execute();
 
     expect(site).toEqual({
+      tenant_id: 'tenant-widget-renamed',
       agent_ref: 'support-agent',
       allowed_origins: ['https://widget.example.test'],
     });
