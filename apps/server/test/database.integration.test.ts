@@ -145,6 +145,24 @@ describe('PostgreSQL persistence base', () => {
       ...config,
       widget: { ...config.widget, displayName: 'Updated chat', theme: 'blue' },
     });
+    await provisionWidgetRegistry(database, {
+      tenant: { tenantId: 'tenant-widget', displayName: 'Widget tenant' },
+      site: {
+        siteId: 'site-widget-two',
+        siteKey: 'site-widget-two-key',
+        displayName: 'Second widget site',
+        allowedOrigins: ['https://second-widget.example.test'],
+      },
+      widget: {
+        ...config.widget,
+        widgetId: 'widget-main-two',
+        displayName: 'Second main chat',
+        theme: 'rgb-neon',
+        agentAliases: [
+          { alias: 'support', label: 'Second support', agentRef: 'support-agent-two' },
+        ],
+      },
+    });
 
     const site = await database
       .selectFrom('sites')
@@ -154,13 +172,23 @@ describe('PostgreSQL persistence base', () => {
     const widget = await database
       .selectFrom('site_widgets')
       .select(['display_name', 'theme', 'agent_aliases'])
-      .where('widget_key', '=', 'main-chat')
+      .where('widget_id', '=', 'widget-main')
       .executeTakeFirstOrThrow();
+    const widgets = await database
+      .selectFrom('site_widgets')
+      .select(['site_id', 'widget_key'])
+      .where('widget_key', '=', 'main-chat')
+      .orderBy('site_id')
+      .execute();
 
     expect(site).toEqual({
       agent_ref: 'support-agent',
       allowed_origins: ['https://widget.example.test'],
     });
+    expect(widgets).toEqual([
+      { site_id: 'site-widget', widget_key: 'main-chat' },
+      { site_id: 'site-widget-two', widget_key: 'main-chat' },
+    ]);
     expect(widget).toEqual({
       display_name: 'Updated chat',
       theme: 'blue',
@@ -183,6 +211,21 @@ describe('PostgreSQL persistence base', () => {
           agentAliases: {
             support: { siteKey: 'site-widget-key', label: 'Support' },
             sales: { siteKey: 'site-widget-key', label: 'Sales' },
+          },
+        },
+      },
+      'second-widget.example.test': {
+        siteKey: 'site-widget-two-key',
+        allowedOrigins: ['https://second-widget.example.test'],
+        widget: {
+          widgetKey: 'main-chat',
+          version: '2026-07-23',
+          defaultAgent: 'support',
+          theme: 'rgb-neon',
+          launcher: 'agent',
+          placement: 'bottom-right',
+          agentAliases: {
+            support: { siteKey: 'site-widget-two-key', label: 'Second support' },
           },
         },
       },

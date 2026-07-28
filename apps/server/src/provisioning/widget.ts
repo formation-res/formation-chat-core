@@ -111,7 +111,10 @@ export async function provisionWidgetRegistry(
       .insertInto('site_widgets')
       .values(widget)
       .onConflict((conflict) =>
-        conflict.column('widget_key').doUpdateSet({
+        conflict.column('widget_id').doUpdateSet({
+          tenant_id: config.tenant.tenantId,
+          site_id: config.site.siteId,
+          widget_key: config.widget.widgetKey,
           display_name: config.widget.displayName,
           version: config.widget.version,
           theme: config.widget.theme,

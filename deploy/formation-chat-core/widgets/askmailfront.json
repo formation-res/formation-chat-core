@@ -1,0 +1,29 @@
+{
+  "tenant": {
+    "tenantId": "formationxyz_com",
+    "displayName": "Formation"
+  },
+  "site": {
+    "siteId": "askmailfront-com",
+    "siteKey": "askmailfront-main",
+    "displayName": "Ask Mailfront",
+    "allowedOrigins": ["https://askmailfront.com", "https://www.askmailfront.com"]
+  },
+  "widget": {
+    "widgetId": "askmailfront-main-chat",
+    "widgetKey": "main-chat",
+    "displayName": "Ask MailFront website chat",
+    "version": "2026-07-23",
+    "theme": "earth",
+    "launcher": "agent",
+    "placement": "bottom-right",
+    "defaultAgentAlias": "support",
+    "agentAliases": [
+      {
+        "alias": "support",
+        "label": "Mailfront",
+        "agentRef": "mailfront_chat"
+      }
+    ]
+  }
+}
