@@ -136,6 +136,10 @@ Example `widget.json`:
 The provisioning config intentionally excludes connector URLs, Haystack tenant keys, unrestricted
 agent slugs, provider settings, and credentials.
 
+Production website provisioning configs live under `deploy/formation-chat-core/widgets/`. For
+example, `formationxyz.json` provisions the `formationxyz` dashboard site and maps the public
+`support` widget alias to the trusted `formationxyz_chat` agent reference.
+
 After provisioning, generate the Worker site map from the registry instead of hand-editing a large
 JSON value:
 

@@ -39,7 +39,9 @@ Edit non-secret values in `wrangler.jsonc`:
 - `CHAT_CORE_BASE_URL` must be an HTTPS origin without a path.
 - `CHAT_SITES` is a JSON object keyed by lowercase public hostname. Each entry contains a trusted
   `siteKey`, one or more exact HTTPS `allowedOrigins`, optional exact HTTPS `dashboardOrigins`, and
-  optional analytics and widget configuration.
+  optional analytics and widget configuration. When multiple websites share one gateway hostname,
+  the hostname value may be an array of site entries; the Worker selects the entry whose
+  `allowedOrigins` contains the browser `Origin`.
 - `widget.agentAliases` maps public aliases such as `support` to labels for this site. Browser
   embeds may pass an alias; Chat Core validates it against the widget registry and resolves the
   trusted `agentRef`. Browser embeds never pass raw connector URLs, Haystack tenant keys,
@@ -52,17 +54,19 @@ entry:
 
 ```json
 {
-  "www.example.com": {
-    "siteKey": "example-site",
-    "allowedOrigins": ["https://www.example.com"],
-    "analytics": {
-      "endpoint": "https://analytics.example.com/collect",
-      "siteId": "example-website"
-    },
-    "widget": {
-      "widgetKey": "main-chat"
+  "chat.example.com": [
+    {
+      "siteKey": "example-site",
+      "allowedOrigins": ["https://www.example.com"],
+      "analytics": {
+        "endpoint": "https://analytics.example.com/collect",
+        "siteId": "example-website"
+      },
+      "widget": {
+        "widgetKey": "main-chat"
+      }
     }
-  }
+  ]
 }
 ```
 

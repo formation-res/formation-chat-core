@@ -246,6 +246,77 @@ describe('Cloudflare chat gateway', () => {
     expect(fetchUpstream).not.toHaveBeenCalled();
   });
 
+  it('selects the trusted widget site by origin when websites share a gateway host', async () => {
+    const fetchUpstream = vi.fn<typeof fetch>();
+    const sharedGatewayEnv: GatewayEnv = {
+      ...env,
+      CHAT_SITES: JSON.stringify({
+        'chat.example.test': [
+          {
+            siteKey: 'askmailfront-main',
+            allowedOrigins: ['https://askmailfront.example.test'],
+            analytics: {
+              endpoint: 'https://analytics.example.test/collect',
+              siteId: 'askmailfront',
+            },
+            widget: {
+              widgetKey: 'main-chat',
+              version: '2026-07-23',
+              defaultAgent: 'support',
+              theme: 'blue',
+              launcher: 'agent',
+              placement: 'bottom-right',
+              agentAliases: {
+                support: { siteKey: 'askmailfront-main', label: 'MailFront agent' },
+              },
+            },
+          },
+          {
+            siteKey: 'formationxyz-main',
+            allowedOrigins: ['https://formationxyz.example.test'],
+            analytics: {
+              endpoint: 'https://analytics.example.test/collect',
+              siteId: 'formationxyz',
+            },
+            widget: {
+              widgetKey: 'main-chat',
+              version: '2026-07-28',
+              defaultAgent: 'support',
+              theme: 'rgb',
+              launcher: 'agent',
+              placement: 'bottom-right',
+              agentAliases: {
+                support: { siteKey: 'formationxyz-main', label: 'XYZ agent' },
+              },
+            },
+          },
+        ],
+      }),
+    };
+
+    const response = await handleGatewayRequest(
+      request('/widget/config?widgetKey=main-chat', {
+        method: 'GET',
+        headers: { Origin: 'https://formationxyz.example.test' },
+      }),
+      sharedGatewayEnv,
+      { fetch: fetchUpstream },
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      siteKey: 'formationxyz-main',
+      agentLabel: 'XYZ agent',
+      version: '2026-07-28',
+      theme: 'rgb',
+      analytics: {
+        endpoint: 'https://analytics.example.test/collect',
+        siteId: 'formationxyz',
+      },
+    });
+    expect(fetchUpstream).not.toHaveBeenCalled();
+  });
+
   it('rejects invalid trusted analytics configuration', async () => {
     const fetchUpstream = vi.fn<typeof fetch>();
     const invalidEnv: GatewayEnv = {

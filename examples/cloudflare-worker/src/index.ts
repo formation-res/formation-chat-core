@@ -123,30 +123,30 @@ export async function handleGatewayRequest(
     );
   }
 
-  const site = configuration.sites[requestUrl.hostname.toLowerCase()];
-  if (!site) return errorResponse(404, 'SITE_NOT_FOUND', 'Site not found.', correlationId);
+  const candidateSites = configuration.sites[requestUrl.hostname.toLowerCase()];
+  if (!candidateSites)
+    return errorResponse(404, 'SITE_NOT_FOUND', 'Site not found.', correlationId);
 
   const route = ROUTES.find(({ pattern }) => pattern.test(requestUrl.pathname));
   if (!route) return errorResponse(404, 'ROUTE_NOT_FOUND', 'Route not found.', correlationId);
 
-  const allowedOrigins =
-    route.kind === 'admin' ? dashboardOrigins(site, requestUrl) : site.allowedOrigins;
   const requestOrigin = request.headers.get('origin');
   const isAuthNavigation =
     route.kind === 'auth' &&
     request.method === 'GET' &&
     (requestUrl.pathname === '/auth/login' || requestUrl.pathname === '/auth/callback');
-  const origin = isAuthNavigation
-    ? requestUrl.origin
-    : validatedOrigin(
-        requestOrigin,
-        route.kind === 'auth' ? [requestUrl.origin] : allowedOrigins,
-        requestUrl.origin,
-        request.headers.get('sec-fetch-site'),
-      );
-  if (!origin) {
+  const resolvedSite = resolveSiteForRequest(
+    candidateSites,
+    route,
+    requestUrl,
+    requestOrigin,
+    request.headers.get('sec-fetch-site'),
+    isAuthNavigation,
+  );
+  if (!resolvedSite) {
     return errorResponse(403, 'ORIGIN_NOT_ALLOWED', 'Origin not allowed.', correlationId);
   }
+  const { site, origin } = resolvedSite;
 
   if (request.method === 'OPTIONS')
     return preflightResponse(request, route, origin ?? requestUrl.origin, correlationId);
@@ -265,7 +265,7 @@ export default {
 
 interface GatewayConfiguration {
   coreBaseUrl: URL;
-  sites: Record<string, SiteConfig>;
+  sites: Record<string, SiteConfig[]>;
   serviceToken: string;
 }
 
@@ -282,23 +282,31 @@ function parseConfiguration(env: GatewayEnv): GatewayConfiguration {
 
   const value: unknown = JSON.parse(env.CHAT_SITES);
   if (!isRecord(value) || Object.keys(value).length === 0) throw new Error('Invalid site map.');
-  const sites: Record<string, SiteConfig> = {};
+  const sites: Record<string, SiteConfig[]> = {};
   for (const [hostname, candidate] of Object.entries(value)) {
     const normalizedHostname = hostname.toLowerCase();
-    if (!isHostname(normalizedHostname) || !isSiteConfig(candidate)) {
+    if (!isHostname(normalizedHostname)) {
       throw new Error('Invalid site configuration.');
     }
-    sites[normalizedHostname] = {
-      siteKey: candidate.siteKey,
-      allowedOrigins: candidate.allowedOrigins.map(normalizeConfiguredOrigin),
-      ...(candidate.dashboardOrigins
-        ? { dashboardOrigins: candidate.dashboardOrigins.map(normalizeConfiguredOrigin) }
-        : {}),
-      ...(candidate.analytics ? { analytics: candidate.analytics } : {}),
-      ...(candidate.widget ? { widget: candidate.widget } : {}),
-    };
+    const candidates = Array.isArray(candidate) ? candidate : [candidate];
+    if (candidates.length === 0 || candidates.length > 20 || !candidates.every(isSiteConfig)) {
+      throw new Error('Invalid site configuration.');
+    }
+    sites[normalizedHostname] = candidates.map(normalizeSiteConfig);
   }
   return { coreBaseUrl, sites, serviceToken };
+}
+
+function normalizeSiteConfig(candidate: SiteConfig): SiteConfig {
+  return {
+    siteKey: candidate.siteKey,
+    allowedOrigins: candidate.allowedOrigins.map(normalizeConfiguredOrigin),
+    ...(candidate.dashboardOrigins
+      ? { dashboardOrigins: candidate.dashboardOrigins.map(normalizeConfiguredOrigin) }
+      : {}),
+    ...(candidate.analytics ? { analytics: candidate.analytics } : {}),
+    ...(candidate.widget ? { widget: candidate.widget } : {}),
+  };
 }
 
 function isSiteConfig(value: unknown): value is SiteConfig {
@@ -344,6 +352,30 @@ function isAnalyticsConfig(value: unknown): value is AnalyticsConfig {
 
 function dashboardOrigins(site: SiteConfig, requestUrl: URL): readonly string[] {
   return site.dashboardOrigins ?? [requestUrl.origin];
+}
+
+function resolveSiteForRequest(
+  sites: readonly SiteConfig[],
+  route: Route,
+  requestUrl: URL,
+  requestOrigin: string | null,
+  fetchSite: string | null,
+  isAuthNavigation: boolean,
+): { site: SiteConfig; origin: string } | undefined {
+  for (const site of sites) {
+    const allowedOrigins =
+      route.kind === 'admin' ? dashboardOrigins(site, requestUrl) : site.allowedOrigins;
+    const origin = isAuthNavigation
+      ? requestUrl.origin
+      : validatedOrigin(
+          requestOrigin,
+          route.kind === 'auth' ? [requestUrl.origin] : allowedOrigins,
+          requestUrl.origin,
+          fetchSite,
+        );
+    if (origin) return { site, origin };
+  }
+  return undefined;
 }
 
 function isWidgetConfig(value: unknown): value is WidgetConfig {

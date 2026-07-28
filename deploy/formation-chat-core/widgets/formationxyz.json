@@ -1,0 +1,29 @@
+{
+  "tenant": {
+    "tenantId": "formation",
+    "displayName": "Formation"
+  },
+  "site": {
+    "siteId": "formationxyz",
+    "siteKey": "formationxyz-main",
+    "displayName": "XYZ by FORMATION",
+    "allowedOrigins": ["https://formationxyz.com", "https://www.formationxyz.com"]
+  },
+  "widget": {
+    "widgetId": "formationxyz-main-widget",
+    "widgetKey": "main-chat",
+    "displayName": "XYZ website chat",
+    "version": "2026-07-28",
+    "theme": "rgb-neon",
+    "launcher": "agent",
+    "placement": "bottom-right",
+    "defaultAgentAlias": "support",
+    "agentAliases": [
+      {
+        "alias": "support",
+        "label": "XYZ agent",
+        "agentRef": "formationxyz_chat"
+      }
+    ]
+  }
+}
