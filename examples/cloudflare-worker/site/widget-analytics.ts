@@ -33,6 +33,7 @@ export function createWidgetAnalytics(
     endpoint: configuration.endpoint,
     siteId: configuration.siteId,
     autoPageviews: false,
+    onError: (error) => logAnalyticsError(error),
   });
   return createWidgetAnalyticsReporter(analytics, {
     websiteId: configuration.siteId,
@@ -50,20 +51,24 @@ export function createWidgetAnalyticsReporter(
   let observedMessageCount = 0;
   let observedHandoff: string | undefined;
 
-  analytics.setContext({
-    website_id: context.websiteId,
-    widget_id: context.widgetId,
-    agent_alias: context.agentAlias,
-    widget_version: context.widgetVersion,
-  });
+  reportAnalytics(() =>
+    analytics.setContext({
+      website_id: context.websiteId,
+      widget_id: context.widgetId,
+      agent_alias: context.agentAlias,
+      widget_version: context.widgetVersion,
+    }),
+  );
 
   return {
     sessionStarted(state) {
       const session = state.session;
       if (!session) return;
-      analytics.event('chat_session_started', {
-        ...messageCounts(state),
-      });
+      reportAnalytics(() =>
+        analytics.event('chat_session_started', {
+          ...messageCounts(state),
+        }),
+      );
     },
     observe(state) {
       const counts = messageCounts(state);
@@ -74,20 +79,24 @@ export function createWidgetAnalyticsReporter(
         observedHandoff = undefined;
       } else if (conversationId && counts.message_count !== observedMessageCount) {
         observedMessageCount = counts.message_count;
-        analytics.event('chat_conversation_length', {
-          ...counts,
-        });
+        reportAnalytics(() =>
+          analytics.event('chat_conversation_length', {
+            ...counts,
+          }),
+        );
       }
 
       const handoff = state.handoff;
       const handoffKey = handoff ? `${handoff.handoffId}:${handoff.status}` : undefined;
       if (handoff && handoffKey !== observedHandoff) {
         observedHandoff = handoffKey;
-        analytics.event(
-          handoff.status === 'completed' ? 'chat_handoff_completed' : 'chat_handoff_requested',
-          {
-            ...counts,
-          },
+        reportAnalytics(() =>
+          analytics.event(
+            handoff.status === 'completed' ? 'chat_handoff_completed' : 'chat_handoff_requested',
+            {
+              ...counts,
+            },
+          ),
         );
       }
     },
@@ -96,16 +105,33 @@ export function createWidgetAnalyticsReporter(
       observedConversationId = conversationId;
       observedMessageCount = counts.message_count;
       observedHandoff = undefined;
-      analytics.event('chat_conversation_started', {
-        ...counts,
-      });
+      reportAnalytics(() =>
+        analytics.event('chat_conversation_started', {
+          ...counts,
+        }),
+      );
     },
     messageSent(state) {
-      analytics.event('chat_message_sent', {
-        ...messageCounts(state),
-      });
+      reportAnalytics(() =>
+        analytics.event('chat_message_sent', {
+          ...messageCounts(state),
+        }),
+      );
     },
   };
+}
+
+function reportAnalytics(action: () => void): void {
+  try {
+    action();
+  } catch (error) {
+    logAnalyticsError(error);
+  }
+}
+
+function logAnalyticsError(error: unknown): void {
+  if (typeof console === 'undefined') return;
+  console.warn('[formation-chat-widget] analytics unavailable', error);
 }
 
 function messageCounts(state: ChatState) {

@@ -113,6 +113,43 @@ describe('shared widget analytics', () => {
       /session-1|conversation-1|handoff-1/,
     );
   });
+
+  it('logs analytics failures without blocking widget actions', () => {
+    const analytics = fakeAnalytics();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    analytics.setContext.mockImplementation(() => {
+      throw new Error('analytics context failed');
+    });
+    analytics.event.mockImplementation(() => {
+      throw new Error('analytics send failed');
+    });
+
+    const reporter = createWidgetAnalyticsReporter(analytics, {
+      websiteId: 'formationxyz',
+      widgetId: 'main-chat',
+      agentAlias: 'support',
+      widgetVersion: '2026-07-29',
+    });
+
+    expect(() => reporter.sessionStarted(chatState())).not.toThrow();
+    expect(() => reporter.conversationStarted('conversation-1', chatState())).not.toThrow();
+    expect(() =>
+      reporter.messageSent(
+        chatState({
+          conversation: conversation(),
+          messages: [message('user-1', 'user')],
+        }),
+      ),
+    ).not.toThrow();
+
+    expect(warn).toHaveBeenCalledTimes(4);
+    expect(warn).toHaveBeenCalledWith(
+      '[formation-chat-widget] analytics unavailable',
+      expect.any(Error),
+    );
+
+    warn.mockRestore();
+  });
 });
 
 function fakeAnalytics() {
