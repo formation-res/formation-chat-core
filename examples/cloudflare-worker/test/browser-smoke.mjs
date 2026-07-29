@@ -481,6 +481,18 @@ async function exerciseAlias(context, agent, label, options = {}) {
     '0px',
   );
   assert.equal(await widget.locator('.artwork-card > strong').count(), 0);
+  assert.ok(
+    await widget.locator('.about-page').evaluate((about) => {
+      const artwork = about.querySelector('.artwork-card');
+      const privacyNotice = about.querySelector('.about-privacy');
+      return Boolean(
+        artwork &&
+        privacyNotice &&
+        artwork.compareDocumentPosition(privacyNotice) &
+          globalThis.Node.DOCUMENT_POSITION_FOLLOWING,
+      );
+    }),
+  );
   await widget
     .locator('[data-page="about"]')
     .evaluate((page) => Promise.all(page.getAnimations().map((animation) => animation.finished)));
@@ -489,9 +501,13 @@ async function exerciseAlias(context, agent, label, options = {}) {
     fullPage: true,
   });
   const artwork = widget.locator('.artwork-card');
-  const compactPanelWidth = await widget
-    .locator('.panel')
-    .evaluate((panel) => panel.getBoundingClientRect().width);
+  const compactPanelGeometry = await widget.locator('.panel').evaluate((panel) => {
+    const bounds = panel.getBoundingClientRect();
+    return { height: bounds.height, width: bounds.width };
+  });
+  if ((await page.viewportSize()).width >= 600) {
+    assert.ok(compactPanelGeometry.height <= 620);
+  }
   await artwork.click();
   assert.equal(await artwork.getAttribute('aria-expanded'), 'true');
   assert.equal(await widget.locator('.maximize').getAttribute('aria-label'), 'Restore chat size');
@@ -512,7 +528,8 @@ async function exerciseAlias(context, agent, label, options = {}) {
     };
   });
   if (expandedGeometry.viewportWidth >= 600) {
-    assert.ok(expandedGeometry.panelWidth > compactPanelWidth * 1.5);
+    assert.ok(expandedGeometry.panelWidth > compactPanelGeometry.width * 1.5);
+    assert.ok(expandedGeometry.bottom - expandedGeometry.top <= 710);
     assert.ok(expandedGeometry.left >= 8);
     assert.ok(expandedGeometry.top >= 8);
     assert.ok(expandedGeometry.right <= expandedGeometry.viewportWidth - 8);

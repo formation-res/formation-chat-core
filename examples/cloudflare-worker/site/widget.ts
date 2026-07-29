@@ -244,13 +244,13 @@ class FormationChatWidget extends HTMLElement {
               <div><strong data-agent-name>${escapeHtml(title)}</strong><span>AI conversation agent</span></div>
             </div>
             <p>Your message is combined with the conversation context, trusted knowledge and available tools before the agent creates a response for chat or email.</p>
-            <p>Responses are generated and may be inaccurate. Please avoid sending sensitive information. See the <a href="${escapeAttribute(privacyUrl)}" target="_blank" rel="noopener noreferrer">privacy policy</a> for further details.</p>
             <button class="artwork-card" type="button" aria-label="Maximize chat to enlarge agent flow diagram" aria-expanded="false">
               <span class="artwork-frame">
                 <img src="${escapeAttribute(agentFlowArtworkUrls[this.widgetTheme])}" alt="Pixel-art flow from a user message through context, knowledge, tools and an AI agent to a chat or mail response">
                 <span class="artwork-expand">${expandIcon()}</span>
               </span>
             </button>
+            <p class="about-privacy">Responses are generated and may be inaccurate. Please avoid sending sensitive information. See the <a href="${escapeAttribute(privacyUrl)}" target="_blank" rel="noopener noreferrer">privacy policy</a> for further details.</p>
           </section>
           <section class="widget-page option-page avatar-page" data-page="avatar" hidden>
             <div class="page-heading">

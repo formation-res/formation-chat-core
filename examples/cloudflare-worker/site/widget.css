@@ -233,7 +233,7 @@ button.profile-sprite:focus-visible {
     0 0 0 1px rgb(255 255 255 / 70%) inset;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  height: min(43rem, calc(100vh - 7.5rem));
+  height: min(41rem, calc(100vh - 9.5rem));
   overflow: hidden;
   position: fixed;
   right: 1rem;
@@ -924,6 +924,10 @@ button.profile-sprite:focus-visible {
   margin: 0 0 0.75rem;
 }
 
+.about-page > .about-privacy {
+  margin: 0.85rem 0 0;
+}
+
 .about-page a {
   color: var(--chat-ink);
   font-weight: 700;
@@ -985,7 +989,7 @@ button.profile-sprite:focus-visible {
 
 .panel.is-maximized {
   bottom: 1rem;
-  height: min(48rem, calc(100vh - 2rem));
+  height: min(46rem, calc(100vh - 4rem));
   right: 50%;
   transform: translateX(50%);
   width: min(70rem, calc(100vw - 2rem));

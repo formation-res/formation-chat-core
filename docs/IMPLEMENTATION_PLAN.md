@@ -542,6 +542,11 @@ The visitor gallery presents both human sheets under one `Human` heading, follow
 animal section. Printed transcripts reuse the active agent and visitor sprite cells in the heading
 and beside every corresponding message.
 
+**Tighter About composition:** 2026-07-29. The response accuracy and privacy notice now follows the
+agent-flow artwork, keeping the explanation in reading order from input through output to its safety
+qualification. Compact and maximized desktop panels are each two rem shorter to reduce unused space
+throughout Chat, Menu, About, Mail, and avatar views while retaining the full-height mobile layout.
+
 **Hover restoration and transient emoji picker:** 2026-07-29. A genuine launcher pointer hover now
 starts the same deduplicated client/session restoration used when opening the panel. If the restored
 conversation contains a visitor message, the launcher tooltip changes to `Continue your
