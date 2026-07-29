@@ -1,6 +1,7 @@
 import {
   createAnalytics,
   type AnalyticsClient,
+  type AnalyticsError,
 } from '@tryformation/formation-web-analytics-client';
 import type { ChatState } from '@formation-chat-core/browser-client';
 
@@ -33,7 +34,7 @@ export function createWidgetAnalytics(
     endpoint: configuration.endpoint,
     siteId: configuration.siteId,
     autoPageviews: false,
-    onError: (error) => logAnalyticsError(error),
+    onError: (error: AnalyticsError) => logAnalyticsError(error),
   });
   return createWidgetAnalyticsReporter(analytics, {
     websiteId: configuration.siteId,
