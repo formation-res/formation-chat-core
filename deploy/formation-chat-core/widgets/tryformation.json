@@ -1,0 +1,29 @@
+{
+  "tenant": {
+    "tenantId": "formationxyz_com",
+    "displayName": "Formation"
+  },
+  "site": {
+    "siteId": "tryformation-com",
+    "siteKey": "tryformation-main",
+    "displayName": "tryformation.com",
+    "allowedOrigins": ["https://tryformation.com", "https://www.tryformation.com"]
+  },
+  "widget": {
+    "widgetId": "tryformation-main-chat",
+    "widgetKey": "main-chat",
+    "displayName": "tryformation.com website chat",
+    "version": "2026-07-29",
+    "theme": "dark-green",
+    "launcher": "agent",
+    "placement": "bottom-right",
+    "defaultAgentAlias": "support",
+    "agentAliases": [
+      {
+        "alias": "support",
+        "label": "FORMATION agent",
+        "agentRef": "tryformation_chat"
+      }
+    ]
+  }
+}
