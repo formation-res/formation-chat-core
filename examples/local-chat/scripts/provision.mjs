@@ -52,7 +52,7 @@ export async function provisionLocalChatSite(database, config) {
       'main-chat',
       'Main chat',
       '2026-07-23',
-      'earth',
+      'hot-pink',
       'agent',
       'bottom-right',
       'support',

@@ -484,6 +484,71 @@ launcher, but a one-shot suppression state prevents that programmatic focus from
 reopening the artwork. The suppression clears on the next genuine pointer entry or after focus leaves
 the launcher, preserving both the requested next-hover behavior and later keyboard discovery.
 
+**Widget experience redesign:** 2026-07-29. The shared Worker widget now uses two bundled 6-by-6
+pixel-art sprites with 72 friendly human, robot, and animal agent portraits. For each locally
+persisted chat it first selects a random sprite and then one of that sprite's 36 portraits. The pair
+is reused by the launcher, welcome card, messages, About page, and thinking state; starting a new
+conversation selects a new pair. Reviewed `agent-image` and `launcher-image` values remain
+supported overrides. The chat shows agent and visitor avatars, timestamps, message copy actions,
+animated thinking dots, an emoji picker, and an agent welcome card. Its internal Chat, Menu, About,
+and Mail pages use back navigation. The menu prints a dated website transcript, explains the AI
+chat with a configurable privacy link, and sends conversation email requests through the configured
+agent. The Magritte-inspired artwork moved from launcher hover into About with the fixed caption
+`"Ceci n'est pas une chatbot."`; `launcher-tooltip` now controls only the short hover message.
+Browser coverage exercises both configured agent aliases, stable two-stage sprite selection, the new
+navigation, artwork expansion, print document, clipboard action, emoji insertion, and agent-directed
+mail request.
+
+**Local shared-widget preview:** 2026-07-29. The root `dev:widget` command builds and serves the
+current shared Worker widget bundle on loopback with deterministic mock Chat Core responses. It
+watches the shared widget site sources and reloads the preview after successful rebuilds, allowing
+interactive review of uncommitted widget changes without Docker, credentials, or deployment.
+
+**Open-widget visual refinement:** 2026-07-29. The agent launcher becomes an accessible minimize
+chevron while the panel is open, leaving only the header and welcome portraits visible. Header
+actions occupy the right grid track, the send action uses the configured accent with a contrasting
+icon, sprite portraits use a centered inset crop, and the welcome card links directly to the
+internal About view.
+
+**Agent-flow About artwork:** 2026-07-29. The shared widget replaces the earlier art reference and
+palette selector with an original high-resolution pixel-art diagram. It follows the visitor message
+through context, trusted knowledge and tools, agent processing, and a response represented by both
+chat and mail icons. Enlarging the diagram expands the complete widget panel within the viewport;
+the image uses contain sizing so neither endpoint is cropped on desktop or mobile.
+
+**Role-specific avatar galleries:** 2026-07-29. The mixed avatar pools are replaced with one
+6-by-6 sprite of robot and accessorized-animal agents and one 6-by-6 sprite of diverse human
+visitors. A conversation selects and persists one profile for each role. Clicking a displayed agent
+or visitor profile opens an accessible in-widget gallery with all 36 relevant choices; a selection
+updates every matching portrait and survives reloads. Tighter sprite-cell cropping prevents
+neighboring cell edges from appearing around rounded white-background portraits. The welcome
+card's About action uses the menu's information icon and sits as a smaller bottom-right link.
+
+**Persistent maximize state and expanded avatar library:** 2026-07-29. A permanent header control
+now switches the complete widget between compact and centered layouts; About artwork clicks use the
+same state, and internal navigation no longer changes it. The welcome card remains the first
+scrolling chat item after messages begin, and the emoji board contains a broader common set. Agent
+avatars now use a separate 6-by-6 sprite for every supported style, so the selected style controls
+both color and portrait artwork. Hot-pink replaces beige as the default, while legacy `earth`,
+`rgb`, and unknown values fall back to hot-pink; the supported alternatives are `blue`,
+`dark-green`, `light`, and `rgb-neon`. Visitors now choose from 108 profiles split into two diverse
+people sections and a separate animal section with common and exotic species.
+
+**Themed flow artwork and illustrated print transcript:** 2026-07-29. The About diagram now has
+tightly cropped hot-pink, blue, dark-green, light, and rgb-neon variants selected with the widget
+theme. Its card border and highlighted caption strip are removed, allowing the maximized About page
+to fit without scrolling. The maximize and restore glyph wrappers use explicit two-axis centering.
+The visitor gallery presents both human sheets under one `Human` heading, followed by the separate
+animal section. Printed transcripts reuse the active agent and visitor sprite cells in the heading
+and beside every corresponding message.
+
+**Hover restoration and transient emoji picker:** 2026-07-29. A genuine launcher pointer hover now
+starts the same deduplicated client/session restoration used when opening the panel. If the restored
+conversation contains a visitor message, the launcher tooltip changes to `Continue your
+conversation`; otherwise it retains the configured initial tooltip. Opening immediately after
+hover reuses the in-flight promise rather than bootstrapping twice. The emoji picker closes after
+an emoji choice, Escape, panel close, or a pointer click anywhere outside the toggle and picker.
+
 ### Checkpoint: Public website
 
 - A static website can embed the reference UI or browser client.

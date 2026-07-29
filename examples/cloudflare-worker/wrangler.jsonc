@@ -6,7 +6,7 @@
   "compatibility_flags": ["nodejs_compat"],
   "vars": {
     "CHAT_CORE_BASE_URL": "https://chat-core.example.com",
-    "CHAT_SITES": "{\"www.example.com\":{\"siteKey\":\"example-site\",\"allowedOrigins\":[\"https://www.example.com\"],\"dashboardOrigins\":[\"https://chat-admin.example.com\"],\"analytics\":{\"endpoint\":\"https://analytics.example.com/collect\",\"siteId\":\"example-website\"},\"widget\":{\"widgetKey\":\"example-widget\",\"version\":\"2026-07-23\",\"defaultAgent\":\"support\",\"theme\":\"earth\",\"launcher\":\"agent\",\"placement\":\"bottom-right\",\"agentAliases\":{\"support\":{\"siteKey\":\"example-site\",\"label\":\"Support\"}}}}}",
+    "CHAT_SITES": "{\"www.example.com\":{\"siteKey\":\"example-site\",\"allowedOrigins\":[\"https://www.example.com\"],\"dashboardOrigins\":[\"https://chat-admin.example.com\"],\"analytics\":{\"endpoint\":\"https://analytics.example.com/collect\",\"siteId\":\"example-website\"},\"widget\":{\"widgetKey\":\"example-widget\",\"version\":\"2026-07-23\",\"defaultAgent\":\"support\",\"theme\":\"hot-pink\",\"launcher\":\"agent\",\"placement\":\"bottom-right\",\"agentAliases\":{\"support\":{\"siteKey\":\"example-site\",\"label\":\"Support\"}}}}}",
   },
   "secrets": {
     "required": ["HAYSTACK_CONNECTOR_TOKEN"],

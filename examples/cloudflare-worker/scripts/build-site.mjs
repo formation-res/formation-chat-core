@@ -43,12 +43,18 @@ await copyFile(
 await copyFile(join(exampleDirectory, 'site/_headers'), join(outputDirectory, '_headers'));
 await Promise.all(
   [
-    'agent-shadow-tooltip.webp',
-    'agent-shadow-tooltip-earth.webp',
-    'agent-shadow-tooltip-blue.webp',
-    'agent-shadow-tooltip-dark-green.webp',
-    'agent-shadow-tooltip-rgb.webp',
-    'agent-shadow-tooltip-light.webp',
-    'agent-shadow-tooltip-rgb-neon.webp',
+    'formation-agent-sprite-v2.webp',
+    'formation-agent-sprite-blue.webp',
+    'formation-agent-sprite-dark-green.webp',
+    'formation-agent-sprite-light.webp',
+    'formation-agent-sprite-rgb-neon.webp',
+    'formation-user-sprite.webp',
+    'formation-user-sprite-alt.webp',
+    'formation-user-animal-sprite.webp',
+    'agent-flow-diagram-hot-pink.webp',
+    'agent-flow-diagram-blue.webp',
+    'agent-flow-diagram-dark-green.webp',
+    'agent-flow-diagram-light.webp',
+    'agent-flow-diagram-rgb-neon.webp',
   ].map((file) => copyFile(join(exampleDirectory, 'site', file), join(outputDirectory, file))),
 );

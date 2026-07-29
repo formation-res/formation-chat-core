@@ -14,7 +14,7 @@
     "widgetKey": "main-chat",
     "displayName": "Ask MailFront website chat",
     "version": "2026-07-23",
-    "theme": "earth",
+    "theme": "hot-pink",
     "launcher": "agent",
     "placement": "bottom-right",
     "defaultAgentAlias": "support",

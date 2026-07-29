@@ -124,7 +124,7 @@ Example `widget.json`:
     "widgetKey": "main-chat",
     "displayName": "Main chat",
     "version": "2026-07-23",
-    "theme": "earth",
+    "theme": "hot-pink",
     "launcher": "agent",
     "placement": "bottom-right",
     "defaultAgentAlias": "support",
@@ -196,12 +196,42 @@ For a plain website, use a small script tag plus public configuration:
   data-theme="light"
   data-launcher="agent"
   data-agent="support"
+  data-launcher-tooltip="Ask us anything"
+  data-privacy-policy-url="/privacy"
   async
 ></script>
 ```
 
 The public `data-agent` value is an alias, not a raw connector setting. The shared gateway or core
 must reject aliases that are not configured for that hostname and widget.
+
+The shared widget uses `hot-pink` by default. The other bundled styles are `blue`, `dark-green`,
+`light`, and `rgb-neon`; each style changes both the accent colors and the agent portrait sprite.
+Legacy `earth` and `rgb` values display the hot-pink style, so existing site configuration remains
+safe while those retired styles are removed from the visible choice.
+
+Agent portraits are robots or animals with work accessories. Visitors can choose among two
+6-by-6 sprites of diverse people and a separate 6-by-6 animal section. Each locally persisted
+conversation randomly selects one of 36 agent portraits and one of 108 visitor portraits. Clicking
+a profile opens its role-specific gallery, and a selected portrait remains stable through reloads
+and session-token renewal. Starting a new conversation selects a new pair.
+
+`data-launcher-tooltip` controls the initial launcher hover message. Hovering the launcher also
+starts session restoration; when the restored conversation contains a visitor message, the tooltip
+becomes `Continue your conversation`. Opening the panel reuses that in-flight request. The header's
+maximize control switches smoothly between compact and centered layouts and remains in that state
+while navigating the widget. Clicking the About artwork toggles the same state. The high-resolution
+pixel-art diagram shows the path from user message through context, trusted knowledge, tools, and
+the agent to a chat or mail response and uses the same theme as the agent portraits. Printed
+transcripts include the currently selected agent and visitor avatars beside their corresponding
+messages. `data-privacy-policy-url` sets the About page's privacy link. A custom element can also
+set `agent-image` or `launcher-image` to a reviewed public image URL.
+
+The widget menu can print a local transcript, show the About page, clear the browser conversation,
+or ask the configured agent to email the conversation to a visitor-supplied address. The mail action
+is an ordinary user message in the canonical conversation so the agent receives the existing chat
+history and can hand the thread to its configured mail workflow. It does not let browser input
+choose a connector, sender, or mail tool.
 
 Use the website's own origin as the transport URL:
 

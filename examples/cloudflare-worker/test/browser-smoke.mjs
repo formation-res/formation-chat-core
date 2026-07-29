@@ -54,7 +54,7 @@ const server = createServer(
       const url = new URL(incoming.url ?? '/', baseUrl);
       if (url.pathname === '/host') {
         outgoing.setHeader('content-type', 'text/html; charset=utf-8');
-        outgoing.end(hostPage(url.searchParams.get('agent') ?? 'support'));
+        outgoing.end(hostPage(url.searchParams));
         return;
       }
       if (url.pathname === '/favicon.ico') {
@@ -129,14 +129,28 @@ try {
   await exerciseAlias(context, 'sales', 'Sales', {
     launcher: 'text',
     placement: 'bottom-left',
-    theme: 'dark',
+    theme: 'rgb',
   });
+  await verifyThemeArtwork(context);
 
   const sessionAliases = requests
     .filter(({ path }) => path === '/v1/sessions')
     .map(({ body }) => body.agentAlias)
     .sort();
-  assert.deepEqual(sessionAliases, ['sales', 'support']);
+  assert.equal(sessionAliases.filter((alias) => alias === 'sales').length, 2);
+  assert.equal(sessionAliases.filter((alias) => alias === 'support').length, 6);
+  assert.ok(
+    requests.some(({ body }) =>
+      body?.parts?.some(
+        (part) =>
+          part.type === 'text' &&
+          part.text.includes(
+            'Please email a well-formatted copy of this conversation to visitor@example.test.',
+          ),
+      ),
+    ),
+    'mail option should send its request through the agent conversation',
+  );
   assert.ok(
     requests.every(
       ({ body }) =>
@@ -147,16 +161,11 @@ try {
           !('connectorToken' in body)),
     ),
   );
-  assert.deepEqual(analyticsEvents.map(({ body }) => body.type).sort(), [
-    'chat_conversation_length',
-    'chat_conversation_length',
-    'chat_conversation_started',
-    'chat_conversation_started',
-    'chat_message_sent',
-    'chat_message_sent',
-    'chat_session_started',
-    'chat_session_started',
-  ]);
+  const analyticsTypes = analyticsEvents.map(({ body }) => body.type);
+  assert.equal(analyticsTypes.filter((type) => type === 'chat_conversation_length').length, 2);
+  assert.equal(analyticsTypes.filter((type) => type === 'chat_conversation_started').length, 2);
+  assert.equal(analyticsTypes.filter((type) => type === 'chat_message_sent').length, 3);
+  assert.equal(analyticsTypes.filter((type) => type === 'chat_session_started').length, 8);
   assert.ok(
     analyticsEvents.every(
       ({ body, origin }) =>
@@ -178,7 +187,9 @@ try {
 
 async function exerciseAlias(context, agent, label, options = {}) {
   const page = await context.newPage();
-  await page.setViewportSize({ width: 1024, height: 768 });
+  await page.setViewportSize(
+    agent === 'sales' ? { width: 390, height: 844 } : { width: 1024, height: 768 },
+  );
   const problems = [];
   page.on('console', (message) => {
     if (message.type() === 'error' || message.type() === 'warning') {
@@ -198,25 +209,435 @@ async function exerciseAlias(context, agent, label, options = {}) {
   await widget.waitFor({ state: 'attached' });
   const launcher = widget.locator('button.launcher');
   await launcher.waitFor();
+  assert.equal(await widget.locator('.panel').isHidden(), true);
+  assert.equal(await widget.locator('.launcher-tooltip').textContent(), 'Start a conversation');
+  const hoverBootstrap = page.waitForResponse(
+    (response) => new URL(response.url()).pathname === '/v1/sessions',
+  );
+  await launcher.hover();
+  await hoverBootstrap;
+  assert.equal(await widget.locator('.panel').isHidden(), true);
   await launcher.click();
   assert.equal(await launcher.getAttribute('aria-expanded'), 'true');
+  assert.equal(await launcher.getAttribute('aria-label'), 'Minimize chat');
+  assert.equal(await widget.locator('.back').isVisible(), false);
+  assert.equal(await widget.locator('.menu').isVisible(), true);
+  assert.equal(await widget.locator('.maximize').isVisible(), true);
+  assert.equal(await widget.locator('.maximize').getAttribute('aria-label'), 'Maximize chat');
+  const maximizeAlignment = await widget.locator('.maximize').evaluate((button) => {
+    const icon = button.querySelector('.maximize-icon');
+    if (!(icon instanceof globalThis.HTMLElement)) throw new Error('Maximize icon is missing.');
+    const buttonBounds = button.getBoundingClientRect();
+    const iconBounds = icon.getBoundingClientRect();
+    return {
+      x: Math.abs(
+        buttonBounds.left + buttonBounds.width / 2 - (iconBounds.left + iconBounds.width / 2),
+      ),
+      y: Math.abs(
+        buttonBounds.top + buttonBounds.height / 2 - (iconBounds.top + iconBounds.height / 2),
+      ),
+    };
+  });
+  assert.ok(maximizeAlignment.x < 0.5);
+  assert.ok(maximizeAlignment.y < 0.5);
+  if (agent === 'support') {
+    assert.equal(await launcher.locator('.launcher-image').isVisible(), false);
+    assert.equal(await launcher.locator('.launcher-collapse').isVisible(), true);
+  }
   await widget.getByText('What can we help you with?').waitFor();
+  await widget.getByText(label, { exact: true }).first().waitFor();
+  assert.equal(
+    await widget
+      .locator('.agent-sprite')
+      .evaluateAll(
+        (avatars) => avatars.filter((avatar) => avatar.getClientRects().length > 0).length,
+      ),
+    2,
+  );
+  const headerAlignment = await widget.locator('.panel > header').evaluate((header) => {
+    const actions = header.querySelector('.header-actions');
+    if (!(actions instanceof globalThis.HTMLElement))
+      throw new Error('Header actions are missing.');
+    return {
+      actionsRight: actions.getBoundingClientRect().right,
+      headerRight: header.getBoundingClientRect().right,
+    };
+  });
+  assert.ok(headerAlignment.headerRight - headerAlignment.actionsRight <= 12);
+  assert.deepEqual(
+    await widget.locator('.send').evaluate((button) => {
+      const style = globalThis.getComputedStyle(button);
+      return { backgroundColor: style.backgroundColor, color: style.color };
+    }),
+    { backgroundColor: 'rgb(255, 117, 173)', color: 'rgb(27, 33, 30)' },
+  );
+  let agentAvatarIndex = Number(
+    await widget.locator('.header-avatar').getAttribute('data-agent-avatar-index'),
+  );
+  let userAvatarIndex = Number(
+    await page.evaluate(
+      (key) => globalThis.localStorage.getItem(key),
+      `formation-chat-widget:main-chat:${agent}:user-avatar`,
+    ),
+  );
+  assert.ok(Number.isInteger(agentAvatarIndex) && agentAvatarIndex >= 0 && agentAvatarIndex < 36);
+  assert.ok(Number.isInteger(userAvatarIndex) && userAvatarIndex >= 0 && userAvatarIndex < 108);
+  const avatarStyle = await widget.locator('.header-avatar').evaluate((avatar) => {
+    const style = globalThis.getComputedStyle(avatar);
+    return {
+      backgroundImage: style.backgroundImage,
+      backgroundSize: style.backgroundSize,
+      overflow: style.overflow,
+    };
+  });
+  assert.ok(
+    avatarStyle.backgroundImage.includes('formation-agent-sprite-v2.webp'),
+    'legacy earth and rgb themes should use the hot-pink default agent sprite',
+  );
+  assert.equal(avatarStyle.backgroundSize, '720% 720%');
+  assert.equal(avatarStyle.overflow, 'hidden');
+  assert.deepEqual(
+    await widget
+      .locator('.agent-sprite')
+      .evaluateAll((avatars) =>
+        avatars.map((avatar) => Number(avatar.getAttribute('data-agent-avatar-index'))),
+      ),
+    Array(await widget.locator('.agent-sprite').count()).fill(agentAvatarIndex),
+  );
+  assert.equal(
+    await page.evaluate(
+      (key) => globalThis.localStorage.getItem(key),
+      `formation-chat-widget:main-chat:${agent}:agent-avatar`,
+    ),
+    String(agentAvatarIndex),
+  );
+  await widget
+    .locator('.panel')
+    .evaluate((panel) => Promise.all(panel.getAnimations().map((animation) => animation.finished)));
+  await page.screenshot({
+    path: join(tmpdir(), `formation-worker-widget-${agent}-welcome.png`),
+    fullPage: true,
+  });
+  const welcomeAboutMetrics = await widget.locator('.welcome-about').evaluate((button) => {
+    const card = button.closest('.welcome');
+    if (!(card instanceof globalThis.HTMLElement)) throw new Error('Welcome card is missing.');
+    const message = card.querySelector('p');
+    if (!(message instanceof globalThis.HTMLElement))
+      throw new Error('Welcome message is missing.');
+    const buttonBounds = button.getBoundingClientRect();
+    const cardBounds = card.getBoundingClientRect();
+    return {
+      bottomGap: cardBounds.bottom - buttonBounds.bottom,
+      fontSize: Number.parseFloat(globalThis.getComputedStyle(button).fontSize),
+      messageFontSize: Number.parseFloat(globalThis.getComputedStyle(message).fontSize),
+      rightGap: cardBounds.right - buttonBounds.right,
+      svgCount: button.querySelectorAll('svg').length,
+    };
+  });
+  assert.ok(welcomeAboutMetrics.bottomGap <= 12);
+  assert.ok(welcomeAboutMetrics.rightGap <= 12);
+  assert.ok(welcomeAboutMetrics.fontSize < welcomeAboutMetrics.messageFontSize);
+  assert.equal(welcomeAboutMetrics.svgCount, 1);
+  const replacementAgentIndex = (agentAvatarIndex + 1) % 36;
+  await widget.locator('.welcome-avatar').click();
+  await widget.getByText('Choose an agent avatar').waitFor();
+  assert.equal(
+    await widget
+      .locator('.avatar-choice')
+      .evaluateAll(
+        (choices) => choices.filter((choice) => choice.getClientRects().length > 0).length,
+      ),
+    36,
+  );
+  await widget
+    .locator('[data-page="avatar"]')
+    .evaluate((page) => Promise.all(page.getAnimations().map((animation) => animation.finished)));
+  await page.screenshot({
+    path: join(tmpdir(), `formation-worker-widget-${agent}-agent-gallery.png`),
+    fullPage: true,
+  });
+  await widget.locator(`[data-avatar-choice="${replacementAgentIndex}"]`).click();
+  await widget.getByText('What can we help you with?').waitFor();
+  agentAvatarIndex = replacementAgentIndex;
+  assert.equal(
+    Number(await widget.locator('.header-avatar').getAttribute('data-agent-avatar-index')),
+    agentAvatarIndex,
+  );
+  await widget.locator('.welcome-about').click();
+  await widget.getByText('How your agent works').waitFor();
+  await widget.locator('.back').click();
+  await widget.getByText('More options').waitFor();
+  await widget.locator('.back').click();
+  await widget.getByText('What can we help you with?').waitFor();
+  await widget.locator('.emoji-toggle').click();
+  assert.ok((await widget.locator('[data-emoji]').count()) >= 24);
+  await widget.locator('.header-copy').click();
+  assert.equal(await widget.locator('.emoji-board').isHidden(), true);
+  assert.equal(await widget.locator('.emoji-toggle').getAttribute('aria-expanded'), 'false');
+  await widget.locator('.emoji-toggle').click();
+  await widget.locator('[data-emoji="👋"]').click();
+  assert.equal(await widget.locator('textarea').inputValue(), '👋');
   await widget.locator('textarea').fill(`Hello from ${agent}`);
   await widget.locator('textarea').press('Enter');
   await widget.getByText(`Hello from ${agent}`).waitFor();
   await widget.getByText('Hello from the shared gateway.').waitFor();
+  assert.equal(await widget.locator('.welcome').count(), 1);
+  assert.equal(
+    await widget.locator('.messages').locator(':scope > article').first().getAttribute('class'),
+    'welcome',
+  );
+  assert.equal(await widget.locator('.message-avatar').count(), 2);
+  assert.equal(await widget.locator('.message-avatar.user-sprite').count(), 1);
+  assert.ok(
+    (
+      await widget
+        .locator('.message-avatar.user-sprite')
+        .evaluate((avatar) => globalThis.getComputedStyle(avatar).backgroundImage)
+    ).match(/formation-user-(?:sprite|sprite-alt|animal-sprite)\.webp/),
+  );
+  const replacementUserIndex = (userAvatarIndex + 1) % 108;
+  await widget.locator('.message-avatar.user-sprite').click();
+  await widget.getByText('Choose your avatar').waitFor();
+  assert.equal(await widget.locator('.avatar-choice').count(), 108);
+  assert.equal(await widget.locator('[data-avatar-section="human"]').count(), 1);
+  assert.equal(await widget.locator('[data-avatar-section="animals"]').count(), 1);
+  assert.equal(await widget.getByText('Human', { exact: true }).count(), 1);
+  assert.equal(await widget.getByText('More people', { exact: true }).count(), 0);
+  await widget
+    .locator('[data-page="avatar"]')
+    .evaluate((page) => Promise.all(page.getAnimations().map((animation) => animation.finished)));
+  await page.screenshot({
+    path: join(tmpdir(), `formation-worker-widget-${agent}-user-gallery.png`),
+    fullPage: true,
+  });
+  await widget.locator(`[data-avatar-choice="${replacementUserIndex}"]`).click();
+  await widget.getByText(`Hello from ${agent}`).waitFor();
+  userAvatarIndex = replacementUserIndex;
+  assert.equal(
+    Number(
+      await widget.locator('.message-avatar.user-sprite').getAttribute('data-user-avatar-index'),
+    ),
+    userAvatarIndex,
+  );
+  assert.equal(await widget.locator('.message-meta time').count(), 2);
+  assert.equal(await widget.locator('.message-copy').count(), 2);
+  const copyButton = widget.locator('.message-copy').first();
+  await copyButton.click();
+  await copyButton.evaluate(
+    (button) =>
+      new Promise((resolve, reject) => {
+        if (button.getAttribute('aria-label') === 'Copied') return resolve();
+        const observer = new globalThis.MutationObserver(() => {
+          if (button.getAttribute('aria-label') !== 'Copied') return;
+          observer.disconnect();
+          resolve();
+        });
+        observer.observe(button, { attributes: true, attributeFilter: ['aria-label'] });
+        globalThis.setTimeout(() => {
+          observer.disconnect();
+          reject(new Error('Copy confirmation was not shown.'));
+        }, 1000);
+      }),
+  );
+  await page.screenshot({
+    path: join(tmpdir(), `formation-worker-widget-${agent}-chat.png`),
+    fullPage: true,
+  });
+
+  await widget.locator('.menu').click();
+  await widget.getByText('More options').waitFor();
+  const popupPromise = page.waitForEvent('popup');
+  await widget.getByText('Print conversation', { exact: true }).click();
+  const printPage = await popupPromise;
+  await printPage.waitForLoadState();
+  assert.match(await printPage.title(), new RegExp(`Conversation with ${label}`));
+  assert.match(await printPage.locator('body').innerText(), /Widget host|127\.0\.0\.1/);
+  assert.equal(await printPage.locator('header .print-avatar img').count(), 1);
+  assert.equal(await printPage.locator('article .print-avatar img').count(), 2);
+  assert.equal(
+    Number(await printPage.locator('header .print-avatar').getAttribute('data-avatar-index')),
+    agentAvatarIndex,
+  );
+  assert.equal(
+    Number(await printPage.locator('article.user .print-avatar').getAttribute('data-avatar-index')),
+    userAvatarIndex,
+  );
+  await printPage.screenshot({
+    path: join(tmpdir(), `formation-worker-widget-${agent}-print.png`),
+    fullPage: true,
+  });
+  await printPage.close();
+
+  await widget.getByText('About this chat', { exact: true }).click();
+  await widget.getByText('How your agent works').waitFor();
+  const flowArtwork = widget.locator('.artwork-frame img');
+  await flowArtwork.waitFor();
+  assert.ok((await flowArtwork.evaluate((image) => image.naturalWidth)) >= 1600);
+  assert.match(await flowArtwork.getAttribute('src'), /agent-flow-diagram-hot-pink\.webp$/);
+  assert.equal(
+    await widget
+      .locator('.artwork-card')
+      .evaluate((card) => globalThis.getComputedStyle(card).borderTopWidth),
+    '0px',
+  );
+  assert.equal(await widget.locator('.artwork-card > strong').count(), 0);
+  await widget
+    .locator('[data-page="about"]')
+    .evaluate((page) => Promise.all(page.getAnimations().map((animation) => animation.finished)));
+  await page.screenshot({
+    path: join(tmpdir(), `formation-worker-widget-${agent}-about.png`),
+    fullPage: true,
+  });
+  const artwork = widget.locator('.artwork-card');
+  const compactPanelWidth = await widget
+    .locator('.panel')
+    .evaluate((panel) => panel.getBoundingClientRect().width);
+  await artwork.click();
+  assert.equal(await artwork.getAttribute('aria-expanded'), 'true');
+  assert.equal(await widget.locator('.maximize').getAttribute('aria-label'), 'Restore chat size');
+  assert.equal(await widget.locator('.panel').getAttribute('class'), 'panel is-maximized');
+  await widget
+    .locator('.panel')
+    .evaluate((panel) => Promise.all(panel.getAnimations().map((animation) => animation.finished)));
+  const expandedGeometry = await widget.locator('.panel').evaluate((panel) => {
+    const panelBounds = panel.getBoundingClientRect();
+    return {
+      panelWidth: panelBounds.width,
+      left: panelBounds.left,
+      right: panelBounds.right,
+      top: panelBounds.top,
+      bottom: panelBounds.bottom,
+      viewportHeight: globalThis.innerHeight,
+      viewportWidth: globalThis.innerWidth,
+    };
+  });
+  if (expandedGeometry.viewportWidth >= 600) {
+    assert.ok(expandedGeometry.panelWidth > compactPanelWidth * 1.5);
+    assert.ok(expandedGeometry.left >= 8);
+    assert.ok(expandedGeometry.top >= 8);
+    assert.ok(expandedGeometry.right <= expandedGeometry.viewportWidth - 8);
+    assert.ok(expandedGeometry.bottom <= expandedGeometry.viewportHeight - 8);
+  } else {
+    assert.ok(expandedGeometry.left >= -1);
+    assert.ok(expandedGeometry.top >= -1);
+    assert.ok(expandedGeometry.right <= expandedGeometry.viewportWidth + 1);
+    assert.ok(expandedGeometry.bottom <= expandedGeometry.viewportHeight + 1);
+  }
+  assert.ok(
+    await widget
+      .locator('[data-page="about"]')
+      .evaluate((about) => about.scrollHeight <= about.clientHeight + 1),
+  );
+  await page.screenshot({
+    path: join(tmpdir(), `formation-worker-widget-${agent}-flow-expanded.png`),
+    fullPage: true,
+  });
+  await artwork.click();
+  assert.equal(await artwork.getAttribute('aria-expanded'), 'false');
+  assert.equal(await widget.locator('.panel').getAttribute('class'), 'panel');
+  await artwork.click();
+  assert.equal(await widget.locator('.panel').getAttribute('class'), 'panel is-maximized');
+  await widget.locator('.back').click();
+  await widget.getByText('More options').waitFor();
+  await widget.locator('.back').click();
+  await widget.getByText(`Hello from ${agent}`).waitFor();
+  assert.equal(await widget.locator('.panel').getAttribute('class'), 'panel is-maximized');
+  await page.screenshot({
+    path: join(tmpdir(), `formation-worker-widget-${agent}-chat-maximized.png`),
+    fullPage: true,
+  });
+  await widget.locator('.maximize').click();
+  assert.equal(await widget.locator('.panel').getAttribute('class'), 'panel');
+  assert.equal(await widget.locator('.maximize').getAttribute('aria-label'), 'Maximize chat');
+  await widget.locator('.menu').click();
+  await widget.getByText('More options').waitFor();
+  await widget.getByText('Mail me this conversation', { exact: true }).click();
+  await widget.locator('input[type="email"]').waitFor();
+  if (agent === 'support') {
+    await widget.locator('input[type="email"]').fill('visitor@example.test');
+    await widget.getByText('Email conversation', { exact: false }).click();
+    await widget.getByText('Your email request has been sent to the agent.').waitFor();
+  } else {
+    await widget.locator('.back').click();
+    await widget.locator('.back').click();
+  }
   await page.screenshot({
     path: join(tmpdir(), `formation-worker-widget-${agent}.png`),
     fullPage: true,
   });
   assert.deepEqual(problems, []);
+  await page.mouse.move(0, 0);
+  await page.reload({ waitUntil: 'networkidle' });
+  const reloadedWidget = page.locator('formation-chat-widget').first();
+  await reloadedWidget.waitFor({ state: 'attached' });
+  assert.equal(
+    Number(
+      await reloadedWidget.locator('.agent-sprite').first().getAttribute('data-agent-avatar-index'),
+    ),
+    agentAvatarIndex,
+  );
+  assert.equal(
+    Number(
+      await page.evaluate(
+        (key) => globalThis.localStorage.getItem(key),
+        `formation-chat-widget:main-chat:${agent}:user-avatar`,
+      ),
+    ),
+    userAvatarIndex,
+  );
+  assert.equal(await reloadedWidget.locator('.panel').isHidden(), true);
+  const restoredMessages = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'GET' &&
+      new URL(response.url()).pathname.endsWith('/messages'),
+  );
+  await reloadedWidget.locator('button.launcher').hover();
+  await restoredMessages;
+  await reloadedWidget.getByText('Continue your conversation', { exact: true }).waitFor();
+  assert.equal(await reloadedWidget.locator('.panel').isHidden(), true);
   await page.close();
 }
 
-function hostPage(agent) {
-  const launcher = searchParam(agent, 'launcher');
-  const placement = searchParam(agent, 'placement');
-  const theme = searchParam(agent, 'theme');
+async function verifyThemeArtwork(context) {
+  const page = await context.newPage();
+  await page.setViewportSize({ width: 1024, height: 768 });
+  for (const theme of ['blue', 'dark-green', 'light', 'rgb-neon']) {
+    await page.goto(`${baseUrl}/host?agent=support&theme=${theme}`, { waitUntil: 'networkidle' });
+    const widget = page.locator('formation-chat-widget').first();
+    await widget.locator('button.launcher').click();
+    await widget.getByText('What can we help you with?').waitFor();
+    await widget.locator('.menu').click();
+    await widget.getByText('About this chat', { exact: true }).click();
+    const artwork = widget.locator('.artwork-frame img');
+    await artwork.waitFor();
+    assert.match(
+      await artwork.getAttribute('src'),
+      new RegExp(`agent-flow-diagram-${theme}\\.webp$`),
+    );
+    assert.match(
+      await widget
+        .locator('.header-avatar')
+        .evaluate((avatar) => globalThis.getComputedStyle(avatar).backgroundImage),
+      new RegExp(`formation-agent-sprite-${theme}\\.webp`),
+    );
+    await widget
+      .locator('[data-page="about"]')
+      .evaluate((about) =>
+        Promise.all(about.getAnimations().map((animation) => animation.finished)),
+      );
+  }
+  await page.screenshot({
+    path: join(tmpdir(), 'formation-worker-widget-themed-artwork.png'),
+    fullPage: true,
+  });
+  await page.close();
+}
+
+function hostPage(searchParams) {
+  const agent = searchParams.get('agent') ?? 'support';
+  const launcher = searchParams.get('launcher') ?? searchParam(agent, 'launcher');
+  const placement = searchParams.get('placement') ?? searchParam(agent, 'placement');
+  const theme = searchParams.get('theme') ?? searchParam(agent, 'theme');
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -258,6 +679,7 @@ function contentType(path) {
   if (extension === '.html') return 'text/html; charset=utf-8';
   if (extension === '.css') return 'text/css; charset=utf-8';
   if (extension === '.svg') return 'image/svg+xml; charset=utf-8';
+  if (extension === '.webp') return 'image/webp';
   if (extension === '.map') return 'application/json';
   return 'text/javascript; charset=utf-8';
 }
@@ -305,7 +727,7 @@ async function coreFetch(request) {
     return Response.json({
       accessToken: `token-${agentRef}`,
       tokenType: 'Bearer',
-      expiresAt: '2026-07-23T12:30:00.000Z',
+      expiresAt: '2030-07-23T12:30:00.000Z',
       tenantId: 'tenant-browser',
       siteId: 'site-browser',
       agentRef,
@@ -324,8 +746,12 @@ async function coreFetch(request) {
     url.pathname === `/v1/conversations/${conversation.conversationId}/messages` &&
     request.method === 'GET'
   ) {
+    const submittedMessage = requests.findLast(
+      ({ method, path }) =>
+        method === 'POST' && path === `/v1/conversations/${conversation.conversationId}/messages`,
+    );
     return Response.json({
-      data: [messageFor(conversation, { parts: [] })],
+      data: submittedMessage ? [messageFor(conversation, submittedMessage.body)] : [],
       pagination: { hasMore: false },
     });
   }

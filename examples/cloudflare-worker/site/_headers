@@ -14,30 +14,54 @@
   Access-Control-Allow-Origin: *
   Cross-Origin-Resource-Policy: cross-origin
 
-/agent-shadow-tooltip.webp
+/formation-agent-sprite-v2.webp
   Access-Control-Allow-Origin: *
   Cross-Origin-Resource-Policy: cross-origin
 
-/agent-shadow-tooltip-earth.webp
+/formation-agent-sprite-blue.webp
   Access-Control-Allow-Origin: *
   Cross-Origin-Resource-Policy: cross-origin
 
-/agent-shadow-tooltip-blue.webp
+/formation-agent-sprite-dark-green.webp
   Access-Control-Allow-Origin: *
   Cross-Origin-Resource-Policy: cross-origin
 
-/agent-shadow-tooltip-dark-green.webp
+/formation-agent-sprite-light.webp
   Access-Control-Allow-Origin: *
   Cross-Origin-Resource-Policy: cross-origin
 
-/agent-shadow-tooltip-rgb.webp
+/formation-agent-sprite-rgb-neon.webp
   Access-Control-Allow-Origin: *
   Cross-Origin-Resource-Policy: cross-origin
 
-/agent-shadow-tooltip-light.webp
+/formation-user-sprite.webp
   Access-Control-Allow-Origin: *
   Cross-Origin-Resource-Policy: cross-origin
 
-/agent-shadow-tooltip-rgb-neon.webp
+/formation-user-sprite-alt.webp
+  Access-Control-Allow-Origin: *
+  Cross-Origin-Resource-Policy: cross-origin
+
+/formation-user-animal-sprite.webp
+  Access-Control-Allow-Origin: *
+  Cross-Origin-Resource-Policy: cross-origin
+
+/agent-flow-diagram-hot-pink.webp
+  Access-Control-Allow-Origin: *
+  Cross-Origin-Resource-Policy: cross-origin
+
+/agent-flow-diagram-blue.webp
+  Access-Control-Allow-Origin: *
+  Cross-Origin-Resource-Policy: cross-origin
+
+/agent-flow-diagram-dark-green.webp
+  Access-Control-Allow-Origin: *
+  Cross-Origin-Resource-Policy: cross-origin
+
+/agent-flow-diagram-light.webp
+  Access-Control-Allow-Origin: *
+  Cross-Origin-Resource-Policy: cross-origin
+
+/agent-flow-diagram-rgb-neon.webp
   Access-Control-Allow-Origin: *
   Cross-Origin-Resource-Policy: cross-origin

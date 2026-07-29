@@ -36,6 +36,8 @@ The temporary Haystack integration is documented in
 The read-only operations UI is documented in [apps/dashboard](apps/dashboard/README.md).
 For the quickest full local trial, run `npm run dev:local`; it prints the visitor/dashboard URLs
 and the scoped local dashboard token. Stop it with `npm run dev:local:stop`.
+To preview the current shared widget source without Chat Core, PostgreSQL, or a deployment, run
+`npm run dev:widget` and open `http://127.0.0.1:8791`.
 Deployment paths are summarized in [the quick starts](docs/quickstarts.md); production operators
 should also review [security and retention](docs/operations/security-and-retention.md),
 [backup and restore](docs/operations/backup-and-restore.md), and the

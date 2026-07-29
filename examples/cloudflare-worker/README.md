@@ -104,6 +104,31 @@ npx wrangler secret put HAYSTACK_CONNECTOR_TOKEN
 For local development, put the same key in an untracked `.dev.vars` file. Wrangler validates the
 required secret name declared by `secrets.required` and generates its TypeScript binding.
 
+## Preview the current widget locally
+
+From the repository root:
+
+```sh
+npm run dev:widget
+```
+
+Open [http://127.0.0.1:8791](http://127.0.0.1:8791). This builds the current shared widget source,
+serves its real bundle and artwork, and uses deterministic mock Chat Core responses. It does not
+need Docker, PostgreSQL, credentials, Wrangler, or a deployment.
+
+Files under `examples/cloudflare-worker/site` are watched. A successful rebuild reloads the browser
+automatically. Stop the preview with Ctrl+C. Set `WIDGET_DEV_PORT` to use another port:
+
+```sh
+WIDGET_DEV_PORT=8800 npm run dev:widget
+```
+
+The preview accepts `agent`, `theme`, `launcher`, and `placement` query parameters. For example:
+
+```text
+http://127.0.0.1:8791/?agent=sales&theme=rgb-neon&launcher=agent&placement=bottom-left
+```
+
 ## Build and verify
 
 From the repository root:
