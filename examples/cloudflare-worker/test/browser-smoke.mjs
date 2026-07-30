@@ -140,16 +140,17 @@ try {
   assert.equal(sessionAliases.filter((alias) => alias === 'sales').length, 2);
   assert.equal(sessionAliases.filter((alias) => alias === 'support').length, 6);
   assert.ok(
-    requests.some(({ body }) =>
-      body?.parts?.some(
-        (part) =>
-          part.type === 'text' &&
-          part.text.includes(
-            'Please email a well-formatted copy of this conversation to visitor@example.test.',
-          ),
-      ),
+    requests.every(
+      ({ body }) =>
+        !body?.parts?.some(
+          (part) =>
+            part.type === 'text' &&
+            part.text.includes(
+              'Please email a well-formatted copy of this conversation to visitor@example.test.',
+            ),
+        ),
     ),
-    'mail option should send its request through the agent conversation',
+    'disabled mail option must not send an agent request',
   );
   assert.ok(
     requests.every(
@@ -164,7 +165,7 @@ try {
   const analyticsTypes = analyticsEvents.map(({ body }) => body.type);
   assert.equal(analyticsTypes.filter((type) => type === 'chat_conversation_length').length, 2);
   assert.equal(analyticsTypes.filter((type) => type === 'chat_conversation_started').length, 2);
-  assert.equal(analyticsTypes.filter((type) => type === 'chat_message_sent').length, 3);
+  assert.equal(analyticsTypes.filter((type) => type === 'chat_message_sent').length, 2);
   assert.equal(analyticsTypes.filter((type) => type === 'chat_session_started').length, 8);
   assert.ok(
     analyticsEvents.every(
@@ -664,21 +665,21 @@ async function exerciseAlias(context, agent, label, options = {}) {
     path: join(tmpdir(), `formation-worker-widget-${agent}-chat-maximized.png`),
     fullPage: true,
   });
-  await widget.locator('.maximize').click();
+  await widget.locator('.close').click();
+  await widget.locator('.panel').waitFor({ state: 'hidden' });
   assert.equal(await widget.locator('.panel').getAttribute('class'), 'panel');
   assert.equal(await widget.locator('.maximize').getAttribute('aria-label'), 'Maximize chat');
+  assert.equal(await widget.locator('.maximize').getAttribute('aria-pressed'), 'false');
+  await widget.locator('.launcher').click();
+  await widget.locator('.panel').waitFor({ state: 'visible' });
+  assert.equal(await widget.locator('.panel').getAttribute('class'), 'panel');
   await widget.locator('.menu').click();
   await widget.getByText('More options').waitFor();
-  await widget.getByText('Mail me this conversation', { exact: true }).click();
-  await widget.locator('input[type="email"]').waitFor();
-  if (agent === 'support') {
-    await widget.locator('input[type="email"]').fill('visitor@example.test');
-    await widget.getByText('Email conversation', { exact: false }).click();
-    await widget.getByText('Your email request has been sent to the agent.').waitFor();
-  } else {
-    await widget.locator('.back').click();
-    await widget.locator('.back').click();
-  }
+  const mailOption = widget.locator('[data-open-page="mail"]');
+  assert.equal(await mailOption.isDisabled(), true);
+  assert.match(await mailOption.innerText(), /Temporarily unavailable/);
+  assert.equal(await widget.locator('[data-page="mail"]').isHidden(), true);
+  await widget.locator('.back').click();
   await page.screenshot({
     path: join(tmpdir(), `formation-worker-widget-${agent}.png`),
     fullPage: true,

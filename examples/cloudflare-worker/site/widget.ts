@@ -303,7 +303,7 @@ class FormationChatWidget extends HTMLElement {
             </div>
             <nav class="option-list" aria-label="Conversation options">
               <button class="print-option" type="button">${printIcon()}<span><strong>Print conversation</strong><small>Create a clean, dated transcript.</small></span>${chevronIcon()}</button>
-              <button type="button" data-open-page="mail">${mailIcon()}<span><strong>Mail me this conversation</strong><small>Continue later from your inbox.</small></span>${chevronIcon()}</button>
+              <button type="button" data-open-page="mail" disabled>${mailIcon()}<span><strong>Mail me this conversation</strong><small>Temporarily unavailable.</small></span>${chevronIcon()}</button>
               <button type="button" data-open-page="about">${infoIcon()}<span><strong>About this chat</strong><small>How this AI conversation works.</small></span>${chevronIcon()}</button>
               <button class="clear" type="button">${trashIcon()}<span><strong>Start a new conversation</strong><small>Clear this chat on this browser.</small></span>${chevronIcon()}</button>
             </nav>
@@ -443,6 +443,7 @@ class FormationChatWidget extends HTMLElement {
       });
       this.input.focus();
     } else {
+      if (this.maximized) this.setMaximized(false);
       this.setEmojiOpen(false);
       this.launcher.focus();
     }

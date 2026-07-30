@@ -573,6 +573,11 @@ does not guess a fallback destination. Missing or invalid values render non-clic
 Desktop panel heights allow the complete About composition in compact and maximized states, and the
 welcome-card About link is slightly larger.
 
+**Temporary mail option guard and compact reopen:** 2026-07-30. Closing the widget always clears
+the maximized presentation state so reopening starts compact. The unfinished “Mail me this
+conversation” menu option remains visible for context but is natively disabled and labelled
+temporarily unavailable until its workflow is ready.
+
 ### Checkpoint: Public website
 
 - A static website can embed the reference UI or browser client.
