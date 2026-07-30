@@ -1,6 +1,8 @@
 import {
   CancelRunResponseSchema,
   ConversationSchema,
+  CreateEmailHandoffRequestSchema,
+  CreateEmailHandoffResponseSchema,
   MessageListSchema,
   MessageSchema,
   PublicConversationEventSchema,
@@ -167,6 +169,18 @@ export function createHttpChatTransport(options: HttpChatTransportOptions): Chat
           body: JSON.stringify(request),
         },
         MessageSchema,
+      );
+    },
+    createEmailHandoff: (conversationId, request, idempotencyKey) => {
+      validate(CreateEmailHandoffRequestSchema, request, 'email handoff request');
+      return requestJson(
+        `/v1/conversations/${encodeURIComponent(conversationId)}/email-handoffs`,
+        {
+          method: 'POST',
+          headers: { 'Idempotency-Key': idempotencyKey },
+          body: JSON.stringify(request),
+        },
+        CreateEmailHandoffResponseSchema,
       );
     },
     submitStructuredInput: (conversationId, requestId, request, idempotencyKey) => {

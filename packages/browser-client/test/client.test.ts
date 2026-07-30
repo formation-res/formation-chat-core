@@ -59,6 +59,15 @@ class FakeTransport implements ChatTransport {
   readonly getConversation = vi.fn(async () => conversation);
   readonly listMessages = vi.fn(async () => this.messages);
   readonly submitMessage = vi.fn(async () => this.messages[0] as Message);
+  readonly createEmailHandoff = vi.fn(async () => ({
+    handoffId: 'email-handoff-1',
+    conversationId: conversation.conversationId,
+    runId: 'email-run-1',
+    kind: 'agent_email' as const,
+    status: 'delivering' as const,
+    createdAt: '2026-07-15T10:00:00.000Z',
+    updatedAt: '2026-07-15T10:00:00.000Z',
+  }));
   readonly submitStructuredInput = vi.fn(async (_conversationId, requestId) => ({
     requestId,
     conversationId: conversation.conversationId,

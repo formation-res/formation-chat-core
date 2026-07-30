@@ -24,8 +24,16 @@
           "type": "string"
         },
         "purpose": {
-          "const": "handoff_email_delivery",
-          "type": "string"
+          "anyOf": [
+            {
+              "const": "handoff_email_delivery",
+              "type": "string"
+            },
+            {
+              "const": "agent_email_handoff",
+              "type": "string"
+            }
+          ]
         },
         "status": {
           "const": "submitted",
@@ -79,8 +87,16 @@
           "type": "string"
         },
         "purpose": {
-          "const": "handoff_email_delivery",
-          "type": "string"
+          "anyOf": [
+            {
+              "const": "handoff_email_delivery",
+              "type": "string"
+            },
+            {
+              "const": "agent_email_handoff",
+              "type": "string"
+            }
+          ]
         },
         "status": {
           "const": "declined",

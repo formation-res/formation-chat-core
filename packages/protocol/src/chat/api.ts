@@ -2,7 +2,7 @@ import { type Static, Type } from '@sinclair/typebox';
 
 import { CursorPageSchema, OpaqueIdSchema } from '../common/index.js';
 import { TextPartSchema } from './content.js';
-import { ConversationSchema, MessageSchema } from './resources.js';
+import { ConversationSchema, EmailHandoffSchema, MessageSchema } from './resources.js';
 
 export const CreateConversationRequestSchema = Type.Object({}, { additionalProperties: false });
 export type CreateConversationRequest = Static<typeof CreateConversationRequestSchema>;
@@ -17,6 +17,15 @@ export const SubmitMessageRequestSchema = Type.Object(
   { additionalProperties: false },
 );
 export type SubmitMessageRequest = Static<typeof SubmitMessageRequestSchema>;
+
+export const CreateEmailHandoffRequestSchema = Type.Object(
+  {
+    email: Type.String({ format: 'email', maxLength: 320 }),
+    consent: Type.Literal(true),
+  },
+  { additionalProperties: false },
+);
+export type CreateEmailHandoffRequest = Static<typeof CreateEmailHandoffRequestSchema>;
 
 export const SubmitStructuredInputRequestSchema = Type.Union([
   Type.Object(
@@ -52,3 +61,6 @@ export const MessageListSchema = Type.Object(
   { additionalProperties: true },
 );
 export type MessageList = Static<typeof MessageListSchema>;
+
+export const CreateEmailHandoffResponseSchema = EmailHandoffSchema;
+export type CreateEmailHandoffResponse = Static<typeof CreateEmailHandoffResponseSchema>;

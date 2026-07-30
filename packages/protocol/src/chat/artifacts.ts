@@ -1,6 +1,8 @@
 import {
   CancelRunResponseSchema,
   ConversationListSchema,
+  CreateEmailHandoffRequestSchema,
+  CreateEmailHandoffResponseSchema,
   CreateConversationRequestSchema,
   MessageListSchema,
   SubmitMessageRequestSchema,
@@ -27,6 +29,7 @@ import {
 import {
   AgentRunSchema,
   ConversationSchema,
+  EmailHandoffSchema,
   HandoffSchema,
   MessageSchema,
   ParticipantSchema,
@@ -46,8 +49,11 @@ export const chatSchemaArtifacts = {
   'public-conversation-event': PublicConversationEventSchema,
   'conversation-list': ConversationListSchema,
   'create-conversation-request': CreateConversationRequestSchema,
+  'create-email-handoff-request': CreateEmailHandoffRequestSchema,
+  'create-email-handoff-response': CreateEmailHandoffResponseSchema,
   'file-reference-part': FileReferencePartSchema,
   handoff: HandoffSchema,
+  'email-handoff': EmailHandoffSchema,
   message: MessageSchema,
   'message-list': MessageListSchema,
   participant: ParticipantSchema,

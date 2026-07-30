@@ -4,8 +4,6 @@
   "type": "object",
   "required": [
     "handoffId",
-    "tenantId",
-    "siteId",
     "conversationId",
     "runId",
     "kind",
@@ -15,18 +13,6 @@
   ],
   "properties": {
     "handoffId": {
-      "minLength": 1,
-      "maxLength": 128,
-      "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
-      "type": "string"
-    },
-    "tenantId": {
-      "minLength": 1,
-      "maxLength": 128,
-      "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
-      "type": "string"
-    },
-    "siteId": {
       "minLength": 1,
       "maxLength": 128,
       "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
@@ -45,27 +31,11 @@
       "type": "string"
     },
     "kind": {
-      "anyOf": [
-        {
-          "const": "human",
-          "type": "string"
-        },
-        {
-          "const": "agent_email",
-          "type": "string"
-        }
-      ]
+      "const": "agent_email",
+      "type": "string"
     },
     "status": {
       "anyOf": [
-        {
-          "const": "requested",
-          "type": "string"
-        },
-        {
-          "const": "awaiting_contact",
-          "type": "string"
-        },
         {
           "const": "delivering",
           "type": "string"

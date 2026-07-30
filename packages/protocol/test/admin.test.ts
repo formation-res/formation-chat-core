@@ -96,6 +96,7 @@ describe('admin API contracts', () => {
       siteId: 'site_1',
       conversationId: 'conversation_1',
       runId: 'run_1',
+      kind: 'human',
       status: 'failed',
       createdAt: timestamp,
       updatedAt: timestamp,

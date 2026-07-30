@@ -634,6 +634,7 @@ function mapHandoff(row: Selectable<HandoffTable>) {
     siteId: row.site_id,
     conversationId: row.conversation_id,
     runId: row.run_id,
+    kind: row.kind,
     status: row.status,
     createdAt: row.created_at.toISOString(),
     updatedAt: row.updated_at.toISOString(),

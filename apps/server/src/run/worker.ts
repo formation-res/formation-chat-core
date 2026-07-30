@@ -238,6 +238,7 @@ export class RunWorker {
       runId: run.run_id,
       conversationId: run.conversation_id,
       agentRef: conversation.agent_ref,
+      triggerType: run.trigger_type,
       currentMessage: toMessage(currentMessage) as ConnectorRunRequest['currentMessage'],
       userParticipantId,
       history: historyDescending.reverse().map(toMessage),

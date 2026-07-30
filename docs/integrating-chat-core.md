@@ -416,6 +416,23 @@ list the commands and runtime checks that support that conclusion.
 After addressing findings, run the target repository's full test, type-check, lint, build, browser,
 and deployment-dry-run gates. Review the final diff for credentials and personal data.
 
+## Agent-to-agent email continuation
+
+The widget's **Mail me this conversation** option is capability-gated. Enable it only after both
+trusted sides are configured:
+
+1. Set `emailHandoff: true` on the public widget agent alias. This exposes only the availability
+   flag to the browser; it does not expose a target slug or mailbox.
+2. Set `email_handoff_agent_slug` on the corresponding Haystack chat agent.
+3. Ensure the referenced Haystack mail agent has an active `inbound_mailbox` and a usable
+   `outbound_from` (or uses that same inbox as its sender).
+
+The browser then submits the visitor's consented address to
+`POST /v1/conversations/{conversationId}/email-handoffs`. Never implement this by sending a
+synthetic chat message. Haystack resolves the target from trusted configuration, sends the first
+email with Reply-To set to the managed inbound mailbox, and seeds that mail thread with the web
+transcript so replies continue with the mail agent.
+
 ## Production checklist
 
 - Chat Core and PostgreSQL have backups, retention settings, metrics, and alerts.
@@ -423,6 +440,8 @@ and deployment-dry-run gates. Review the final diff for credentials and personal
 - The public gateway has exact hostname and origin mappings.
 - Every widget has one trusted `agentRef`, or an explicit allowlist of public agent aliases, that
   exists in server connector configuration.
+- Every enabled email-continuation alias points to a distinct provisioned mail agent with an active
+  inbound mailbox.
 - The Haystack base URL and credentials are unavailable to browser code.
 - Browser and gateway requests use HTTPS.
 - SSE buffering is disabled at every proxy layer.

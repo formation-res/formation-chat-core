@@ -144,9 +144,6 @@ const emojis = [
   '🚀',
 ] as const;
 
-const mailInstruction = (email: string) =>
-  `Please email a well-formatted copy of this conversation to ${email}. Include a short thank-you for their interest and one relevant follow-up question based on the conversation so they can continue by email. Preserve the conversation context for the mail agent.`;
-
 type WidgetPage = 'chat' | 'menu' | 'about' | 'mail' | 'avatar';
 
 interface WidgetConfiguration {
@@ -154,6 +151,7 @@ interface WidgetConfiguration {
   siteKey: string;
   agent: string;
   agentLabel: string;
+  emailHandoff?: boolean;
   version: string;
   theme: string;
   launcher: string;
@@ -303,7 +301,7 @@ class FormationChatWidget extends HTMLElement {
             </div>
             <nav class="option-list" aria-label="Conversation options">
               <button class="print-option" type="button">${printIcon()}<span><strong>Print conversation</strong><small>Create a clean, dated transcript.</small></span>${chevronIcon()}</button>
-              <button type="button" data-open-page="mail" disabled>${mailIcon()}<span><strong>Mail me this conversation</strong><small>Temporarily unavailable.</small></span>${chevronIcon()}</button>
+              <button class="mail-option" type="button" data-open-page="mail" disabled>${mailIcon()}<span><strong>Mail me this conversation</strong><small>Continue this chat with the agent by email.</small></span>${chevronIcon()}</button>
               <button type="button" data-open-page="about">${infoIcon()}<span><strong>About this chat</strong><small>How this AI conversation works.</small></span>${chevronIcon()}</button>
               <button class="clear" type="button">${trashIcon()}<span><strong>Start a new conversation</strong><small>Clear this chat on this browser.</small></span>${chevronIcon()}</button>
             </nav>
@@ -348,7 +346,7 @@ class FormationChatWidget extends HTMLElement {
               <button type="submit">Email conversation ${sendIcon()}</button>
             </form>
             <p class="mail-status" role="status"></p>
-            <p class="privacy-note">${lockIcon()} Your email is used for this request and becomes part of the conversation context.</p>
+            <p class="privacy-note">${lockIcon()} Your email is used to continue this conversation and is not posted as a chat message.</p>
           </section>
         </div>
       </section>`;
@@ -507,16 +505,15 @@ class FormationChatWidget extends HTMLElement {
       return;
     }
     this.busy = true;
-    this.setMailStatus('Asking the agent to prepare your email…');
+    this.setMailStatus('Preparing your email handoff…');
     this.updateControls();
     try {
       const client = await this.ensureClient();
       await this.ensureConversation(client);
-      await client.sendMessage({ parts: [{ type: 'text', text: mailInstruction(email) }] });
+      await client.createEmailHandoff({ email, consent: true });
       this.mailInput.value = '';
-      this.analytics?.messageSent(client.getState());
       this.showPage('chat');
-      this.notice = 'Your email request has been sent to the agent.';
+      this.notice = 'The email agent is preparing your conversation summary.';
       this.setStatus(this.notice);
     } catch (error) {
       this.setMailStatus(
@@ -617,6 +614,7 @@ class FormationChatWidget extends HTMLElement {
     });
     this.headerName.textContent = config.agentLabel;
     this.panel.setAttribute('aria-label', `Chat with ${config.agentLabel}`);
+    this.updateControls();
     this.widgetTheme = normalizeTheme(config.theme);
     this.applyAppearance();
     this.refreshProfiles();
@@ -865,6 +863,10 @@ class FormationChatWidget extends HTMLElement {
     this.input.disabled = this.busy;
     this.sendButton.disabled = this.busy;
     this.clearButton.disabled = this.busy;
+    this.mailOption.disabled =
+      this.busy ||
+      this.configuration?.emailHandoff !== true ||
+      !this.state?.messages.some((message) => message.role === 'user');
     this.mailInput.disabled = this.busy;
     this.mailSubmit.disabled = this.busy;
     const awaitingContact = Boolean(this.state?.contactRequest);
@@ -1046,6 +1048,9 @@ class FormationChatWidget extends HTMLElement {
   }
   private get printButton() {
     return requiredElement<HTMLButtonElement>(this.root, '.print-option');
+  }
+  private get mailOption() {
+    return requiredElement<HTMLButtonElement>(this.root, '.mail-option');
   }
   private get artworkButton() {
     return requiredElement<HTMLButtonElement>(this.root, '.artwork-card');

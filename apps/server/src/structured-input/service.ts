@@ -211,6 +211,9 @@ function hashRequest(request: SubmitStructuredInputRequest): string {
 }
 
 function mapInput(row: Selectable<StructuredInputRequestTable>): StructuredInputRequest {
+  if (row.purpose !== 'handoff_email_delivery') {
+    throw new Error('The input request is not a public structured input.');
+  }
   return {
     requestId: row.request_id,
     conversationId: row.conversation_id,

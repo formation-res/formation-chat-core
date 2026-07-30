@@ -234,6 +234,37 @@
         }
       }
     },
+    "/v1/conversations/{conversationId}/email-handoffs": {
+      "parameters": [{ "$ref": "#/components/parameters/ConversationId" }],
+      "post": {
+        "operationId": "createAgentEmailHandoff",
+        "description": "Starts a consented agent-to-agent email handoff without creating a user transcript message. The connector resolves the target mail agent and mailbox from trusted server-side configuration.",
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "../schemas/chat/create-email-handoff-request.schema.json"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Agent email handoff accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../schemas/chat/create-email-handoff-response.schema.json"
+                }
+              }
+            }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
     "/v1/conversations/{conversationId}/cancel": {
       "parameters": [{ "$ref": "#/components/parameters/ConversationId" }],
       "post": {

@@ -19,6 +19,7 @@
           "siteId",
           "conversationId",
           "runId",
+          "kind",
           "status",
           "createdAt",
           "updatedAt"
@@ -53,6 +54,18 @@
             "maxLength": 128,
             "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
             "type": "string"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "const": "human",
+                "type": "string"
+              },
+              {
+                "const": "agent_email",
+                "type": "string"
+              }
+            ]
           },
           "status": {
             "anyOf": [

@@ -8,6 +8,7 @@ import { migrateDatabase } from './database/migrate.js';
 import { EventBroker } from './event/broker.js';
 import { EventService } from './event/service.js';
 import { EventStore } from './event/store.js';
+import { EmailHandoffService } from './email-handoff/service.js';
 import { MessageService } from './message/service.js';
 import { RetentionService, RetentionWorker } from './privacy/retention.js';
 import { RunCancellationCoordinator } from './run/cancellation.js';
@@ -35,6 +36,7 @@ async function main(): Promise<void> {
   );
   const conversations = new ConversationService(database);
   const messages = new MessageService(database);
+  const emailHandoffs = new EmailHandoffService(database);
   const cancellation = new RunCancellationCoordinator();
   const runs = new RunService(database, cancellation);
   const structuredInputs = new StructuredInputService(database);
@@ -77,6 +79,7 @@ async function main(): Promise<void> {
     bootstrapAnonymous: async (request, context) => sessions.bootstrapAnonymous(request, context),
     conversationService: conversations,
     messageService: messages,
+    emailHandoffService: emailHandoffs,
     eventService: events,
     runService: runs,
     structuredInputService: structuredInputs,

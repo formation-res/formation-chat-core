@@ -1,7 +1,7 @@
 import { type Static, type TSchema, Type } from '@sinclair/typebox';
 
 import { EventEnvelopeSchema, OpaqueIdSchema, VisibilitySchema } from '../common/index.js';
-import { CitationPartSchema, ContentPartSchema, StructuredInputPurposeSchema } from './content.js';
+import { CitationPartSchema, ContentPartSchema } from './content.js';
 
 interface EventDefinition {
   readonly type: string;
@@ -76,7 +76,7 @@ const definitions = [
       {
         requestId: OpaqueIdSchema,
         inputKind: Type.Literal('email'),
-        purpose: StructuredInputPurposeSchema,
+        purpose: Type.Literal('handoff_email_delivery'),
         prompt: Type.String({ minLength: 1, maxLength: 500 }),
         required: Type.Boolean(),
       },

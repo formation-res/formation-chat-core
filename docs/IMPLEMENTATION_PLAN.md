@@ -727,6 +727,19 @@ run-derived message ID prevent duplicate delivery and permit transient retries. 
 invalid, declined, isolated, successful, transient, permanent, duplicate, contract, and header
 injection paths.
 
+**Agent-to-agent email continuation follow-up:** 2026-07-30. A visitor-requested email
+continuation is a separate control action, not a synthetic user message and not a human handoff.
+Chat Core accepts the consented address through an idempotent
+`POST /v1/conversations/{conversationId}/email-handoffs` command, keeps the last completed user
+message only as immutable run context, and marks the connector run with
+`triggerType=agent_email_handoff`. The associated mail-agent slug is resolved only from trusted
+Haystack chat-agent configuration. The target mail agent generates the first summary and
+follow-up, sends it to the visitor from its configured sender with Reply-To forced to its managed
+inbox, seeds the email thread with the web transcript and generated response, and emits that same
+response as a public assistant message in Chat Core. The widget exposes the option only when its
+trusted public alias capability is enabled. Production enablement remains configuration-gated
+until each chat agent points to a provisioned mail agent with an active inbound mailbox.
+
 ### Checkpoint: Production agent path
 
 - Cloudflare-hosted site streams a Haystack answer through the core.

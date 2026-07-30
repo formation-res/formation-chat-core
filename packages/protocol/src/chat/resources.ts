@@ -188,3 +188,21 @@ export const HandoffSchema = Type.Object(
   { additionalProperties: true },
 );
 export type Handoff = Static<typeof HandoffSchema>;
+
+export const EmailHandoffSchema = Type.Object(
+  {
+    handoffId: OpaqueIdSchema,
+    conversationId: OpaqueIdSchema,
+    runId: OpaqueIdSchema,
+    kind: Type.Literal('agent_email'),
+    status: Type.Union([
+      Type.Literal('delivering'),
+      Type.Literal('completed'),
+      Type.Literal('failed'),
+    ]),
+    createdAt: TimestampSchema,
+    updatedAt: TimestampSchema,
+  },
+  { additionalProperties: false },
+);
+export type EmailHandoff = Static<typeof EmailHandoffSchema>;

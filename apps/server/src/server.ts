@@ -11,6 +11,8 @@ import type { ConversationService } from './conversation/service.js';
 import { registerEventRoutes } from './event/route.js';
 import type { EventService } from './event/service.js';
 import type { MessageService } from './message/service.js';
+import { registerEmailHandoffRoutes } from './email-handoff/route.js';
+import type { EmailHandoffService } from './email-handoff/service.js';
 import { registerRunRoutes } from './run/route.js';
 import type { RunService } from './run/service.js';
 import { getAuditActor, type AuditSink } from './security/audit.js';
@@ -27,6 +29,7 @@ export interface BuildServerOptions {
   bootstrapAnonymous?: BootstrapAnonymous;
   conversationService?: ConversationService;
   messageService?: MessageService;
+  emailHandoffService?: EmailHandoffService;
   eventService?: EventService;
   runService?: RunService;
   structuredInputService?: StructuredInputService;
@@ -191,6 +194,9 @@ export function buildServer(options: BuildServerOptions) {
   }
   if (options.structuredInputService && options.sessionTokens) {
     registerStructuredInputRoutes(server, options.structuredInputService, options.sessionTokens);
+  }
+  if (options.emailHandoffService && options.sessionTokens) {
+    registerEmailHandoffRoutes(server, options.emailHandoffService, options.sessionTokens);
   }
   if (options.adminService && options.adminTokens) {
     registerAdminRoutes(server, options.adminService, options.adminTokens);

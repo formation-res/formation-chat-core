@@ -230,6 +230,15 @@ function createFakeClient(overrides: Partial<ChatState>) {
     createConversation: vi.fn(async () => conversation),
     selectConversation: vi.fn(async () => undefined),
     sendMessage: vi.fn(async () => message('sent-message', 'user', 'sent')),
+    createEmailHandoff: vi.fn(async () => ({
+      handoffId: 'email-handoff-1',
+      conversationId: 'conversation-1',
+      runId: 'email-run-1',
+      kind: 'agent_email' as const,
+      status: 'delivering' as const,
+      createdAt: '2026-07-15T10:00:00.000Z',
+      updatedAt: '2026-07-15T10:00:00.000Z',
+    })),
     submitStructuredInput: vi.fn(async (requestId) => ({
       requestId,
       conversationId: 'conversation-1',

@@ -3,6 +3,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { ConversationService } from '../src/conversation/service.js';
 import { createDatabase } from '../src/database/database.js';
 import { migrateDatabase } from '../src/database/migrate.js';
+import { EmailHandoffService } from '../src/email-handoff/service.js';
 import { MessageService } from '../src/message/service.js';
 import { RunService } from '../src/run/service.js';
 import { buildServer } from '../src/server.js';
@@ -15,11 +16,13 @@ const secret = '0123456789abcdef0123456789abcdef';
 const tokens = new SessionTokenService(secret, 600);
 const conversations = new ConversationService(database);
 const messages = new MessageService(database);
+const emailHandoffs = new EmailHandoffService(database);
 const runs = new RunService(database);
 const server = buildServer({
   checkDatabase: async () => undefined,
   conversationService: conversations,
   messageService: messages,
+  emailHandoffService: emailHandoffs,
   runService: runs,
   sessionTokens: tokens,
   logger: false,
@@ -127,6 +130,8 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await database.deleteFrom('command_idempotency').execute();
+  await database.deleteFrom('structured_input_requests').execute();
+  await database.deleteFrom('handoffs').execute();
   await database.deleteFrom('agent_runs').execute();
   await database.deleteFrom('messages').execute();
   await database.deleteFrom('conversation_participants').execute();
@@ -164,6 +169,19 @@ const cancelRun = (token: string, conversationId: string, idempotencyKey = crypt
     method: 'POST',
     url: `/v1/conversations/${conversationId}/cancel`,
     headers: { authorization: `Bearer ${token}`, 'idempotency-key': idempotencyKey },
+  });
+
+const createEmailHandoff = (
+  token: string,
+  conversationId: string,
+  email: string,
+  idempotencyKey = crypto.randomUUID(),
+) =>
+  server.inject({
+    method: 'POST',
+    url: `/v1/conversations/${conversationId}/email-handoffs`,
+    headers: { authorization: `Bearer ${token}`, 'idempotency-key': idempotencyKey },
+    payload: { email, consent: true },
   });
 
 describe('conversation API', () => {
@@ -371,6 +389,69 @@ describe('message API', () => {
     });
     expect(response.statusCode).toBe(400);
     expect(response.json()).toMatchObject({ error: { code: 'INVALID_CURSOR' } });
+  });
+});
+
+describe('agent email handoff API', () => {
+  it('queues a consented control action without adding a visible user message', async () => {
+    const conversation = (await createConversation(tokenA)).json();
+    const submitted = await submitMessage(tokenA, conversation.conversationId, 'Hello there');
+    const response = await createEmailHandoff(
+      tokenA,
+      conversation.conversationId,
+      'Visitor@Example.com',
+    );
+
+    expect(response.statusCode).toBe(202);
+    expect(response.json()).toMatchObject({
+      conversationId: conversation.conversationId,
+      kind: 'agent_email',
+      status: 'delivering',
+    });
+    const storedMessages = await database
+      .selectFrom('messages')
+      .select(['message_id', 'role'])
+      .where('conversation_id', '=', conversation.conversationId)
+      .execute();
+    expect(storedMessages).toEqual([{ message_id: submitted.json().messageId, role: 'user' }]);
+    const run = await database
+      .selectFrom('agent_runs')
+      .select(['trigger_message_id', 'trigger_type'])
+      .where('run_id', '=', response.json().runId)
+      .executeTakeFirstOrThrow();
+    expect(run).toEqual({
+      trigger_message_id: submitted.json().messageId,
+      trigger_type: 'agent_email_handoff',
+    });
+    const input = await database
+      .selectFrom('structured_input_requests')
+      .select(['purpose', 'status', 'value', 'consent_status'])
+      .where('run_id', '=', response.json().runId)
+      .executeTakeFirstOrThrow();
+    expect(input).toEqual({
+      purpose: 'agent_email_handoff',
+      status: 'submitted',
+      value: 'visitor@example.com',
+      consent_status: 'granted',
+    });
+  });
+
+  it('requires an existing user message and enforces tenant scope', async () => {
+    const conversation = (await createConversation(tokenA)).json();
+    const empty = await createEmailHandoff(
+      tokenA,
+      conversation.conversationId,
+      'visitor@example.com',
+    );
+    const foreign = await createEmailHandoff(
+      tokenB,
+      conversation.conversationId,
+      'visitor@example.com',
+    );
+
+    expect(empty.statusCode).toBe(400);
+    expect(empty.json()).toMatchObject({ error: { code: 'EMPTY_CONVERSATION' } });
+    expect(foreign.statusCode).toBe(404);
   });
 });
 

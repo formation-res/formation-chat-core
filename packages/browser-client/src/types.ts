@@ -2,6 +2,8 @@ import type {
   CancelRunResponse,
   ContentPart,
   Conversation,
+  CreateEmailHandoffRequest,
+  CreateEmailHandoffResponse,
   Message,
   PublicConversationEvent,
   SessionBootstrapResponse,
@@ -121,6 +123,11 @@ export interface ChatTransport {
     request: SubmitMessageRequest,
     idempotencyKey: string,
   ): Promise<Message>;
+  createEmailHandoff(
+    conversationId: string,
+    request: CreateEmailHandoffRequest,
+    idempotencyKey: string,
+  ): Promise<CreateEmailHandoffResponse>;
   submitStructuredInput(
     conversationId: string,
     requestId: string,
@@ -150,6 +157,7 @@ export interface ChatClient {
   createConversation(): Promise<Conversation>;
   selectConversation(conversationId: string): Promise<void>;
   sendMessage(request: SubmitMessageRequest): Promise<Message>;
+  createEmailHandoff(request: CreateEmailHandoffRequest): Promise<CreateEmailHandoffResponse>;
   submitStructuredInput(
     requestId: string,
     request: SubmitStructuredInputRequest,

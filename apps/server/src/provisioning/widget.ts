@@ -223,7 +223,7 @@ export interface WorkerChatSites {
       theme: string;
       launcher: string;
       placement: string;
-      agentAliases: Record<string, { siteKey: string; label: string }>;
+      agentAliases: Record<string, { siteKey: string; label: string; emailHandoff?: boolean }>;
     };
   };
 }
@@ -254,9 +254,16 @@ export async function exportWorkerChatSites(database: Database): Promise<WorkerC
   for (const row of rows) {
     const allowedOrigins = normalizeStringArray(row.allowed_origins);
     const aliases = normalizeAgentAliases(row.agent_aliases);
-    const workerAliases: Record<string, { siteKey: string; label: string }> = {};
+    const workerAliases: Record<
+      string,
+      { siteKey: string; label: string; emailHandoff?: boolean }
+    > = {};
     for (const alias of aliases) {
-      workerAliases[alias.alias] = { siteKey: row.site_key, label: alias.label };
+      workerAliases[alias.alias] = {
+        siteKey: row.site_key,
+        label: alias.label,
+        ...(alias.emailHandoff ? { emailHandoff: true } : {}),
+      };
     }
     if (!workerAliases[row.default_agent_alias]) {
       throw new WorkerSiteExportError(`Widget ${row.widget_key} default alias is not configured.`);
@@ -351,6 +358,7 @@ function parseAgentAlias(input: unknown, label: string): SiteWidgetAgentAlias {
     alias: publicToken(input.alias, `${label}.alias`),
     label: displayText(input.label, `${label}.label`, 80),
     agentRef: publicToken(input.agentRef, `${label}.agentRef`),
+    ...(input.emailHandoff === true ? { emailHandoff: true } : {}),
   };
 }
 

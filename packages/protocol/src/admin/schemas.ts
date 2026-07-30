@@ -98,6 +98,7 @@ export const AdminHandoffSchema = Type.Object(
     siteId: OpaqueIdSchema,
     conversationId: OpaqueIdSchema,
     runId: OpaqueIdSchema,
+    kind: Type.Union([Type.Literal('human'), Type.Literal('agent_email')]),
     status: AdminHandoffStatusSchema,
     createdAt: TimestampSchema,
     updatedAt: TimestampSchema,
@@ -111,6 +112,7 @@ export const AdminWidgetAgentAliasSchema = Type.Object(
     alias: OpaqueIdSchema,
     label: Type.String({ minLength: 1, maxLength: 80 }),
     agentRef: OpaqueIdSchema,
+    emailHandoff: Type.Optional(Type.Boolean()),
   },
   { additionalProperties: false },
 );

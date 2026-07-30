@@ -21,7 +21,7 @@ const CurrentUserMessageSchema = Type.Intersect([
 const inputResolutionBase = {
   requestId: OpaqueIdSchema,
   inputKind: Type.Literal('email'),
-  purpose: StructuredInputPurposeSchema,
+  purpose: Type.Union([StructuredInputPurposeSchema, Type.Literal('agent_email_handoff')]),
 };
 
 export const StructuredInputResolutionSchema = Type.Union([
@@ -56,6 +56,9 @@ export const ConnectorRunRequestSchema = Type.Object(
     runId: OpaqueIdSchema,
     conversationId: OpaqueIdSchema,
     agentRef: OpaqueIdSchema,
+    triggerType: Type.Optional(
+      Type.Union([Type.Literal('message'), Type.Literal('agent_email_handoff')]),
+    ),
     currentMessage: CurrentUserMessageSchema,
     userParticipantId: OpaqueIdSchema,
     history: Type.Array(NormalizedMessageSchema, { minItems: 1, maxItems: 1_000 }),

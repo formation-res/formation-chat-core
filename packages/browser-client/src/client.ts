@@ -1,6 +1,8 @@
 import type {
   CancelRunResponse,
   Conversation,
+  CreateEmailHandoffRequest,
+  CreateEmailHandoffResponse,
   Message,
   PublicConversationEvent,
   SubmitMessageRequest,
@@ -113,6 +115,18 @@ export function createChatClient(options: ChatClientOptions): ChatClient {
     dispatch({ type: 'message.submitted', message });
     openStream();
     return message;
+  }
+
+  async function createEmailHandoff(
+    request: CreateEmailHandoffRequest,
+  ): Promise<CreateEmailHandoffResponse> {
+    const conversation = requireConversation();
+    const idempotencyKey = createId();
+    const handoff = await runCommand(() =>
+      options.transport.createEmailHandoff(conversation.conversationId, request, idempotencyKey),
+    );
+    openStream();
+    return handoff;
   }
 
   async function cancel(): Promise<CancelRunResponse> {
@@ -380,6 +394,7 @@ export function createChatClient(options: ChatClientOptions): ChatClient {
     createConversation,
     selectConversation,
     sendMessage,
+    createEmailHandoff,
     submitStructuredInput,
     cancel,
     retryRun,

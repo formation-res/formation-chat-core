@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "email",
+    "consent"
+  ],
+  "properties": {
+    "email": {
+      "format": "email",
+      "maxLength": 320,
+      "type": "string"
+    },
+    "consent": {
+      "const": true,
+      "type": "boolean"
+    }
+  }
+}

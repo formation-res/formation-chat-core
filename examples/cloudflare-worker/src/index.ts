@@ -35,6 +35,11 @@ const ROUTES: readonly Route[] = [
     kind: 'public',
   },
   {
+    pattern: new RegExp(`^/v1/conversations/${OPAQUE_ID}/email-handoffs$`),
+    methods: ['POST'],
+    kind: 'public',
+  },
+  {
     pattern: new RegExp(`^/v1/conversations/${OPAQUE_ID}/(?:cancel|retry)$`),
     methods: ['POST'],
     kind: 'public',
@@ -91,6 +96,7 @@ interface WidgetConfig {
 interface AgentAliasConfig {
   siteKey: string;
   label: string;
+  emailHandoff?: boolean;
 }
 
 export interface GatewayEnv {
@@ -408,7 +414,8 @@ function isAgentAliasConfig(value: unknown): value is AgentAliasConfig {
     PUBLIC_TOKEN.test(value.siteKey) &&
     typeof value.label === 'string' &&
     value.label.length >= 1 &&
-    value.label.length <= 80
+    value.label.length <= 80 &&
+    (value.emailHandoff === undefined || typeof value.emailHandoff === 'boolean')
   );
 }
 
@@ -567,6 +574,7 @@ function widgetConfigurationResponse(
       siteKey: site.siteKey,
       agent,
       agentLabel: alias.label,
+      ...(alias.emailHandoff ? { emailHandoff: true } : {}),
       version: publicTokenParam(requestUrl, 'version') ?? widget.version,
       theme: publicTokenParam(requestUrl, 'theme') ?? widget.theme,
       launcher: publicTokenParam(requestUrl, 'launcher') ?? widget.launcher,

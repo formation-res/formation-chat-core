@@ -11,6 +11,7 @@ import * as createAuditEvents from './migrations/008_create_audit_events.js';
 import * as createSiteWidgets from './migrations/009_create_site_widgets.js';
 import * as scopeWidgetKeysToSite from './migrations/010_scope_widget_keys_to_site.js';
 import * as makeSiteScopeForeignKeysDeferrable from './migrations/011_make_site_scope_foreign_keys_deferrable.js';
+import * as createAgentEmailHandoffs from './migrations/012_create_agent_email_handoffs.js';
 import type { Database } from './database.js';
 
 const migrations: Record<string, Migration> = {
@@ -25,6 +26,7 @@ const migrations: Record<string, Migration> = {
   '009_create_site_widgets': createSiteWidgets,
   '010_scope_widget_keys_to_site': scopeWidgetKeysToSite,
   '011_make_site_scope_foreign_keys_deferrable': makeSiteScopeForeignKeysDeferrable,
+  '012_create_agent_email_handoffs': createAgentEmailHandoffs,
 };
 
 export class DatabaseMigrationError extends Error {

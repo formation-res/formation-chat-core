@@ -21,6 +21,7 @@ export interface SiteWidgetAgentAlias {
   alias: string;
   label: string;
   agentRef: string;
+  emailHandoff?: boolean;
 }
 
 export interface SiteWidgetTable {
@@ -134,6 +135,7 @@ export interface AgentRunTable {
   site_id: string;
   conversation_id: string;
   trigger_message_id: string;
+  trigger_type: Generated<'message' | 'agent_email_handoff'>;
   assistant_message_id: string;
   agent_ref: string;
   status:
@@ -161,6 +163,7 @@ export interface HandoffTable {
   site_id: string;
   conversation_id: string;
   run_id: string;
+  kind: Generated<'human' | 'agent_email'>;
   status: 'requested' | 'awaiting_contact' | 'delivering' | 'completed' | 'failed';
   created_at: Generated<Date>;
   updated_at: Generated<Date>;
@@ -173,7 +176,7 @@ export interface StructuredInputRequestTable {
   conversation_id: string;
   run_id: string;
   input_kind: 'email';
-  purpose: 'handoff_email_delivery';
+  purpose: 'handoff_email_delivery' | 'agent_email_handoff';
   prompt: string;
   required: boolean;
   status: 'pending' | 'submitted' | 'declined' | 'expired';

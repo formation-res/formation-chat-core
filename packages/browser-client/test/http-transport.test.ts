@@ -143,6 +143,41 @@ describe('HTTP chat transport', () => {
     });
     expect(calls[1]?.[1]?.headers).toMatchObject({ Authorization: 'Bearer secret-token' });
   });
+
+  it('starts an email handoff without submitting a chat message', async () => {
+    const handoff = {
+      handoffId: 'handoff-1',
+      conversationId: 'conversation-1',
+      runId: 'run-email-1',
+      kind: 'agent_email' as const,
+      status: 'delivering' as const,
+      createdAt: '2026-07-15T10:00:00.000Z',
+      updatedAt: '2026-07-15T10:00:00.000Z',
+    };
+    const calls: Array<[RequestInfo | URL, RequestInit | undefined]> = [];
+    const responses = [Response.json(session), Response.json(handoff)];
+    const transport = createHttpChatTransport({
+      baseUrl: 'https://chat.example',
+      fetch: vi.fn(async (url, init) => {
+        calls.push([url, init]);
+        return responses.shift() as Response;
+      }),
+    });
+    await transport.bootstrap({ siteKey: 'site-key', idempotencyKey: 'bootstrap-key' });
+
+    await expect(
+      transport.createEmailHandoff(
+        'conversation-1',
+        { email: 'visitor@example.com', consent: true },
+        'handoff-key',
+      ),
+    ).resolves.toEqual(handoff);
+    expect(String(calls[1]?.[0])).toContain('/conversation-1/email-handoffs');
+    expect(calls[1]?.[1]).toMatchObject({
+      method: 'POST',
+      body: JSON.stringify({ email: 'visitor@example.com', consent: true }),
+    });
+  });
 });
 
 describe('SSE parser', () => {

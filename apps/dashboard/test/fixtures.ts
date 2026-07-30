@@ -199,6 +199,7 @@ export const handoffPage: AdminHandoffList = {
       siteId: 'site-1',
       conversationId: conversation.conversationId,
       runId: 'run-1',
+      kind: 'human',
       status: 'awaiting_contact',
       createdAt: '2026-07-16T10:01:30.000Z',
       updatedAt: '2026-07-16T10:01:30.000Z',

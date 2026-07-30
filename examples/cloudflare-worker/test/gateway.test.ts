@@ -21,7 +21,7 @@ const env: GatewayEnv = {
         launcher: 'agent',
         placement: 'bottom-right',
         agentAliases: {
-          support: { siteKey: 'trusted-site', label: 'Support' },
+          support: { siteKey: 'trusted-site', label: 'Support', emailHandoff: true },
           sales: { siteKey: 'trusted-site', label: 'Sales' },
         },
       },
@@ -244,6 +244,21 @@ describe('Cloudflare chat gateway', () => {
       },
     });
     expect(fetchUpstream).not.toHaveBeenCalled();
+  });
+
+  it('exposes only the email-handoff capability flag for configured aliases', async () => {
+    const response = await handleGatewayRequest(
+      request('/widget/config?widgetKey=main-chat'),
+      env,
+      {
+        fetch: vi.fn<typeof fetch>(),
+      },
+    );
+
+    expect(await response.json()).toMatchObject({
+      agent: 'support',
+      emailHandoff: true,
+    });
   });
 
   it('selects the trusted widget site by origin when websites share a gateway host', async () => {

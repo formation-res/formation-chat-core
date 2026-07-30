@@ -32,6 +32,18 @@
       "pattern": "^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$",
       "type": "string"
     },
+    "triggerType": {
+      "anyOf": [
+        {
+          "const": "message",
+          "type": "string"
+        },
+        {
+          "const": "agent_email_handoff",
+          "type": "string"
+        }
+      ]
+    },
     "currentMessage": {
       "type": "object",
       "allOf": [
@@ -842,8 +854,16 @@
                 "type": "string"
               },
               "purpose": {
-                "const": "handoff_email_delivery",
-                "type": "string"
+                "anyOf": [
+                  {
+                    "const": "handoff_email_delivery",
+                    "type": "string"
+                  },
+                  {
+                    "const": "agent_email_handoff",
+                    "type": "string"
+                  }
+                ]
               },
               "status": {
                 "const": "submitted",
@@ -897,8 +917,16 @@
                 "type": "string"
               },
               "purpose": {
-                "const": "handoff_email_delivery",
-                "type": "string"
+                "anyOf": [
+                  {
+                    "const": "handoff_email_delivery",
+                    "type": "string"
+                  },
+                  {
+                    "const": "agent_email_handoff",
+                    "type": "string"
+                  }
+                ]
               },
               "status": {
                 "const": "declined",

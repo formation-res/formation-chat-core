@@ -109,6 +109,18 @@ class BrowserFixtureClient implements ChatClient {
     return userMessage;
   }
 
+  async createEmailHandoff() {
+    return {
+      handoffId: 'browser-email-handoff',
+      conversationId: conversation.conversationId,
+      runId: 'browser-email-run',
+      kind: 'agent_email' as const,
+      status: 'delivering' as const,
+      createdAt: now,
+      updatedAt: now,
+    };
+  }
+
   async cancel() {
     this.update({
       phase: 'ready',

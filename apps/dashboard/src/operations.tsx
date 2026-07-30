@@ -289,7 +289,7 @@ function HandoffRow({
           <Icon name="handoff" />
         </span>
         <span className="summary-main">
-          <strong>Handoff</strong>
+          <strong>{item.kind === 'agent_email' ? 'Email continuation' : 'Human handoff'}</strong>
           <span>{item.handoffId}</span>
         </span>
         <StatusBadge status={item.status} />
@@ -310,6 +310,10 @@ function HandoffRow({
           />
         </div>
         <dl className="metadata-list">
+          <div>
+            <dt>Kind</dt>
+            <dd>{item.kind === 'agent_email' ? 'Agent to mail agent' : 'Agent to human'}</dd>
+          </div>
           <div>
             <dt>Created</dt>
             <dd>{formatTime(item.createdAt)}</dd>
