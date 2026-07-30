@@ -554,6 +554,13 @@ conversation`; otherwise it retains the configured initial tooltip. Opening imme
 hover reuses the in-flight promise rather than bootstrapping twice. The emoji picker closes after
 an emoji choice, Escape, panel close, or a pointer click anywhere outside the toggle and picker.
 
+**Explicit light/dark appearance contract:** 2026-07-30. The public widget accepts
+`color-mode="light|dark"` independently from its brand `theme`, observes runtime changes, and
+applies a complete palette to panel, surface, text, control, border, hover, and accent tokens.
+Missing or invalid values safely use light mode. The local preview exposes `colorMode`, browser
+coverage verifies live switching and WCAG AA accent contrast across every bundled theme, and the
+integration guide requires host theme switchers to update the attribute.
+
 ### Checkpoint: Public website
 
 - A static website can embed the reference UI or browser client.

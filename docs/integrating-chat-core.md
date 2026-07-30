@@ -194,6 +194,7 @@ For a plain website, use a small script tag plus public configuration:
   src="https://chat.example.com/widget.js"
   data-widget-key="example-public-chat"
   data-theme="light"
+  data-color-mode="light"
   data-launcher="agent"
   data-agent="support"
   data-launcher-tooltip="Ask us anything"
@@ -209,6 +210,19 @@ The shared widget uses `hot-pink` by default. The other bundled styles are `blue
 `light`, and `rgb-neon`; each style changes both the accent colors and the agent portrait sprite.
 Legacy `earth` and `rgb` values display the hot-pink style, so existing site configuration remains
 safe while those retired styles are removed from the visible choice.
+
+`data-color-mode` is the explicit light/dark appearance contract. Set it to `light` or `dark` and
+update the corresponding `color-mode` attribute whenever the host website changes mode. The widget
+observes that attribute and immediately applies a complete contrast-safe palette for surfaces,
+text, controls, and accents. Missing, empty, and unknown values fall back to `light`. Do not rely on
+inherited host color variables or the visitor's system preference when the website has its own mode
+switcher. `data-theme` remains independent: it selects brand accent colors, artwork, and agent
+sprites rather than light or dark surfaces.
+
+```js
+const widget = document.querySelector('formation-chat-widget');
+widget?.setAttribute('color-mode', websiteIsDark ? 'dark' : 'light');
+```
 
 Agent portraits are robots or animals with work accessories. Visitors can choose among two
 6-by-6 sprites of diverse people and a separate 6-by-6 animal section. Each locally persisted

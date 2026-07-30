@@ -38,10 +38,11 @@ describe('shared widget local preview', () => {
     if (!address || typeof address === 'string') throw new Error('Preview server did not start.');
     const origin = `http://127.0.0.1:${address.port}`;
 
-    const hostPage = await fetch(origin).then((response) => response.text());
+    const hostPage = await fetch(`${origin}/?colorMode=dark`).then((response) => response.text());
     expect(hostPage).toContain('src="/widget.js"');
     expect(hostPage).toContain('new EventSource("/__dev/events")');
     expect(hostPage).toContain('data-theme="hot-pink"');
+    expect(hostPage).toContain('data-color-mode="dark"');
 
     const widget = await fetch(`${origin}/widget.js`);
     expect(widget.status).toBe(200);

@@ -306,6 +306,7 @@ function hostPage(searchParams) {
     'hot-pink',
   );
   const launcher = safeParameter(searchParams.get('launcher'), ['agent', 'text'], 'agent');
+  const colorMode = safeParameter(searchParams.get('colorMode'), ['light', 'dark'], 'light');
   const placement = safeParameter(
     searchParams.get('placement'),
     ['bottom-right', 'bottom-left'],
@@ -329,7 +330,7 @@ function hostPage(searchParams) {
       <p>This page uses the current uncommitted shared widget bundle and deterministic mock replies.</p>
       <p>Edit files under <code>examples/cloudflare-worker/site</code>; this page reloads after a successful rebuild.</p>
     </main>
-    <script type="module" src="/widget.js" data-widget-key="main-chat" data-agent="${agent}" data-theme="${theme}" data-launcher="${launcher}" data-placement="${placement}" async></script>
+    <script type="module" src="/widget.js" data-widget-key="main-chat" data-agent="${agent}" data-theme="${theme}" data-color-mode="${colorMode}" data-launcher="${launcher}" data-placement="${placement}" async></script>
     <script>new EventSource("/__dev/events").onmessage = () => location.reload();</script>
   </body>
 </html>`;

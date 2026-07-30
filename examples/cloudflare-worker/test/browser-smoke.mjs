@@ -246,6 +246,87 @@ async function exerciseAlias(context, agent, label, options = {}) {
   }
   await widget.getByText('What can we help you with?').waitFor();
   await widget.getByText(label, { exact: true }).first().waitFor();
+  assert.equal(await widget.getAttribute('color-mode'), 'light');
+  await widget.evaluate((element) => element.setAttribute('color-mode', 'dark'));
+  assert.deepEqual(
+    await widget.evaluate((element) => {
+      const panel = element.shadowRoot?.querySelector('.panel');
+      const welcome = element.shadowRoot?.querySelector('.welcome');
+      const composer = element.shadowRoot?.querySelector('.composer');
+      if (!(panel && welcome && composer))
+        throw new Error('Widget color-mode surfaces are missing.');
+      const hostStyle = globalThis.getComputedStyle(element);
+      return {
+        datasetMode: element.dataset.colorMode,
+        ink: hostStyle.getPropertyValue('--chat-ink').trim(),
+        paper: hostStyle.getPropertyValue('--chat-paper').trim(),
+        surface: hostStyle.getPropertyValue('--chat-surface').trim(),
+        muted: hostStyle.getPropertyValue('--chat-muted').trim(),
+        line: hostStyle.getPropertyValue('--chat-line').trim(),
+        accentInk: hostStyle.getPropertyValue('--chat-accent-ink').trim(),
+        panel: globalThis.getComputedStyle(panel).backgroundColor,
+        welcome: globalThis.getComputedStyle(welcome).backgroundColor,
+        composer: globalThis.getComputedStyle(composer).backgroundColor,
+      };
+    }),
+    {
+      datasetMode: 'dark',
+      ink: '#f3f6f4',
+      paper: '#111713',
+      surface: '#19211c',
+      muted: '#a9b5ae',
+      line: '#344039',
+      accentInk: '#101713',
+      panel: 'rgb(17, 23, 19)',
+      welcome: 'rgb(25, 33, 28)',
+      composer: 'rgb(25, 33, 28)',
+    },
+  );
+  await widget.evaluate((element) => element.setAttribute('color-mode', 'unknown'));
+  assert.equal(await widget.evaluate((element) => element.dataset.colorMode), 'light');
+  await widget.evaluate((element) => element.setAttribute('color-mode', 'light'));
+  const themeContrastRatios = await widget.evaluate((element) => {
+    const relativeLuminance = (hex) => {
+      const channels = hex
+        .match(/[0-9a-f]{2}/gi)
+        .map((channel) => Number.parseInt(channel, 16) / 255)
+        .map((channel) =>
+          channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4,
+        );
+      return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+    };
+    const contrastRatio = (first, second) => {
+      const firstLuminance = relativeLuminance(first);
+      const secondLuminance = relativeLuminance(second);
+      return (
+        (Math.max(firstLuminance, secondLuminance) + 0.05) /
+        (Math.min(firstLuminance, secondLuminance) + 0.05)
+      );
+    };
+    return ['hot-pink', 'blue', 'dark-green', 'light', 'rgb-neon'].flatMap((theme) => {
+      element.setAttribute('theme', theme);
+      return ['light', 'dark'].map((colorMode) => {
+        element.setAttribute('color-mode', colorMode);
+        const style = globalThis.getComputedStyle(element);
+        return {
+          theme,
+          colorMode,
+          ratio: contrastRatio(
+            style.getPropertyValue('--chat-paper').trim(),
+            style.getPropertyValue('--chat-accent-strong').trim(),
+          ),
+        };
+      });
+    });
+  });
+  assert.ok(
+    themeContrastRatios.every(({ ratio }) => ratio >= 4.5),
+    `Theme accent contrast fell below 4.5:1: ${JSON.stringify(themeContrastRatios)}`,
+  );
+  await widget.evaluate((element, originalTheme) => {
+    element.setAttribute('theme', originalTheme);
+    element.setAttribute('color-mode', 'light');
+  }, options.theme ?? 'hot-pink');
   assert.equal(
     await widget
       .locator('.agent-sprite')
@@ -655,6 +736,7 @@ function hostPage(searchParams) {
   const launcher = searchParams.get('launcher') ?? searchParam(agent, 'launcher');
   const placement = searchParams.get('placement') ?? searchParam(agent, 'placement');
   const theme = searchParams.get('theme') ?? searchParam(agent, 'theme');
+  const colorMode = searchParams.get('colorMode') ?? 'light';
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -664,7 +746,7 @@ function hostPage(searchParams) {
   </head>
   <body>
     <h1>Widget host</h1>
-    <script type="module" src="/widget.js" data-widget-key="main-chat" data-agent="${agent}" data-theme="${theme}" data-launcher="${launcher}" data-placement="${placement}" async></script>
+    <script type="module" src="/widget.js" data-widget-key="main-chat" data-agent="${agent}" data-theme="${theme}" data-color-mode="${colorMode}" data-launcher="${launcher}" data-placement="${placement}" async></script>
   </body>
 </html>`;
 }

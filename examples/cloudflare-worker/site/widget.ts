@@ -23,6 +23,7 @@ import {
 import { createWidgetAnalytics, type WidgetAnalyticsReporter } from './widget-analytics.js';
 
 type WidgetTheme = 'hot-pink' | 'blue' | 'dark-green' | 'light' | 'rgb-neon';
+type WidgetColorMode = 'light' | 'dark';
 
 const agentSpriteUrls: Readonly<Record<WidgetTheme, string>> = {
   'hot-pink': new URL('./formation-agent-sprite-v2.webp', import.meta.url).href,
@@ -37,13 +38,77 @@ const userSpriteUrls = {
   animals: new URL('./formation-user-animal-sprite.webp', import.meta.url).href,
 } as const;
 const themeTokens: Readonly<
-  Record<WidgetTheme, { accent: string; accentStrong: string; dark: string }>
+  Record<
+    WidgetTheme,
+    { accent: string; accentStrong: string; accentStrongDark: string; dark: string }
+  >
 > = {
-  'hot-pink': { accent: '#ff75ad', accentStrong: '#c72d70', dark: '#202723' },
-  blue: { accent: '#a9d8ff', accentStrong: '#2674c7', dark: '#102b47' },
-  'dark-green': { accent: '#74d887', accentStrong: '#33a652', dark: '#071a11' },
-  light: { accent: '#e2e2df', accentStrong: '#6e716f', dark: '#2d302f' },
-  'rgb-neon': { accent: '#ff4fa3', accentStrong: '#13bde8', dark: '#0b0b17' },
+  'hot-pink': {
+    accent: '#ff75ad',
+    accentStrong: '#c72d70',
+    accentStrongDark: '#ff9bc4',
+    dark: '#202723',
+  },
+  blue: {
+    accent: '#a9d8ff',
+    accentStrong: '#236ebd',
+    accentStrongDark: '#8bc5ff',
+    dark: '#102b47',
+  },
+  'dark-green': {
+    accent: '#74d887',
+    accentStrong: '#217938',
+    accentStrongDark: '#74d887',
+    dark: '#071a11',
+  },
+  light: {
+    accent: '#e2e2df',
+    accentStrong: '#626865',
+    accentStrongDark: '#c9cecb',
+    dark: '#2d302f',
+  },
+  'rgb-neon': {
+    accent: '#ff4fa3',
+    accentStrong: '#08758f',
+    accentStrongDark: '#68d7f3',
+    dark: '#0b0b17',
+  },
+};
+const colorModeTokens: Readonly<
+  Record<
+    WidgetColorMode,
+    {
+      ink: string;
+      paper: string;
+      surface: string;
+      muted: string;
+      line: string;
+      accentInk: string;
+      hover: string;
+      fieldLine: string;
+    }
+  >
+> = {
+  light: {
+    ink: '#1b211e',
+    paper: '#f7f6f1',
+    surface: '#ffffff',
+    muted: '#687069',
+    line: '#d9ddd7',
+    accentInk: '#101713',
+    hover: '#f0f2ef',
+    fieldLine: '#cbd1cb',
+  },
+  dark: {
+    ink: '#f3f6f4',
+    paper: '#111713',
+    surface: '#19211c',
+    muted: '#a9b5ae',
+    line: '#344039',
+    accentInk: '#101713',
+    hover: '#26312a',
+    fieldLine: '#526159',
+  },
 };
 const agentFlowArtworkUrls: Readonly<Record<WidgetTheme, string>> = {
   'hot-pink': new URL('./agent-flow-diagram-hot-pink.webp', import.meta.url).href,
@@ -108,6 +173,10 @@ interface RenderedMessage {
 }
 
 class FormationChatWidget extends HTMLElement {
+  static get observedAttributes(): string[] {
+    return ['color-mode'];
+  }
+
   private readonly root = this.attachShadow({ mode: 'open' });
   private readonly messageTimes = new Map<string, string>();
   private client: ChatClient | undefined;
@@ -122,6 +191,7 @@ class FormationChatWidget extends HTMLElement {
   private avatarPickerReturnPage: WidgetPage = 'chat';
   private notice = '';
   private widgetTheme: WidgetTheme = 'hot-pink';
+  private widgetColorMode: WidgetColorMode = 'light';
   private agentAvatarIndex = 0;
   private userAvatarIndex = 0;
   private avatarWidgetStorageKey: string | undefined;
@@ -155,6 +225,7 @@ class FormationChatWidget extends HTMLElement {
     this.avatarWidgetStorageKey = provisionalStorageKey;
     this.selectSessionAvatars(provisionalStorageKey);
     this.widgetTheme = normalizeTheme(this.getAttribute('theme'));
+    this.widgetColorMode = normalizeColorMode(this.getAttribute('color-mode'));
     const launcherTooltip = (
       this.getAttribute('launcher-tooltip') ?? 'Start a conversation'
     ).trim();
@@ -278,7 +349,7 @@ class FormationChatWidget extends HTMLElement {
           </section>
         </div>
       </section>`;
-    this.applyTheme(this.widgetTheme);
+    this.applyAppearance();
     this.bind();
     document.addEventListener('pointerdown', this.onDocumentPointerDown);
     this.renderMessages();
@@ -288,6 +359,12 @@ class FormationChatWidget extends HTMLElement {
     document.removeEventListener('pointerdown', this.onDocumentPointerDown);
     this.unsubscribe?.();
     this.client?.destroy();
+  }
+
+  attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
+    if (name !== 'color-mode' || oldValue === newValue) return;
+    this.widgetColorMode = normalizeColorMode(newValue);
+    if (this.root.childNodes.length > 0) this.applyAppearance();
   }
 
   private bind(): void {
@@ -537,18 +614,32 @@ class FormationChatWidget extends HTMLElement {
     this.headerName.textContent = config.agentLabel;
     this.panel.setAttribute('aria-label', `Chat with ${config.agentLabel}`);
     this.widgetTheme = normalizeTheme(config.theme);
-    this.applyTheme(this.widgetTheme);
+    this.applyAppearance();
     this.refreshProfiles();
   }
 
-  private applyTheme(theme: WidgetTheme): void {
-    const tokens = themeTokens[theme];
-    this.dataset.widgetTheme = theme;
-    this.style.setProperty('--chat-accent', tokens.accent);
-    this.style.setProperty('--chat-accent-strong', tokens.accentStrong);
-    this.style.setProperty('--chat-dark', tokens.dark);
+  private applyAppearance(): void {
+    const theme = themeTokens[this.widgetTheme];
+    const mode = colorModeTokens[this.widgetColorMode];
+    this.dataset.widgetTheme = this.widgetTheme;
+    this.dataset.colorMode = this.widgetColorMode;
+    this.style.colorScheme = this.widgetColorMode;
+    this.style.setProperty('--chat-ink', mode.ink);
+    this.style.setProperty('--chat-paper', mode.paper);
+    this.style.setProperty('--chat-surface', mode.surface);
+    this.style.setProperty('--chat-muted', mode.muted);
+    this.style.setProperty('--chat-line', mode.line);
+    this.style.setProperty('--chat-accent-ink', mode.accentInk);
+    this.style.setProperty('--chat-hover', mode.hover);
+    this.style.setProperty('--chat-field-line', mode.fieldLine);
+    this.style.setProperty('--chat-accent', theme.accent);
+    this.style.setProperty(
+      '--chat-accent-strong',
+      this.widgetColorMode === 'dark' ? theme.accentStrongDark : theme.accentStrong,
+    );
+    this.style.setProperty('--chat-dark', theme.dark);
     const artwork = this.root.querySelector<HTMLImageElement>('.artwork-frame img');
-    if (artwork) artwork.src = agentFlowArtworkUrls[theme];
+    if (artwork) artwork.src = agentFlowArtworkUrls[this.widgetTheme];
   }
 
   private clear(): void {
@@ -1114,6 +1205,10 @@ function normalizeTheme(value: string | null | undefined): WidgetTheme {
   return 'hot-pink';
 }
 
+function normalizeColorMode(value: string | null | undefined): WidgetColorMode {
+  return value?.trim().toLowerCase() === 'dark' ? 'dark' : 'light';
+}
+
 function backIcon() {
   return icon('<path d="m15 18-6-6 6-6"/>');
 }
@@ -1188,6 +1283,7 @@ function autoCreateWidgetFromScript(): void {
   copyDatasetAttribute(script, widget, 'widgetKey', 'widget-key');
   copyDatasetAttribute(script, widget, 'agent', 'agent');
   copyDatasetAttribute(script, widget, 'theme', 'theme');
+  copyDatasetAttribute(script, widget, 'colorMode', 'color-mode');
   copyDatasetAttribute(script, widget, 'launcher', 'launcher');
   copyDatasetAttribute(script, widget, 'placement', 'placement');
   copyDatasetAttribute(script, widget, 'version', 'version');

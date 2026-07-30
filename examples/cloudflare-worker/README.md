@@ -123,11 +123,15 @@ automatically. Stop the preview with Ctrl+C. Set `WIDGET_DEV_PORT` to use anothe
 WIDGET_DEV_PORT=8800 npm run dev:widget
 ```
 
-The preview accepts `agent`, `theme`, `launcher`, and `placement` query parameters. For example:
+The preview accepts `agent`, `theme`, `colorMode`, `launcher`, and `placement` query parameters. For
+example:
 
 ```text
-http://127.0.0.1:8791/?agent=sales&theme=rgb-neon&launcher=agent&placement=bottom-left
+http://127.0.0.1:8791/?agent=sales&theme=rgb-neon&colorMode=dark&launcher=agent&placement=bottom-left
 ```
+
+Production integrations should set the equivalent `color-mode` element attribute and update it
+whenever their website theme switcher changes.
 
 ## Build and verify
 

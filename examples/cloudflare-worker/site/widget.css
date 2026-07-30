@@ -6,7 +6,10 @@
   --chat-line: #d9ddd7;
   --chat-accent: #ff75ad;
   --chat-accent-strong: #c72d70;
+  --chat-accent-ink: #101713;
   --chat-dark: #202723;
+  --chat-hover: #f0f2ef;
+  --chat-field-line: #cbd1cb;
   --chat-radius: 1rem;
   color: var(--chat-ink);
   font-family:
@@ -575,7 +578,7 @@ button.profile-sprite:focus-visible {
 }
 
 .message-copy:hover {
-  background: #e9ece8;
+  background: var(--chat-hover);
 }
 
 .message-copy.is-copied {
@@ -593,7 +596,7 @@ button.profile-sprite:focus-visible {
 
 .typing-bubble {
   align-items: center;
-  background: white;
+  background: var(--chat-surface);
   border: 1px solid var(--chat-line);
   border-radius: 0.8rem 0.8rem 0.8rem 0.25rem;
   display: flex;
@@ -652,8 +655,8 @@ button.profile-sprite:focus-visible {
 
 .composer {
   align-items: end;
-  background: white;
-  border: 1px solid #cbd1cb;
+  background: var(--chat-surface);
+  border: 1px solid var(--chat-field-line);
   border-radius: 0.8rem;
   display: grid;
   gap: 0.25rem;
@@ -701,13 +704,13 @@ button.profile-sprite:focus-visible {
 }
 
 .emoji-toggle:hover {
-  background: #f0f2ef;
+  background: var(--chat-hover);
   color: var(--chat-ink);
 }
 
 .send {
   background: var(--chat-accent);
-  color: var(--chat-ink);
+  color: var(--chat-accent-ink);
   transition:
     background-color 150ms ease,
     transform 150ms ease;
@@ -725,7 +728,7 @@ button.profile-sprite:focus-visible {
 }
 
 .emoji-board {
-  background: white;
+  background: var(--chat-surface);
   border: 1px solid var(--chat-line);
   border-radius: 0.75rem;
   bottom: calc(100% + 0.55rem);
@@ -750,7 +753,7 @@ button.profile-sprite:focus-visible {
 }
 
 .emoji-board button:hover {
-  background: #f0f2ef;
+  background: var(--chat-hover);
 }
 
 .chat-page > small {
@@ -791,7 +794,7 @@ button.profile-sprite:focus-visible {
 }
 
 .option-list {
-  background: white;
+  background: var(--chat-surface);
   border: 1px solid var(--chat-line);
   border-radius: 0.85rem;
   overflow: hidden;
@@ -799,7 +802,7 @@ button.profile-sprite:focus-visible {
 
 .option-list button {
   align-items: center;
-  background: white;
+  background: var(--chat-surface);
   border: 0;
   border-bottom: 1px solid var(--chat-line);
   cursor: pointer;
@@ -818,11 +821,11 @@ button.profile-sprite:focus-visible {
 }
 
 .option-list button:hover {
-  background: #f5f6f3;
+  background: var(--chat-hover);
 }
 
 .option-list button > svg {
-  color: #59625d;
+  color: var(--chat-muted);
   height: 1.15rem;
   width: 1.15rem;
 }
@@ -842,7 +845,7 @@ button.profile-sprite:focus-visible {
 }
 
 .option-list .chevron {
-  color: #9ca49f;
+  color: var(--chat-muted);
   height: 0.85rem;
   width: 0.85rem;
 }
@@ -873,7 +876,7 @@ button.profile-sprite:focus-visible {
 
 .avatar-choice {
   aspect-ratio: 1;
-  background-color: white;
+  background-color: var(--chat-surface);
   border: 1px solid var(--chat-line);
   border-radius: 0.65rem;
   min-width: 0;
@@ -918,7 +921,7 @@ button.profile-sprite:focus-visible {
 }
 
 .about-page > p {
-  color: #4f5852;
+  color: var(--chat-muted);
   font-size: 0.76rem;
   line-height: 1.58;
   margin: 0 0 0.75rem;
@@ -1014,8 +1017,8 @@ button.profile-sprite:focus-visible {
 }
 
 .mail-form input {
-  background: white;
-  border: 1px solid #cbd1cb;
+  background: var(--chat-surface);
+  border: 1px solid var(--chat-field-line);
   border-radius: 0.65rem;
   color: var(--chat-ink);
   height: 2.8rem;
