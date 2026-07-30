@@ -22,7 +22,8 @@
       {
         "alias": "support",
         "label": "Mailfront",
-        "agentRef": "mailfront_chat"
+        "agentRef": "mailfront_chat",
+        "emailHandoff": true
       }
     ]
   }
