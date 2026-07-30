@@ -199,6 +199,8 @@ class FormationChatWidget extends HTMLElement {
   private emojiOpen = false;
   private maximized = false;
   private launcherTooltipDefault = '';
+  private viewportAnimationFrame: number | undefined;
+  private readonly onViewportChange = (): void => this.scheduleViewportSync();
   private readonly onDocumentPointerDown = (event: PointerEvent): void => {
     if (!this.emojiOpen) return;
     const path = event.composedPath();
@@ -207,6 +209,7 @@ class FormationChatWidget extends HTMLElement {
   };
 
   connectedCallback(): void {
+    this.observeViewport();
     if (this.root.childNodes.length > 0) {
       document.addEventListener('pointerdown', this.onDocumentPointerDown);
       return;
@@ -359,6 +362,7 @@ class FormationChatWidget extends HTMLElement {
 
   disconnectedCallback(): void {
     document.removeEventListener('pointerdown', this.onDocumentPointerDown);
+    this.unobserveViewport();
     this.unsubscribe?.();
     this.client?.destroy();
   }
@@ -404,6 +408,7 @@ class FormationChatWidget extends HTMLElement {
         this.messageForm.requestSubmit();
       }
     });
+    this.input.addEventListener('focus', () => this.scheduleViewportSync());
     this.emojiToggle.addEventListener('click', () => this.setEmojiOpen(!this.emojiOpen));
     this.emojiBoard.querySelectorAll<HTMLButtonElement>('[data-emoji]').forEach((button) => {
       button.addEventListener('click', () => this.insertEmoji(button.dataset.emoji ?? ''));
@@ -432,15 +437,18 @@ class FormationChatWidget extends HTMLElement {
 
   private setOpen(value: boolean): void {
     this.open = value;
+    this.toggleAttribute('data-open', value);
+    this.syncViewport();
     this.panel.hidden = !value;
     this.launcher.setAttribute('aria-expanded', String(value));
     this.launcher.setAttribute('aria-label', value ? 'Minimize chat' : 'Open chat');
     if (value) {
-      this.showPage('chat');
+      const autofocusComposer = this.shouldAutofocusComposer();
+      this.showPage('chat', autofocusComposer);
+      if (!autofocusComposer) this.closeButton.focus({ preventScroll: true });
       void this.ensureClient().catch((error: unknown) => {
         this.setStatus(error instanceof Error ? error.message : 'The chat could not be loaded.');
       });
-      this.input.focus();
     } else {
       if (this.maximized) this.setMaximized(false);
       this.setEmojiOpen(false);
@@ -448,7 +456,7 @@ class FormationChatWidget extends HTMLElement {
     }
   }
 
-  private showPage(page: WidgetPage): void {
+  private showPage(page: WidgetPage, focus = true): void {
     this.currentPage = page;
     this.pages.forEach((element) => {
       element.hidden = element.dataset.page !== page;
@@ -458,8 +466,66 @@ class FormationChatWidget extends HTMLElement {
     this.menuButton.setAttribute('aria-expanded', String(page !== 'chat'));
     this.panel.dataset.activePage = page;
     const heading = this.root.querySelector<HTMLElement>(`[data-page="${page}"] h2`);
-    if (page === 'chat') this.input.focus();
-    else heading?.focus({ preventScroll: true });
+    if (focus) {
+      if (page === 'chat') this.input.focus();
+      else heading?.focus({ preventScroll: true });
+    }
+  }
+
+  private observeViewport(): void {
+    window.addEventListener('resize', this.onViewportChange, { passive: true });
+    window.visualViewport?.addEventListener('resize', this.onViewportChange, { passive: true });
+    window.visualViewport?.addEventListener('scroll', this.onViewportChange, { passive: true });
+  }
+
+  private unobserveViewport(): void {
+    window.removeEventListener('resize', this.onViewportChange);
+    window.visualViewport?.removeEventListener('resize', this.onViewportChange);
+    window.visualViewport?.removeEventListener('scroll', this.onViewportChange);
+    if (this.viewportAnimationFrame !== undefined) {
+      cancelAnimationFrame(this.viewportAnimationFrame);
+      this.viewportAnimationFrame = undefined;
+    }
+  }
+
+  private scheduleViewportSync(): void {
+    if (this.viewportAnimationFrame !== undefined) return;
+    this.viewportAnimationFrame = requestAnimationFrame(() => {
+      this.viewportAnimationFrame = undefined;
+      this.syncViewport();
+    });
+  }
+
+  private syncViewport(): void {
+    const properties = [
+      '--chat-viewport-height',
+      '--chat-viewport-left',
+      '--chat-viewport-top',
+      '--chat-viewport-width',
+    ];
+    if (!this.open || !window.matchMedia('(max-width: 30rem)').matches) {
+      properties.forEach((property) => this.style.removeProperty(property));
+      return;
+    }
+    const viewport = window.visualViewport;
+    this.style.setProperty(
+      '--chat-viewport-height',
+      `${Math.max(1, Math.round(viewport?.height ?? window.innerHeight))}px`,
+    );
+    this.style.setProperty(
+      '--chat-viewport-width',
+      `${Math.max(1, Math.round(viewport?.width ?? window.innerWidth))}px`,
+    );
+    this.style.setProperty('--chat-viewport-left', `${Math.round(viewport?.offsetLeft ?? 0)}px`);
+    this.style.setProperty('--chat-viewport-top', `${Math.round(viewport?.offsetTop ?? 0)}px`);
+    this.messages.scrollTop = this.messages.scrollHeight;
+  }
+
+  private shouldAutofocusComposer(): boolean {
+    return (
+      !window.matchMedia('(max-width: 30rem)').matches &&
+      window.matchMedia('(hover: hover) and (pointer: fine)').matches
+    );
   }
 
   private async submit(): Promise<void> {

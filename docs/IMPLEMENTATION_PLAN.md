@@ -440,6 +440,12 @@ reuse their original idempotency keys after renewal, SSE 401s renew immediately 
 saved cursor, and the shared Worker widget keeps draft textarea content until message submission is
 confirmed.
 
+**Mobile viewport follow-up:** 2026-07-30. The shared Worker widget follows the browser's visual
+viewport while mobile keyboards and browser bars resize or move it. Opening the full-screen mobile
+panel no longer autofocuses the composer or leaves the floating launcher above the send control.
+Safe-area padding, a 16px composer font, contained overscroll, and regression checks cover repeated
+mobile viewport changes.
+
 **Runtime fix:** 2026-07-21. Outbound Haystack requests use manual redirect handling and invoke the
 native fetch function with the Worker global receiver. Non-success redirects remain unavailable
 responses and are never followed with the connector bearer token. Regression assertions cover both

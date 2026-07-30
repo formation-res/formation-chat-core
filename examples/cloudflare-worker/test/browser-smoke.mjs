@@ -135,6 +135,7 @@ try {
     placement: 'bottom-left',
     theme: 'rgb',
   });
+  await verifyMobileViewport(context);
   await verifyThemeArtwork(context);
 
   const sessionAliases = requests
@@ -142,7 +143,7 @@ try {
     .map(({ body }) => body.agentAlias)
     .sort();
   assert.equal(sessionAliases.filter((alias) => alias === 'sales').length, 2);
-  assert.equal(sessionAliases.filter((alias) => alias === 'support').length, 6);
+  assert.equal(sessionAliases.filter((alias) => alias === 'support').length, 7);
   assert.ok(
     requests.every(
       ({ body }) =>
@@ -170,7 +171,7 @@ try {
   assert.equal(analyticsTypes.filter((type) => type === 'chat_conversation_length').length, 2);
   assert.equal(analyticsTypes.filter((type) => type === 'chat_conversation_started').length, 2);
   assert.equal(analyticsTypes.filter((type) => type === 'chat_message_sent').length, 2);
-  assert.equal(analyticsTypes.filter((type) => type === 'chat_session_started').length, 8);
+  assert.equal(analyticsTypes.filter((type) => type === 'chat_session_started').length, 9);
   assert.ok(
     analyticsEvents.every(
       ({ body, origin }) =>
@@ -227,24 +228,27 @@ async function exerciseAlias(context, agent, label, options = {}) {
   assert.equal(await launcher.getAttribute('aria-label'), 'Minimize chat');
   assert.equal(await widget.locator('.back').isVisible(), false);
   assert.equal(await widget.locator('.menu').isVisible(), true);
-  assert.equal(await widget.locator('.maximize').isVisible(), true);
+  const mobileViewport = (await page.viewportSize()).width <= 480;
+  assert.equal(await widget.locator('.maximize').isVisible(), !mobileViewport);
   assert.equal(await widget.locator('.maximize').getAttribute('aria-label'), 'Maximize chat');
-  const maximizeAlignment = await widget.locator('.maximize').evaluate((button) => {
-    const icon = button.querySelector('.maximize-icon');
-    if (!(icon instanceof globalThis.HTMLElement)) throw new Error('Maximize icon is missing.');
-    const buttonBounds = button.getBoundingClientRect();
-    const iconBounds = icon.getBoundingClientRect();
-    return {
-      x: Math.abs(
-        buttonBounds.left + buttonBounds.width / 2 - (iconBounds.left + iconBounds.width / 2),
-      ),
-      y: Math.abs(
-        buttonBounds.top + buttonBounds.height / 2 - (iconBounds.top + iconBounds.height / 2),
-      ),
-    };
-  });
-  assert.ok(maximizeAlignment.x < 0.5);
-  assert.ok(maximizeAlignment.y < 0.5);
+  if (!mobileViewport) {
+    const maximizeAlignment = await widget.locator('.maximize').evaluate((button) => {
+      const icon = button.querySelector('.maximize-icon');
+      if (!(icon instanceof globalThis.HTMLElement)) throw new Error('Maximize icon is missing.');
+      const buttonBounds = button.getBoundingClientRect();
+      const iconBounds = icon.getBoundingClientRect();
+      return {
+        x: Math.abs(
+          buttonBounds.left + buttonBounds.width / 2 - (iconBounds.left + iconBounds.width / 2),
+        ),
+        y: Math.abs(
+          buttonBounds.top + buttonBounds.height / 2 - (iconBounds.top + iconBounds.height / 2),
+        ),
+      };
+    });
+    assert.ok(maximizeAlignment.x < 0.5);
+    assert.ok(maximizeAlignment.y < 0.5);
+  }
   if (agent === 'support') {
     assert.equal(await launcher.locator('.launcher-image').isVisible(), false);
     assert.equal(await launcher.locator('.launcher-collapse').isVisible(), true);
@@ -768,6 +772,89 @@ async function verifyThemeArtwork(context) {
     path: join(tmpdir(), 'formation-worker-widget-themed-artwork.png'),
     fullPage: true,
   });
+  await page.close();
+}
+
+async function verifyMobileViewport(context) {
+  const page = await context.newPage();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`${baseUrl}/host?agent=support`, { waitUntil: 'networkidle' });
+
+  const widget = page.locator('formation-chat-widget').first();
+  const launcher = widget.locator('.launcher');
+  const input = widget.locator('textarea');
+  await launcher.click();
+  await widget.locator('.panel').waitFor({ state: 'visible' });
+
+  assert.equal(
+    await launcher.isVisible(),
+    false,
+    'the mobile launcher must not cover the composer',
+  );
+  assert.equal(
+    await input.evaluate((element) => element.getRootNode().activeElement === element),
+    false,
+    'opening the mobile widget must not summon the keyboard before the visitor taps the composer',
+  );
+  assert.equal(
+    await widget
+      .locator('.close')
+      .evaluate((element) => element.getRootNode().activeElement === element),
+    true,
+    'mobile focus must move away from the hidden launcher to the visible close control',
+  );
+
+  await input.focus();
+  for (const height of [560, 480, 620]) {
+    await page.setViewportSize({ width: 390, height });
+    await page.waitForFunction(() => {
+      const widgetElement = globalThis.document.querySelector('formation-chat-widget');
+      if (!(widgetElement instanceof globalThis.HTMLElement) || !globalThis.visualViewport) {
+        return false;
+      }
+      return (
+        Number.parseFloat(widgetElement.style.getPropertyValue('--chat-viewport-height')) ===
+        Math.round(globalThis.visualViewport.height)
+      );
+    });
+    const geometry = await widget.evaluate((element) => {
+      const panel = element.shadowRoot?.querySelector('.panel');
+      const composer = element.shadowRoot?.querySelector('.composer');
+      if (
+        !(panel instanceof globalThis.HTMLElement) ||
+        !(composer instanceof globalThis.HTMLElement) ||
+        !globalThis.visualViewport
+      ) {
+        throw new Error('Mobile widget geometry is unavailable.');
+      }
+      const panelBounds = panel.getBoundingClientRect();
+      const composerBounds = composer.getBoundingClientRect();
+      return {
+        composerBottom: composerBounds.bottom,
+        panelBottom: panelBounds.bottom,
+        panelTop: panelBounds.top,
+        viewportBottom: globalThis.visualViewport.offsetTop + globalThis.visualViewport.height,
+        viewportTop: globalThis.visualViewport.offsetTop,
+      };
+    });
+    assert.ok(
+      geometry.panelTop >= geometry.viewportTop - 1,
+      `panel starts outside the visual viewport: ${JSON.stringify(geometry)}`,
+    );
+    assert.ok(
+      geometry.panelBottom <= geometry.viewportBottom + 1,
+      `panel extends below the visual viewport: ${JSON.stringify(geometry)}`,
+    );
+    assert.ok(
+      geometry.composerBottom <= geometry.viewportBottom + 1,
+      `composer extends below the visual viewport: ${JSON.stringify(geometry)}`,
+    );
+  }
+  await page.screenshot({
+    path: join(tmpdir(), 'formation-worker-widget-mobile-viewport.png'),
+    fullPage: true,
+  });
+
   await page.close();
 }
 

@@ -238,6 +238,7 @@ button.profile-sprite:focus-visible {
   grid-template-rows: auto minmax(0, 1fr);
   height: min(35rem, calc(100vh - 9.5rem));
   overflow: hidden;
+  overscroll-behavior: contain;
   position: fixed;
   right: 1rem;
   transform: translateX(0);
@@ -754,6 +755,7 @@ button.profile-sprite:focus-visible {
   border: 0;
   color: var(--chat-ink);
   line-height: 1.4;
+  font-size: 1rem;
   max-height: 7rem;
   min-height: 2.3rem;
   outline: 0;
@@ -1240,15 +1242,42 @@ button.profile-sprite:focus-visible {
 }
 
 @media (max-width: 30rem) {
+  :host([data-open]) .launcher-shell {
+    display: none;
+  }
+
   .panel,
   .panel.is-maximized {
+    animation: none;
     border: 0;
     border-radius: 0;
-    bottom: 0;
-    height: 100dvh;
-    right: 0;
+    bottom: auto;
+    height: var(--chat-viewport-height, 100dvh);
+    left: var(--chat-viewport-left, 0);
+    right: auto;
+    top: var(--chat-viewport-top, 0);
     transform: none;
-    width: 100vw;
+    transition: none;
+    width: var(--chat-viewport-width, 100vw);
+  }
+
+  .panel > header {
+    padding-left: max(0.65rem, env(safe-area-inset-left));
+    padding-right: max(0.65rem, env(safe-area-inset-right));
+    padding-top: max(0.55rem, env(safe-area-inset-top));
+  }
+
+  .maximize {
+    display: none !important;
+  }
+
+  .message-form {
+    padding-left: max(0.75rem, env(safe-area-inset-left));
+    padding-right: max(0.75rem, env(safe-area-inset-right));
+  }
+
+  .chat-page > small {
+    padding-bottom: max(0.65rem, env(safe-area-inset-bottom));
   }
 }
 
