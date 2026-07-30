@@ -7,6 +7,7 @@ import {
   type PersistedChatState,
 } from '@formation-chat-core/browser-client';
 import type { ContentPart, Message } from '@formation-chat-core/protocol';
+import { renderMarkdown } from '@formation-chat-core/markdown';
 
 import styles from './widget.css';
 import {
@@ -710,9 +711,9 @@ class FormationChatWidget extends HTMLElement {
         : this.createProfile('message-avatar', 'user');
     const content = document.createElement('div');
     content.className = 'message-content';
-    const bubble = document.createElement('p');
+    const bubble = document.createElement('div');
     bubble.className = 'message';
-    bubble.textContent = message.text;
+    bubble.innerHTML = renderMarkdown(message.text);
     const meta = document.createElement('div');
     meta.className = 'message-meta';
     const time = document.createElement('time');
@@ -784,7 +785,7 @@ class FormationChatWidget extends HTMLElement {
         (message) => `<article class="${message.role}">
           ${this.printAvatarMarkup(message.role === 'assistant' ? 'agent' : 'user')}
           <div class="print-message"><div class="meta"><strong>${escapeHtml(message.role === 'assistant' ? this.agentName : 'You')}</strong><time>${escapeHtml(formatPrintTime(message.createdAt))}</time></div>
-          <p>${escapeHtml(message.text).replaceAll('\n', '<br>')}</p></div>
+          <div class="message">${renderMarkdown(message.text)}</div></div>
         </article>`,
       )
       .join('');
@@ -1161,7 +1162,7 @@ function formatPrintTime(value: string): string {
 }
 
 function printStyles(): string {
-  return `:root{font-family:Inter,system-ui,sans-serif;color:#1c211d;background:#f6f4ed}*{box-sizing:border-box}body{margin:0;padding:40px 20px}main{max-width:760px;margin:auto;background:#fff;padding:48px;border:1px solid #dedbd0}header{border-bottom:2px solid #1c211d;padding-bottom:24px}.print-title{display:flex;align-items:center;gap:14px}.print-title p{margin:0 0 6px;text-transform:uppercase;letter-spacing:.12em;font-size:11px}h1{margin:0;font-size:32px}dl{display:flex;gap:32px;margin:24px 0 0}dl div{display:grid;gap:3px}dt{font-size:10px;text-transform:uppercase;color:#687069}dd{margin:0;font-size:13px}section{display:grid;gap:20px;padding:32px 0}article{align-items:flex-start;display:flex;gap:10px;max-width:82%}article.user{flex-direction:row-reverse;margin-left:auto}.print-message{min-width:0}.print-avatar{border-radius:9px;display:block;flex:0 0 auto;height:38px;overflow:hidden;position:relative;width:38px}.print-avatar img{height:720%;image-rendering:pixelated;left:calc(-10% - var(--avatar-column) * 120%);max-width:none;position:absolute;top:calc(-10% - var(--avatar-row) * 120%);width:720%}.print-avatar.custom-avatar img{height:100%;left:0;object-fit:cover;position:absolute;top:0;width:100%}.print-title .print-avatar{height:52px;width:52px}.meta{display:flex;gap:12px;align-items:baseline;margin-bottom:5px}.meta strong{font-size:12px}.meta time{font-size:10px;color:#687069}article p{margin:0;padding:12px 14px;border-radius:12px;background:#f0eee7;line-height:1.5}article.user p{background:#1c211d;color:#fff}.empty{color:#687069}footer{border-top:1px solid #dedbd0;padding-top:18px;font-size:10px;color:#687069}@media print{body{padding:0;background:#fff}main{border:0;padding:0}}`;
+  return `:root{font-family:Inter,system-ui,sans-serif;color:#1c211d;background:#f6f4ed}*{box-sizing:border-box}body{margin:0;padding:40px 20px}main{max-width:760px;margin:auto;background:#fff;padding:48px;border:1px solid #dedbd0}header{border-bottom:2px solid #1c211d;padding-bottom:24px}.print-title{display:flex;align-items:center;gap:14px}.print-title p{margin:0 0 6px;text-transform:uppercase;letter-spacing:.12em;font-size:11px}h1{margin:0;font-size:32px}dl{display:flex;gap:32px;margin:24px 0 0}dl div{display:grid;gap:3px}dt{font-size:10px;text-transform:uppercase;color:#687069}dd{margin:0;font-size:13px}section{display:grid;gap:20px;padding:32px 0}article{align-items:flex-start;display:flex;gap:10px;max-width:82%}article.user{flex-direction:row-reverse;margin-left:auto}.print-message{min-width:0}.print-avatar{border-radius:9px;display:block;flex:0 0 auto;height:38px;overflow:hidden;position:relative;width:38px}.print-avatar img{height:720%;image-rendering:pixelated;left:calc(-10% - var(--avatar-column) * 120%);max-width:none;position:absolute;top:calc(-10% - var(--avatar-row) * 120%);width:720%}.print-avatar.custom-avatar img{height:100%;left:0;object-fit:cover;position:absolute;top:0;width:100%}.print-title .print-avatar{height:52px;width:52px}.meta{display:flex;gap:12px;align-items:baseline;margin-bottom:5px}.meta strong{font-size:12px}.meta time{font-size:10px;color:#687069}article .message{padding:12px 14px;border-radius:12px;background:#f0eee7;line-height:1.5}article.user .message{background:#1c211d;color:#fff}.message>:first-child{margin-top:0}.message>:last-child{margin-bottom:0}.message pre{max-width:100%;overflow-wrap:anywhere;white-space:pre-wrap}.empty{color:#687069}footer{border-top:1px solid #dedbd0;padding-top:18px;font-size:10px;color:#687069}@media print{body{padding:0;background:#fff}main{border:0;padding:0}}`;
 }
 
 function requiredElement<T extends Element>(root: ShadowRoot, selector: string): T {

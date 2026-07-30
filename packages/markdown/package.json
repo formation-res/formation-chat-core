@@ -1,0 +1,31 @@
+{
+  "name": "@formation-chat-core/markdown",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Safe Markdown rendering for Formation Chat Core message text.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "eslint src test --no-error-on-unmatched-pattern",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p test/tsconfig.json"
+  },
+  "dependencies": {
+    "markdown-it": "14.3.0"
+  },
+  "devDependencies": {
+    "@types/markdown-it": "14.1.2"
+  }
+}

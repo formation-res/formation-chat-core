@@ -27,6 +27,7 @@
   },
   "dependencies": {
     "@formation-chat-core/browser-client": "0.0.0",
+    "@formation-chat-core/markdown": "0.0.0",
     "@formation-chat-core/protocol": "0.0.0"
   },
   "peerDependencies": {

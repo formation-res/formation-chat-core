@@ -4,6 +4,10 @@
 browser client. It renders public protocol data only; connector and agent implementation details
 do not enter its props.
 
+Default text parts render safe Markdown through `@formation-chat-core/markdown`. Raw HTML is
+escaped, unsafe link schemes are rejected, and remote images are not embedded. Integrators can
+replace this behavior with the existing `renderPart` or `renderMessage` hooks.
+
 ## Use
 
 ```tsx

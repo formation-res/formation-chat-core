@@ -1,4 +1,5 @@
 import styles from './widget.css';
+import { renderMarkdown } from '@formation-chat-core/markdown';
 import { readEventStream, type WidgetEvent } from './stream.js';
 
 const earthTooltipArtworkUrl = new URL('./agent-shadow-tooltip-earth.webp', import.meta.url).href;
@@ -277,9 +278,9 @@ class FormationChatWidget extends HTMLElement {
       return;
     }
     for (const message of this.chat.messages) {
-      const bubble = document.createElement('p');
+      const bubble = document.createElement('div');
       bubble.className = `message ${message.role}`;
-      bubble.textContent = message.text || '…';
+      bubble.innerHTML = renderMarkdown(message.text || '…');
       this.messages.append(bubble);
     }
     this.messages.scrollTop = this.messages.scrollHeight;

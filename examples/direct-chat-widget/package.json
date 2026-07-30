@@ -5,6 +5,9 @@
   "description": "Minimal Cloudflare chat widget that streams directly from a trusted Haystack agent.",
   "license": "MIT",
   "type": "module",
+  "dependencies": {
+    "@formation-chat-core/markdown": "0.0.0"
+  },
   "scripts": {
     "build": "node scripts/build-site.mjs && tsc -p tsconfig.json",
     "deploy:site": "wrangler deploy --keep-vars",

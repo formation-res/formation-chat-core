@@ -5,6 +5,7 @@ import type {
   ConversationEvent,
   CursorPage,
 } from '@formation-chat-core/protocol';
+import { renderMarkdown } from '@formation-chat-core/markdown';
 
 import type { AdminApi } from './admin-client.js';
 import { Icon } from './icons.js';
@@ -371,7 +372,11 @@ function Transcript({
             {message.parts
               .filter((part) => part.type === 'text')
               .map((part, index) => (
-                <p key={`${message.messageId}-text-${index}`}>{part.text}</p>
+                <div
+                  className="message-markdown"
+                  key={`${message.messageId}-text-${index}`}
+                  dangerouslySetInnerHTML={{ __html: renderMarkdown(part.text) }}
+                />
               ))}
             <MessageDetails message={message} />
           </div>

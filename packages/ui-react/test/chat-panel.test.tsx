@@ -109,6 +109,27 @@ describe('ChatPanel', () => {
     expect(container?.querySelector('a')).toBeNull();
   });
 
+  it('renders message text as safe Markdown', () => {
+    const fake = createFakeClient({
+      phase: 'ready',
+      messages: [
+        message(
+          'assistant-message',
+          'assistant',
+          '## Answer\n\n- Use **Settings**\n- Save `changes`\n\n<script>alert(1)</script>',
+        ),
+      ],
+    });
+    render(<ChatPanel client={fake.client} />);
+
+    expect(container?.querySelector('.fcc-markdown h2')?.textContent).toBe('Answer');
+    expect(container?.querySelectorAll('.fcc-markdown li')).toHaveLength(2);
+    expect(container?.querySelector('.fcc-markdown strong')?.textContent).toBe('Settings');
+    expect(container?.querySelector('.fcc-markdown code')?.textContent).toBe('changes');
+    expect(container?.querySelector('.fcc-markdown script')).toBeNull();
+    expect(container?.textContent).toContain('<script>alert(1)</script>');
+  });
+
   it('announces reconnecting and failed states and exposes retry', async () => {
     const fake = createFakeClient({
       phase: 'error',

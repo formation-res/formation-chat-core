@@ -529,7 +529,83 @@ button.profile-sprite:focus-visible {
   margin: 0;
   overflow-wrap: anywhere;
   padding: 0.62rem 0.74rem;
-  white-space: pre-wrap;
+}
+
+.message > :first-child {
+  margin-top: 0;
+}
+
+.message > :last-child {
+  margin-bottom: 0;
+}
+
+.message p,
+.message ul,
+.message ol,
+.message blockquote,
+.message pre {
+  margin-block: 0 0.55rem;
+}
+
+.message ul,
+.message ol {
+  padding-inline-start: 1.15rem;
+}
+
+.message li + li {
+  margin-top: 0.2rem;
+}
+
+.message blockquote {
+  padding-inline-start: 0.65rem;
+  border-inline-start: 0.18rem solid currentColor;
+  opacity: 0.8;
+}
+
+.message pre {
+  max-width: 100%;
+  padding: 0.55rem;
+  overflow-x: auto;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  border-radius: 0.35rem;
+}
+
+.message code {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.85em;
+}
+
+.message :not(pre) > code {
+  padding: 0.1em 0.28em;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  border-radius: 0.22rem;
+}
+
+.message h1,
+.message h2,
+.message h3,
+.message h4 {
+  margin-block: 0 0.45rem;
+  font-size: 1em;
+  line-height: 1.3;
+}
+
+.message a {
+  color: inherit;
+  text-underline-offset: 0.14em;
+}
+
+.message table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+
+.message th,
+.message td {
+  padding: 0.2rem 0.4rem;
+  border: 1px solid currentColor;
 }
 
 .user .message {

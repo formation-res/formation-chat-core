@@ -386,7 +386,69 @@
   max-width: 86%;
   overflow-wrap: anywhere;
   padding: 0.65rem 0.8rem;
-  white-space: pre-wrap;
+}
+.panel .message > :first-child {
+  margin-top: 0;
+}
+.panel .message > :last-child {
+  margin-bottom: 0;
+}
+.panel .message p,
+.panel .message ul,
+.panel .message ol,
+.panel .message blockquote,
+.panel .message pre {
+  margin-block: 0 0.55rem;
+}
+.panel .message ul,
+.panel .message ol {
+  padding-inline-start: 1.15rem;
+}
+.panel .message li + li {
+  margin-top: 0.2rem;
+}
+.panel .message blockquote {
+  padding-inline-start: 0.65rem;
+  border-inline-start: 0.18rem solid currentColor;
+  opacity: 0.8;
+}
+.panel .message pre {
+  max-width: 100%;
+  padding: 0.55rem;
+  overflow-x: auto;
+  background: rgb(24 25 22 / 7%);
+  border-radius: 0.35rem;
+}
+.panel .message code {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.85em;
+}
+.panel .message :not(pre) > code {
+  padding: 0.1em 0.28em;
+  background: rgb(24 25 22 / 7%);
+  border-radius: 0.22rem;
+}
+.panel .message h1,
+.panel .message h2,
+.panel .message h3,
+.panel .message h4 {
+  margin-block: 0 0.45rem;
+  font-size: 1em;
+}
+.panel .message a {
+  color: inherit;
+  text-underline-offset: 0.14em;
+}
+.panel .message table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+.panel .message th,
+.panel .message td {
+  padding: 0.2rem 0.4rem;
+  border: 1px solid currentColor;
 }
 .panel .message.user {
   align-self: flex-end;

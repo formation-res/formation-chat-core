@@ -1,4 +1,5 @@
 import type { ContentPart } from '@formation-chat-core/protocol';
+import { renderMarkdown } from '@formation-chat-core/markdown';
 import { Fragment } from 'react';
 
 import type { ChatDisplayMessage, ChatPanelProps } from './types.js';
@@ -23,7 +24,12 @@ export function ContentParts({ message, renderPart }: ContentPartsProps) {
 function DefaultPart({ part }: { part: ContentPart }) {
   switch (part.type) {
     case 'text':
-      return <span className="fcc-text">{part.text}</span>;
+      return (
+        <div
+          className="fcc-text fcc-markdown"
+          dangerouslySetInnerHTML={{ __html: renderMarkdown(part.text) }}
+        />
+      );
     case 'citation': {
       const citationUrl = safeHttpsUrl(part.url);
       return (

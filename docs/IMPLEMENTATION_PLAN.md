@@ -373,6 +373,11 @@ unsafe-link checks. A real Chrome smoke test passes keyboard submission, axe, co
 contact-to-handoff checks with a clean console; 1024-pixel and 320-pixel screenshots were reviewed.
 The Web Component wrapper remains deliberately deferred until a concrete reuse need appears.
 
+**Markdown rendering follow-up:** 2026-07-30. Canonical text parts now render as safe Markdown in
+the reference React UI, shared and direct widgets, print transcript, and operator dashboard.
+Rendering is centralized in a framework-neutral package; raw HTML and unsafe link schemes remain
+inert, remote Markdown images do not load, and custom React render hooks remain available.
+
 ### Task 12: Add the Cloudflare Worker gateway example
 
 **Description:** Provide a stateless gateway that maps a site hostname to trusted configuration,

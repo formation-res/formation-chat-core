@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@formation-chat-core/browser-client": "0.0.0",
+    "@formation-chat-core/markdown": "0.0.0",
     "@formation-chat-core/ui-react": "0.0.0",
     "@tryformation/formation-web-analytics-client": "0.1.1",
     "react": "19.2.4",

@@ -121,7 +121,10 @@ export const messagePage: AdminMessageList = {
       role: 'assistant',
       status: 'completed',
       parts: [
-        { type: 'text', text: 'I can help with that.' },
+        {
+          type: 'text',
+          text: '## Answer\n\nI can **help** with that.\n\n- Open Settings\n- Choose a plan',
+        },
         {
           type: 'tool_status',
           toolCallId: 'tool-1',

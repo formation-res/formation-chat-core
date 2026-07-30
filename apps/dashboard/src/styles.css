@@ -747,6 +747,64 @@ select:focus {
   background: var(--accent-soft);
   border-color: color-mix(in srgb, var(--accent) 22%, var(--border));
 }
+.message-markdown > :first-child {
+  margin-top: 0;
+}
+.message-markdown > :last-child {
+  margin-bottom: 0;
+}
+.message-markdown ul,
+.message-markdown ol,
+.message-markdown blockquote,
+.message-markdown pre {
+  margin-block: 0 0.75rem;
+}
+.message-markdown ul,
+.message-markdown ol {
+  padding-inline-start: 1.25rem;
+}
+.message-markdown li + li {
+  margin-top: 0.25rem;
+}
+.message-markdown blockquote {
+  padding-inline-start: 0.75rem;
+  border-inline-start: 0.2rem solid var(--border-strong);
+  color: var(--text-soft);
+}
+.message-markdown pre {
+  max-width: 100%;
+  padding: 0.65rem;
+  overflow-x: auto;
+  background: var(--surface-muted);
+  border-radius: 0.4rem;
+}
+.message-markdown code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+}
+.message-markdown :not(pre) > code {
+  padding: 0.1em 0.3em;
+  background: var(--surface-muted);
+  border-radius: 0.25rem;
+}
+.message-markdown h1,
+.message-markdown h2,
+.message-markdown h3,
+.message-markdown h4 {
+  margin-block: 0 0.5rem;
+  font-size: 1em;
+}
+.message-markdown table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+.message-markdown th,
+.message-markdown td {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--border);
+}
 .message-body p:last-child {
   margin-bottom: 0;
 }

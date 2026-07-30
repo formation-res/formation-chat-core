@@ -108,6 +108,9 @@ describe('operations dashboard', () => {
       expect.any(AbortSignal),
     );
     expect(container?.textContent).toContain('Public transcript');
+    expect(container?.querySelector('.message-markdown h2')?.textContent).toBe('Answer');
+    expect(container?.querySelector('.message-markdown strong')?.textContent).toBe('help');
+    expect(container?.querySelectorAll('.message-markdown li')).toHaveLength(2);
     const executionDetails = container?.querySelector<HTMLDetailsElement>('.message-details');
     expect(executionDetails?.open).toBe(false);
     expect(executionDetails?.querySelector('summary')?.textContent).toContain('1 source');

@@ -472,6 +472,13 @@ async function exerciseAlias(context, agent, label, options = {}) {
   await widget.locator('textarea').press('Enter');
   await widget.getByText(`Hello from ${agent}`).waitFor();
   await widget.getByText('Hello from the shared gateway.').waitFor();
+  const markdownMessage = widget.locator('.message-row.assistant .message').last();
+  assert.equal(await markdownMessage.locator('h2').textContent(), 'Shared answer');
+  assert.equal(await markdownMessage.locator('strong').textContent(), 'shared gateway');
+  assert.equal(await markdownMessage.locator('li').count(), 2);
+  assert.equal(await markdownMessage.locator('a').getAttribute('rel'), 'noopener noreferrer');
+  assert.equal(await markdownMessage.locator('script').count(), 0);
+  assert.match(await markdownMessage.textContent(), /<script>alert\(1\)<\/script>/);
   assert.equal(await widget.locator('.welcome').count(), 1);
   assert.equal(
     await widget.locator('.messages').locator(':scope > article').first().getAttribute('class'),
@@ -930,7 +937,10 @@ function eventStream(conversation) {
     conversationId: conversation.conversationId,
     runId: `run-${conversation.agentRef}`,
     messageId: `assistant-${conversation.agentRef}`,
-    data: { delta: 'Hello from the shared gateway.' },
+    data: {
+      delta:
+        '## Shared answer\n\n- Hello from the **shared gateway**.\n- Read [the guide](https://example.com/help)\n\n<script>alert(1)</script>',
+    },
   };
   return `id: ${base.eventId}\nevent: ${base.type}\ndata: ${JSON.stringify(base)}\n\n`;
 }
