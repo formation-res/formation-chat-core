@@ -22,7 +22,8 @@
       {
         "alias": "support",
         "label": "XYZ agent",
-        "agentRef": "formationxyz_chat"
+        "agentRef": "formationxyz_chat",
+        "emailHandoff": true
       }
     ]
   }

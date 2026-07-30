@@ -22,7 +22,8 @@
       {
         "alias": "support",
         "label": "FORMATION agent",
-        "agentRef": "tryformation_chat"
+        "agentRef": "tryformation_chat",
+        "emailHandoff": true
       }
     ]
   }
