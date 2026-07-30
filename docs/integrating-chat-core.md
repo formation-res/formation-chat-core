@@ -198,7 +198,7 @@ For a plain website, use a small script tag plus public configuration:
   data-launcher="agent"
   data-agent="support"
   data-launcher-tooltip="Ask us anything"
-  data-privacy-policy-url="/privacy"
+  data-privacy-policy-url="https://www.example.com/privacy"
   async
 ></script>
 ```
@@ -230,6 +230,11 @@ conversation randomly selects one of 36 agent portraits and one of 108 visitor p
 a profile opens its role-specific gallery, and a selected portrait remains stable through reloads
 and session-token renewal. Starting a new conversation selects a new pair.
 
+`data-privacy-policy-url` is the explicit privacy-link contract and should be set by every website
+integration to that website's actual policy URL. Absolute and origin-relative HTTP(S) URLs are
+accepted. Missing or invalid values leave “privacy policy” as non-clickable text; the widget does
+not guess a path or destination.
+
 `data-launcher-tooltip` controls the initial launcher hover message. Hovering the launcher also
 starts session restoration; when the restored conversation contains a visitor message, the tooltip
 becomes `Continue your conversation`. Opening the panel reuses that in-flight request. The header's
@@ -238,8 +243,8 @@ while navigating the widget. Clicking the About artwork toggles the same state. 
 pixel-art diagram shows the path from user message through context, trusted knowledge, tools, and
 the agent to a chat or mail response and uses the same theme as the agent portraits. Printed
 transcripts include the currently selected agent and visitor avatars beside their corresponding
-messages. `data-privacy-policy-url` sets the About page's privacy link. A custom element can also
-set `agent-image` or `launcher-image` to a reviewed public image URL.
+messages. A custom element can also set `agent-image` or `launcher-image` to a reviewed public image
+URL.
 
 The widget menu can print a local transcript, show the About page, clear the browser conversation,
 or ask the configured agent to email the conversation to a visitor-supplied address. The mail action

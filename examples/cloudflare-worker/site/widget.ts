@@ -231,7 +231,10 @@ class FormationChatWidget extends HTMLElement {
     ).trim();
     this.launcherTooltipDefault = launcherTooltip;
     const title = this.getAttribute('title') ?? 'Ask us';
-    const privacyUrl = this.getAttribute('privacy-policy-url')?.trim() || '/privacy';
+    const privacyUrl = resolvePrivacyPolicyUrl(this.getAttribute('privacy-policy-url'));
+    const privacyPolicyMarkup = privacyUrl
+      ? `<a href="${escapeAttribute(privacyUrl)}" target="_blank" rel="noopener noreferrer">privacy policy</a>`
+      : '<span>privacy policy</span>';
     const launcherContent =
       launcherType === 'button'
         ? `<span class="launcher-text">${escapeHtml(this.getAttribute('launcher-text') ?? 'Chat')}</span>`
@@ -321,7 +324,7 @@ class FormationChatWidget extends HTMLElement {
                 <span class="artwork-expand">${expandIcon()}</span>
               </span>
             </button>
-            <p class="about-privacy">Responses are generated and may be inaccurate. Please avoid sending sensitive information. See the <a href="${escapeAttribute(privacyUrl)}" target="_blank" rel="noopener noreferrer">privacy policy</a> for further details.</p>
+            <p class="about-privacy">Responses are generated and may be inaccurate. Please avoid sending sensitive information. See the ${privacyPolicyMarkup} for further details.</p>
           </section>
           <section class="widget-page option-page avatar-page" data-page="avatar" hidden>
             <div class="page-heading">
@@ -1207,6 +1210,17 @@ function normalizeTheme(value: string | null | undefined): WidgetTheme {
 
 function normalizeColorMode(value: string | null | undefined): WidgetColorMode {
   return value?.trim().toLowerCase() === 'dark' ? 'dark' : 'light';
+}
+
+function resolvePrivacyPolicyUrl(value: string | null): string | undefined {
+  const candidate = value?.trim();
+  if (!candidate) return undefined;
+  try {
+    const url = new URL(candidate, document.baseURI);
+    return url.protocol === 'http:' || url.protocol === 'https:' ? url.href : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function backIcon() {

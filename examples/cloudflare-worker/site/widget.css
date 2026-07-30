@@ -236,7 +236,7 @@ button.profile-sprite:focus-visible {
     0 0 0 1px rgb(255 255 255 / 70%) inset;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  height: min(33.5rem, calc(100vh - 9.5rem));
+  height: min(35rem, calc(100vh - 9.5rem));
   overflow: hidden;
   position: fixed;
   right: 1rem;
@@ -457,7 +457,7 @@ button.profile-sprite:focus-visible {
   color: var(--chat-accent-strong);
   cursor: pointer;
   display: flex;
-  font-size: 0.5rem;
+  font-size: 0.6rem;
   font-weight: 700;
   gap: 0.28rem;
   padding: 0.2rem;
@@ -1007,7 +1007,7 @@ button.profile-sprite:focus-visible {
 
 .panel.is-maximized {
   bottom: 1rem;
-  height: min(39rem, calc(100vh - 4rem));
+  height: min(40.5rem, calc(100vh - 4rem));
   right: 50%;
   transform: translateX(50%);
   width: min(70rem, calc(100vw - 2rem));

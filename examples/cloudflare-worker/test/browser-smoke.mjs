@@ -417,6 +417,7 @@ async function exerciseAlias(context, agent, label, options = {}) {
   });
   assert.ok(welcomeAboutMetrics.bottomGap <= 12);
   assert.ok(welcomeAboutMetrics.rightGap <= 12);
+  assert.ok(welcomeAboutMetrics.fontSize >= 9.5);
   assert.ok(welcomeAboutMetrics.fontSize < welcomeAboutMetrics.messageFontSize);
   assert.equal(welcomeAboutMetrics.svgCount, 1);
   const replacementAgentIndex = (agentAvatarIndex + 1) % 36;
@@ -551,6 +552,7 @@ async function exerciseAlias(context, agent, label, options = {}) {
 
   await widget.getByText('About this chat', { exact: true }).click();
   await widget.getByText('How your agent works').waitFor();
+  assert.equal(await widget.locator('.about-privacy a').getAttribute('href'), `${baseUrl}/privacy`);
   const flowArtwork = widget.locator('.artwork-frame img');
   await flowArtwork.waitFor();
   assert.ok((await flowArtwork.evaluate((image) => image.naturalWidth)) >= 1600);
@@ -605,7 +607,7 @@ async function exerciseAlias(context, agent, label, options = {}) {
     return { height: bounds.height, width: bounds.width };
   });
   if ((await page.viewportSize()).width >= 600) {
-    assert.ok(compactPanelGeometry.height <= 537);
+    assert.ok(compactPanelGeometry.height <= 561);
   }
   await artwork.click();
   assert.equal(await artwork.getAttribute('aria-expanded'), 'true');
@@ -764,7 +766,7 @@ function hostPage(searchParams) {
   </head>
   <body>
     <h1>Widget host</h1>
-    <script type="module" src="/widget.js" data-widget-key="main-chat" data-agent="${agent}" data-theme="${theme}" data-color-mode="${colorMode}" data-launcher="${launcher}" data-placement="${placement}" async></script>
+    <script type="module" src="/widget.js" data-widget-key="main-chat" data-agent="${agent}" data-theme="${theme}" data-color-mode="${colorMode}" data-launcher="${launcher}" data-placement="${placement}" data-privacy-policy-url="${baseUrl}/privacy" async></script>
   </body>
 </html>`;
 }

@@ -567,6 +567,12 @@ larger and higher contrast, its artwork has rounded clipped corners, and the saf
 anchors to the bottom of the page. Compact and maximized desktop panels are shorter, using the
 complete About composition as the height constraint while other views retain scrolling.
 
+**Explicit privacy-link integration:** 2026-07-30. Website integrations set their actual policy
+through `data-privacy-policy-url`; the widget accepts absolute or origin-relative HTTP(S) URLs and
+does not guess a fallback destination. Missing or invalid values render non-clickable policy text.
+Desktop panel heights allow the complete About composition in compact and maximized states, and the
+welcome-card About link is slightly larger.
+
 ### Checkpoint: Public website
 
 - A static website can embed the reference UI or browser client.
