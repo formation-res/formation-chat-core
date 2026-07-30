@@ -115,7 +115,11 @@ try {
           launcher: 'agent',
           placement: 'bottom-right',
           agentAliases: {
-            support: { siteKey: 'trusted-site', label: 'Support' },
+            support: {
+              siteKey: 'trusted-site',
+              label: 'Support',
+              emailHandoff: true,
+            },
             sales: { siteKey: 'trusted-site', label: 'Sales' },
           },
         },
@@ -247,6 +251,10 @@ async function exerciseAlias(context, agent, label, options = {}) {
   }
   await widget.getByText('What can we help you with?').waitFor();
   await widget.getByText(label, { exact: true }).first().waitFor();
+  await widget.locator('.menu').click();
+  await widget.getByText('More options').waitFor();
+  assert.equal(await widget.locator('[data-open-page="mail"]').isDisabled(), true);
+  await widget.locator('.back').click();
   assert.equal(await widget.getAttribute('color-mode'), 'light');
   await widget.evaluate((element) => element.setAttribute('color-mode', 'dark'));
   assert.deepEqual(
@@ -676,9 +684,13 @@ async function exerciseAlias(context, agent, label, options = {}) {
   await widget.locator('.menu').click();
   await widget.getByText('More options').waitFor();
   const mailOption = widget.locator('[data-open-page="mail"]');
-  assert.equal(await mailOption.isDisabled(), true);
-  assert.match(await mailOption.innerText(), /Temporarily unavailable/);
+  assert.equal(await mailOption.isDisabled(), agent !== 'support');
   assert.equal(await widget.locator('[data-page="mail"]').isHidden(), true);
+  if (agent === 'support') {
+    await mailOption.click();
+    assert.equal(await widget.locator('[data-page="mail"]').isVisible(), true);
+    await widget.locator('.back').click();
+  }
   await widget.locator('.back').click();
   await page.screenshot({
     path: join(tmpdir(), `formation-worker-widget-${agent}.png`),

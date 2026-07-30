@@ -578,6 +578,7 @@ class FormationChatWidget extends HTMLElement {
       this.state = state;
       this.analytics?.observe(state);
       this.renderMessages();
+      this.updateControls();
       this.updateLauncherTooltip();
       this.updateStatusFromState(state);
     });
@@ -586,6 +587,7 @@ class FormationChatWidget extends HTMLElement {
     this.client = client;
     this.state = client.getState();
     this.renderMessages();
+    this.updateControls();
     this.updateLauncherTooltip();
     return client;
   }
