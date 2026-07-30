@@ -100,14 +100,14 @@ const colorModeTokens: Readonly<
     fieldLine: '#cbd1cb',
   },
   dark: {
-    ink: '#f3f6f4',
-    paper: '#111713',
-    surface: '#19211c',
-    muted: '#a9b5ae',
-    line: '#344039',
+    ink: '#f5f7f6',
+    paper: '#1b241f',
+    surface: '#252f29',
+    muted: '#bdc8c1',
+    line: '#46554c',
     accentInk: '#101713',
-    hover: '#26312a',
-    fieldLine: '#526159',
+    hover: '#313e36',
+    fieldLine: '#64746a',
   },
 };
 const agentFlowArtworkUrls: Readonly<Record<WidgetTheme, string>> = {
@@ -314,7 +314,7 @@ class FormationChatWidget extends HTMLElement {
               ${this.agentProfileMarkup('about-agent-avatar', agentImage)}
               <div><strong data-agent-name>${escapeHtml(title)}</strong><span>AI conversation agent</span></div>
             </div>
-            <p>Your message is combined with the conversation context, trusted knowledge and available tools before the agent creates a response for chat or email.</p>
+            <p class="about-explanation">Your message is combined with the conversation context, trusted knowledge and available tools before the agent creates a response for chat or email.</p>
             <button class="artwork-card" type="button" aria-label="Maximize chat to enlarge agent flow diagram" aria-expanded="false">
               <span class="artwork-frame">
                 <img src="${escapeAttribute(agentFlowArtworkUrls[this.widgetTheme])}" alt="Pixel-art flow from a user message through context, knowledge, tools and an AI agent to a chat or mail response">

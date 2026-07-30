@@ -271,15 +271,15 @@ async function exerciseAlias(context, agent, label, options = {}) {
     }),
     {
       datasetMode: 'dark',
-      ink: '#f3f6f4',
-      paper: '#111713',
-      surface: '#19211c',
-      muted: '#a9b5ae',
-      line: '#344039',
+      ink: '#f5f7f6',
+      paper: '#1b241f',
+      surface: '#252f29',
+      muted: '#bdc8c1',
+      line: '#46554c',
       accentInk: '#101713',
-      panel: 'rgb(17, 23, 19)',
-      welcome: 'rgb(25, 33, 28)',
-      composer: 'rgb(25, 33, 28)',
+      panel: 'rgb(27, 36, 31)',
+      welcome: 'rgb(37, 47, 41)',
+      composer: 'rgb(37, 47, 41)',
     },
   );
   await widget.evaluate((element) => element.setAttribute('color-mode', 'unknown'));
@@ -562,6 +562,24 @@ async function exerciseAlias(context, agent, label, options = {}) {
     '0px',
   );
   assert.equal(await widget.locator('.artwork-card > strong').count(), 0);
+  const aboutComposition = await widget.locator('.about-page').evaluate((about) => {
+    const explanation = about.querySelector('.about-explanation');
+    const artworkFrame = about.querySelector('.artwork-frame');
+    const privacyNotice = about.querySelector('.about-privacy');
+    if (!(explanation && artworkFrame && privacyNotice))
+      throw new Error('About composition is incomplete.');
+    const aboutBounds = about.getBoundingClientRect();
+    const privacyBounds = privacyNotice.getBoundingClientRect();
+    return {
+      explanationFontSize: Number.parseFloat(globalThis.getComputedStyle(explanation).fontSize),
+      artworkRadius: Number.parseFloat(globalThis.getComputedStyle(artworkFrame).borderRadius),
+      privacyBottomGap: aboutBounds.bottom - privacyBounds.bottom,
+    };
+  });
+  assert.ok(aboutComposition.explanationFontSize >= 14);
+  assert.ok(aboutComposition.artworkRadius >= 10);
+  assert.ok(aboutComposition.privacyBottomGap >= 15);
+  assert.ok(aboutComposition.privacyBottomGap <= 24);
   assert.ok(
     await widget.locator('.about-page').evaluate((about) => {
       const artwork = about.querySelector('.artwork-card');
@@ -587,7 +605,7 @@ async function exerciseAlias(context, agent, label, options = {}) {
     return { height: bounds.height, width: bounds.width };
   });
   if ((await page.viewportSize()).width >= 600) {
-    assert.ok(compactPanelGeometry.height <= 620);
+    assert.ok(compactPanelGeometry.height <= 537);
   }
   await artwork.click();
   assert.equal(await artwork.getAttribute('aria-expanded'), 'true');

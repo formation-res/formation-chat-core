@@ -561,6 +561,12 @@ Missing or invalid values safely use light mode. The local preview exposes `colo
 coverage verifies live switching and WCAG AA accent contrast across every bundled theme, and the
 integration guide requires host theme switchers to update the attribute.
 
+**Compact About composition and lifted dark surfaces:** 2026-07-30. Dark mode uses lighter paper
+and surface tokens so the widget remains distinct from dark host websites. The About explanation is
+larger and higher contrast, its artwork has rounded clipped corners, and the safety/privacy notice
+anchors to the bottom of the page. Compact and maximized desktop panels are shorter, using the
+complete About composition as the height constraint while other views retain scrolling.
+
 ### Checkpoint: Public website
 
 - A static website can embed the reference UI or browser client.
