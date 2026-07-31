@@ -10,6 +10,10 @@
   --chat-dark: #202723;
   --chat-hover: #f0f2ef;
   --chat-field-line: #cbd1cb;
+  --chat-send: #ff75ad;
+  --chat-send-ink: #101713;
+  --chat-panel-line: rgb(27 33 30 / 13%);
+  --chat-panel-inset: rgb(255 255 255 / 70%);
   --chat-radius: 1rem;
   color: var(--chat-ink);
   font-family:
@@ -228,12 +232,12 @@ button.profile-sprite:focus-visible {
 .panel {
   animation: panel-enter 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
   background: var(--chat-paper);
-  border: 1px solid rgb(27 33 30 / 13%);
+  border: 1px solid var(--chat-panel-line);
   border-radius: var(--chat-radius);
   bottom: calc(1rem + var(--chat-launcher-size, 4.5rem) + 0.9rem);
   box-shadow:
     0 1.75rem 5rem rgb(16 22 18 / 22%),
-    0 0 0 1px rgb(255 255 255 / 70%) inset;
+    0 0 0 1px var(--chat-panel-inset) inset;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   height: min(35rem, calc(100vh - 9.5rem));
@@ -786,16 +790,16 @@ button.profile-sprite:focus-visible {
   color: var(--chat-ink);
 }
 
-.send {
-  background: var(--chat-accent);
-  color: var(--chat-accent-ink);
+.composer .send {
+  background: var(--chat-send);
+  color: var(--chat-send-ink);
   transition:
     background-color 150ms ease,
     transform 150ms ease;
 }
 
-.send:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--chat-accent) 78%, white);
+.composer .send:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--chat-send) 84%, white);
   transform: translateY(-1px);
 }
 

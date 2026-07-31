@@ -11,6 +11,11 @@ import { renderMarkdown } from '@formation-chat-core/markdown';
 
 import styles from './widget.css';
 import {
+  resolveWidgetAppearance,
+  type WidgetColorMode,
+  type WidgetTheme,
+} from './widget-appearance.js';
+import {
   AGENT_AVATAR_COUNT,
   AVATARS_PER_SHEET as USER_AVATARS_PER_SHEET,
   USER_AVATAR_COUNT,
@@ -22,9 +27,6 @@ import {
   userAvatarSheet,
 } from './widget-avatar.js';
 import { createWidgetAnalytics, type WidgetAnalyticsReporter } from './widget-analytics.js';
-
-type WidgetTheme = 'hot-pink' | 'blue' | 'dark-green' | 'light' | 'rgb-neon';
-type WidgetColorMode = 'light' | 'dark';
 
 const agentSpriteUrls: Readonly<Record<WidgetTheme, string>> = {
   'hot-pink': new URL('./formation-agent-sprite-v2.webp', import.meta.url).href,
@@ -38,79 +40,6 @@ const userSpriteUrls = {
   'people-alt': new URL('./formation-user-sprite-alt.webp', import.meta.url).href,
   animals: new URL('./formation-user-animal-sprite.webp', import.meta.url).href,
 } as const;
-const themeTokens: Readonly<
-  Record<
-    WidgetTheme,
-    { accent: string; accentStrong: string; accentStrongDark: string; dark: string }
-  >
-> = {
-  'hot-pink': {
-    accent: '#ff75ad',
-    accentStrong: '#c72d70',
-    accentStrongDark: '#ff9bc4',
-    dark: '#202723',
-  },
-  blue: {
-    accent: '#a9d8ff',
-    accentStrong: '#236ebd',
-    accentStrongDark: '#8bc5ff',
-    dark: '#102b47',
-  },
-  'dark-green': {
-    accent: '#74d887',
-    accentStrong: '#217938',
-    accentStrongDark: '#74d887',
-    dark: '#071a11',
-  },
-  light: {
-    accent: '#e2e2df',
-    accentStrong: '#626865',
-    accentStrongDark: '#c9cecb',
-    dark: '#2d302f',
-  },
-  'rgb-neon': {
-    accent: '#ff4fa3',
-    accentStrong: '#08758f',
-    accentStrongDark: '#68d7f3',
-    dark: '#0b0b17',
-  },
-};
-const colorModeTokens: Readonly<
-  Record<
-    WidgetColorMode,
-    {
-      ink: string;
-      paper: string;
-      surface: string;
-      muted: string;
-      line: string;
-      accentInk: string;
-      hover: string;
-      fieldLine: string;
-    }
-  >
-> = {
-  light: {
-    ink: '#1b211e',
-    paper: '#f7f6f1',
-    surface: '#ffffff',
-    muted: '#687069',
-    line: '#d9ddd7',
-    accentInk: '#101713',
-    hover: '#f0f2ef',
-    fieldLine: '#cbd1cb',
-  },
-  dark: {
-    ink: '#f5f7f6',
-    paper: '#1b241f',
-    surface: '#252f29',
-    muted: '#bdc8c1',
-    line: '#46554c',
-    accentInk: '#101713',
-    hover: '#313e36',
-    fieldLine: '#64746a',
-  },
-};
 const agentFlowArtworkUrls: Readonly<Record<WidgetTheme, string>> = {
   'hot-pink': new URL('./agent-flow-diagram-hot-pink.webp', import.meta.url).href,
   blue: new URL('./agent-flow-diagram-blue.webp', import.meta.url).href,
@@ -173,7 +102,7 @@ interface RenderedMessage {
 
 class FormationChatWidget extends HTMLElement {
   static get observedAttributes(): string[] {
-    return ['color-mode'];
+    return ['color-mode', 'theme'];
   }
 
   private readonly root = this.attachShadow({ mode: 'open' });
@@ -368,9 +297,14 @@ class FormationChatWidget extends HTMLElement {
   }
 
   attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
-    if (name !== 'color-mode' || oldValue === newValue) return;
-    this.widgetColorMode = normalizeColorMode(newValue);
-    if (this.root.childNodes.length > 0) this.applyAppearance();
+    if (oldValue === newValue) return;
+    if (name === 'color-mode') this.widgetColorMode = normalizeColorMode(newValue);
+    else if (name === 'theme') this.widgetTheme = normalizeTheme(newValue);
+    else return;
+    if (this.root.childNodes.length > 0) {
+      this.applyAppearance();
+      if (name === 'theme') this.refreshProfiles();
+    }
   }
 
   private bind(): void {
@@ -690,25 +624,25 @@ class FormationChatWidget extends HTMLElement {
   }
 
   private applyAppearance(): void {
-    const theme = themeTokens[this.widgetTheme];
-    const mode = colorModeTokens[this.widgetColorMode];
+    const appearance = resolveWidgetAppearance(this.widgetTheme, this.widgetColorMode);
     this.dataset.widgetTheme = this.widgetTheme;
     this.dataset.colorMode = this.widgetColorMode;
     this.style.colorScheme = this.widgetColorMode;
-    this.style.setProperty('--chat-ink', mode.ink);
-    this.style.setProperty('--chat-paper', mode.paper);
-    this.style.setProperty('--chat-surface', mode.surface);
-    this.style.setProperty('--chat-muted', mode.muted);
-    this.style.setProperty('--chat-line', mode.line);
-    this.style.setProperty('--chat-accent-ink', mode.accentInk);
-    this.style.setProperty('--chat-hover', mode.hover);
-    this.style.setProperty('--chat-field-line', mode.fieldLine);
-    this.style.setProperty('--chat-accent', theme.accent);
-    this.style.setProperty(
-      '--chat-accent-strong',
-      this.widgetColorMode === 'dark' ? theme.accentStrongDark : theme.accentStrong,
-    );
-    this.style.setProperty('--chat-dark', theme.dark);
+    this.style.setProperty('--chat-ink', appearance.ink);
+    this.style.setProperty('--chat-paper', appearance.paper);
+    this.style.setProperty('--chat-surface', appearance.surface);
+    this.style.setProperty('--chat-muted', appearance.muted);
+    this.style.setProperty('--chat-line', appearance.line);
+    this.style.setProperty('--chat-accent-ink', appearance.accentInk);
+    this.style.setProperty('--chat-hover', appearance.hover);
+    this.style.setProperty('--chat-field-line', appearance.fieldLine);
+    this.style.setProperty('--chat-send', appearance.send);
+    this.style.setProperty('--chat-send-ink', appearance.sendInk);
+    this.style.setProperty('--chat-panel-line', appearance.panelLine);
+    this.style.setProperty('--chat-panel-inset', appearance.panelInset);
+    this.style.setProperty('--chat-accent', appearance.accent);
+    this.style.setProperty('--chat-accent-strong', appearance.accentStrong);
+    this.style.setProperty('--chat-dark', appearance.dark);
     const artwork = this.root.querySelector<HTMLImageElement>('.artwork-frame img');
     if (artwork) artwork.src = agentFlowArtworkUrls[this.widgetTheme];
   }

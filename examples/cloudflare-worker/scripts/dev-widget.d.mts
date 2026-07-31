@@ -1,6 +1,7 @@
 import type { Server } from 'node:http';
 
 export interface WidgetPreviewServer extends Server {
+  closePreviewStreams(): void;
   notifyReload(): void;
 }
 

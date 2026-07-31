@@ -12,10 +12,35 @@ const exampleDirectory = join(scriptDirectory, '..');
 const siteDirectory = join(exampleDirectory, 'site');
 const defaultAssetDirectory = join(exampleDirectory, 'dist/site');
 const agentLabels = { support: 'Support', sales: 'Sales' };
+const widgetStyles = {
+  'hot-pink': 'Hot pink',
+  blue: 'Blue',
+  'dark-green': 'Dark green',
+  light: 'Light',
+  'rgb-neon': 'RGB neon',
+};
+const standardPreviewResponse = [
+  '## Markdown preview',
+  '',
+  'This shorter reply includes **bold**, _italic_, and `inline code` while still giving the message bubble enough content to wrap naturally.',
+  '',
+  '```ts',
+  'const preview = "ready";',
+  '```',
+  '',
+  '| Example | Markdown |',
+  '| --- | --- |',
+  '| Emphasis | **bold text** |',
+  '| Code | `preview()` |',
+  '',
+  'Send another message to keep building the transcript for scrolling and print tests.',
+].join('\n');
 
 export function createWidgetPreviewServer({ assetDirectory = defaultAssetDirectory } = {}) {
   /** @type {Set<import('node:http').ServerResponse>} */
   const reloadClients = new Set();
+  /** @type {Map<string, ReturnType<typeof createConversationState>>} */
+  const conversationStates = new Map();
   const server = createServer(async (request, response) => {
     try {
       const origin = requestOrigin(request);
@@ -56,11 +81,73 @@ export function createWidgetPreviewServer({ assetDirectory = defaultAssetDirecto
   server.once('close', () => {
     for (const client of reloadClients) client.end();
     reloadClients.clear();
+    closeConversationStreams(conversationStates);
   });
   server.notifyReload = () => {
     for (const client of reloadClients) client.write('data: reload\n\n');
   };
+  server.closePreviewStreams = () => closeConversationStreams(conversationStates);
   return server;
+
+  function stateFor(agent) {
+    let state = conversationStates.get(agent);
+    if (!state) {
+      state = createConversationState(agent);
+      conversationStates.set(agent, state);
+    }
+    return state;
+  }
+
+  async function mockChatCoreResponse(request, response, url) {
+    const agent = previewAgent(request, url);
+    const state = stateFor(agent);
+    const { conversation } = state;
+    const body = await readJsonBody(request);
+
+    if (url.pathname === '/v1/sessions' && request.method === 'POST') {
+      sendJson(response, 200, {
+        accessToken: `local-preview-token-${agent}`,
+        tokenType: 'Bearer',
+        expiresAt: '2099-01-01T00:00:00.000Z',
+        tenantId: 'local-widget-preview',
+        siteId: 'local-widget-preview',
+        agentRef: conversation.agentRef,
+        principal: { kind: 'anonymous', principalId: `local-principal-${agent}` },
+        sessionId: `local-session-${agent}`,
+        browserIdentity: `local-browser-${agent}`,
+      });
+      return;
+    }
+    if (url.pathname === '/v1/conversations' && request.method === 'POST') {
+      sendJson(response, 201, conversation);
+      return;
+    }
+    if (url.pathname === `/v1/conversations/${conversation.conversationId}`) {
+      sendJson(response, 200, conversation);
+      return;
+    }
+    if (
+      url.pathname === `/v1/conversations/${conversation.conversationId}/messages` &&
+      request.method === 'GET'
+    ) {
+      sendJson(response, 200, { data: state.messages, pagination: { hasMore: false } });
+      return;
+    }
+    if (
+      url.pathname === `/v1/conversations/${conversation.conversationId}/messages` &&
+      request.method === 'POST'
+    ) {
+      const exchange = appendExchange(state, body);
+      sendJson(response, 201, exchange.userMessage);
+      publishEvents(state, exchange.events);
+      return;
+    }
+    if (url.pathname === `/v1/conversations/${conversation.conversationId}/events`) {
+      openEventStream(request, response, state);
+      return;
+    }
+    sendJson(response, 404, { error: { code: 'NOT_FOUND', message: 'Not found.' } });
+  }
 }
 
 async function startWidgetPreview() {
@@ -117,6 +204,7 @@ async function startWidgetPreview() {
   function stop() {
     clearTimeout(buildTimer);
     sourceWatcher.close();
+    server.closePreviewStreams();
     server.close(() => process.exit(0));
   }
 }
@@ -166,57 +254,6 @@ function widgetConfiguration(response, url, origin) {
   });
 }
 
-async function mockChatCoreResponse(request, response, url) {
-  const agent = previewAgent(request, url);
-  const agentRef = `local-${agent}`;
-  const conversation = conversationFor(agent);
-  const body = await readJsonBody(request);
-
-  if (url.pathname === '/v1/sessions' && request.method === 'POST') {
-    sendJson(response, 200, {
-      accessToken: `local-preview-token-${agent}`,
-      tokenType: 'Bearer',
-      expiresAt: '2099-01-01T00:00:00.000Z',
-      tenantId: 'local-widget-preview',
-      siteId: 'local-widget-preview',
-      agentRef,
-      principal: { kind: 'anonymous', principalId: `local-principal-${agent}` },
-      sessionId: `local-session-${agent}`,
-      browserIdentity: `local-browser-${agent}`,
-    });
-    return;
-  }
-  if (url.pathname === '/v1/conversations' && request.method === 'POST') {
-    sendJson(response, 201, conversation);
-    return;
-  }
-  if (url.pathname === `/v1/conversations/${conversation.conversationId}`) {
-    sendJson(response, 200, conversation);
-    return;
-  }
-  if (
-    url.pathname === `/v1/conversations/${conversation.conversationId}/messages` &&
-    request.method === 'GET'
-  ) {
-    sendJson(response, 200, { data: [], pagination: { hasMore: false } });
-    return;
-  }
-  if (
-    url.pathname === `/v1/conversations/${conversation.conversationId}/messages` &&
-    request.method === 'POST'
-  ) {
-    sendJson(response, 201, messageFor(conversation, body));
-    return;
-  }
-  if (url.pathname === `/v1/conversations/${conversation.conversationId}/events`) {
-    send(response, 200, eventStream(conversation), 'text/event-stream; charset=utf-8', {
-      'Cache-Control': 'no-cache',
-    });
-    return;
-  }
-  sendJson(response, 404, { error: { code: 'NOT_FOUND', message: 'Not found.' } });
-}
-
 async function readJsonBody(request) {
   if (!request.headers['content-type']?.includes('application/json')) return {};
   const chunks = [];
@@ -250,39 +287,101 @@ function conversationFor(agent) {
   };
 }
 
-function messageFor(conversation, body) {
-  const agent = conversation.agentRef.replace(/^local-/, '');
-  return {
-    messageId: `local-message-${conversation.agentRef}`,
-    conversationId: conversation.conversationId,
-    sequence: 1,
-    participantId: `local-user-${agent}`,
-    role: 'user',
-    status: 'completed',
-    parts: Array.isArray(body.parts) ? body.parts : [],
-    createdAt: '2026-07-29T12:00:01.000Z',
-    completedAt: '2026-07-29T12:00:01.000Z',
-  };
-}
-
 function previewAgent(request, url) {
   if (url.searchParams.get('agent') === 'sales') return 'sales';
   return request.headers.authorization === 'Bearer local-preview-token-sales' ? 'sales' : 'support';
 }
 
-function eventStream(conversation) {
-  const event = {
-    eventId: `local-event-${conversation.agentRef}`,
-    sequence: 1,
-    type: 'message.delta',
-    occurredAt: '2026-07-29T12:00:02.000Z',
-    visibility: 'public',
-    conversationId: conversation.conversationId,
-    runId: `local-run-${conversation.agentRef}`,
-    messageId: `local-assistant-${conversation.agentRef}`,
-    data: { delta: 'Hello from the local widget preview.' },
+function createConversationState(agent) {
+  return { conversation: conversationFor(agent), messages: [], events: [], clients: new Set() };
+}
+
+function appendExchange(state, body) {
+  const exchangeNumber = state.messages.length / 2 + 1;
+  const agent = state.conversation.agentRef.replace(/^local-/, '');
+  const occurredAt = new Date().toISOString();
+  const userMessage = {
+    messageId: `local-user-message-${agent}-${exchangeNumber}`,
+    conversationId: state.conversation.conversationId,
+    sequence: state.messages.length + 1,
+    participantId: `local-user-${agent}`,
+    role: 'user',
+    status: 'completed',
+    parts: Array.isArray(body.parts) ? body.parts : [],
+    createdAt: occurredAt,
+    completedAt: occurredAt,
   };
+  const assistantMessage = {
+    messageId: `local-assistant-message-${agent}-${exchangeNumber}`,
+    conversationId: state.conversation.conversationId,
+    sequence: state.messages.length + 2,
+    participantId: `local-agent-${agent}`,
+    role: 'assistant',
+    status: 'completed',
+    parts: [{ type: 'text', text: standardPreviewResponse }],
+    createdAt: occurredAt,
+    completedAt: occurredAt,
+  };
+  state.messages.push(userMessage, assistantMessage);
+  const runId = `local-run-${agent}-${exchangeNumber}`;
+  let nextEventSequence = state.events.length + 1;
+  const common = {
+    occurredAt,
+    visibility: 'public',
+    conversationId: state.conversation.conversationId,
+    runId,
+  };
+  const event = (type, data, messageId) => ({
+    ...common,
+    eventId: `local-event-${agent}-${nextEventSequence}`,
+    sequence: nextEventSequence++,
+    type,
+    ...(messageId ? { messageId } : {}),
+    data,
+  });
+  const events = [
+    event('run.started', { agentRef: state.conversation.agentRef }),
+    event('message.started', { role: 'assistant' }, assistantMessage.messageId),
+    event('message.delta', { delta: standardPreviewResponse }, assistantMessage.messageId),
+    event('message.completed', { parts: assistantMessage.parts }, assistantMessage.messageId),
+    event('run.completed', {}),
+  ];
+  state.events.push(...events);
+  return { userMessage, events };
+}
+
+function openEventStream(request, response, state) {
+  response.writeHead(200, {
+    'Cache-Control': 'no-cache',
+    Connection: 'keep-alive',
+    'Content-Type': 'text/event-stream; charset=utf-8',
+  });
+  response.write(': connected\n\n');
+  const lastEventId = request.headers['last-event-id'];
+  const lastIndex =
+    typeof lastEventId === 'string'
+      ? state.events.findIndex((event) => event.eventId === lastEventId)
+      : -1;
+  for (const event of state.events.slice(lastIndex + 1)) response.write(eventFrame(event));
+  state.clients.add(response);
+  response.once('close', () => state.clients.delete(response));
+}
+
+function publishEvents(state, events) {
+  for (const client of state.clients) {
+    for (const event of events) client.write(eventFrame(event));
+  }
+}
+
+function eventFrame(event) {
   return `id: ${event.eventId}\nevent: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`;
+}
+
+function closeConversationStreams(states) {
+  for (const state of states.values()) {
+    for (const client of state.clients) client.end();
+    state.clients.clear();
+  }
 }
 
 async function sendStaticAsset(response, assetDirectory, pathname) {
@@ -313,15 +412,23 @@ function hostPage(searchParams) {
     'bottom-right',
   );
   return `<!doctype html>
-<html lang="en">
+<html lang="en" data-color-mode="${colorMode}">
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Shared widget local preview</title>
+    <link rel="icon" href="/favicon.svg">
     <style>
-      body { margin: 0; min-height: 100vh; background: #f6f1e7; color: #29241f; font: 16px/1.5 system-ui, sans-serif; }
+      :root { color-scheme: light; --preview-bg: #f6f1e7; --preview-control: #fffaf1; --preview-line: #c9bdab; --preview-text: #29241f; }
+      :root[data-color-mode="dark"] { color-scheme: dark; --preview-bg: #171513; --preview-control: #25211e; --preview-line: #51483f; --preview-text: #f6f1e7; }
+      body { margin: 0; min-height: 100vh; background: var(--preview-bg); color: var(--preview-text); font: 16px/1.5 system-ui, sans-serif; }
       main { max-width: 48rem; padding: 4rem 2rem; }
-      code { background: #e8dfd0; border-radius: .25rem; padding: .1rem .35rem; }
+      code { background: color-mix(in srgb, var(--preview-text) 10%, transparent); border-radius: .25rem; padding: .1rem .35rem; }
+      .preview-controls { align-items: end; display: flex; flex-wrap: wrap; gap: 1rem 1.5rem; margin-top: 2rem; }
+      .control { display: grid; font-size: .85rem; font-weight: 650; gap: .35rem; }
+      select { background: var(--preview-control); border: 1px solid var(--preview-line); border-radius: .4rem; color: inherit; font: inherit; min-width: 10rem; padding: .55rem .75rem; }
+      .mode-switch { align-items: center; cursor: pointer; display: flex; font-size: .9rem; font-weight: 650; gap: .55rem; min-height: 2.55rem; }
+      .mode-switch input { height: 1.15rem; margin: 0; width: 1.15rem; }
     </style>
   </head>
   <body>
@@ -329,11 +436,46 @@ function hostPage(searchParams) {
       <h1>Shared widget local preview</h1>
       <p>This page uses the current uncommitted shared widget bundle and deterministic mock replies.</p>
       <p>Edit files under <code>examples/cloudflare-worker/site</code>; this page reloads after a successful rebuild.</p>
+      <form class="preview-controls" aria-label="Widget preview controls">
+        <label class="control" for="widget-style"><span>Widget style</span>
+          <select id="widget-style" name="theme">${styleOptions(theme)}</select>
+        </label>
+        <label class="mode-switch" for="dark-mode">
+          <input id="dark-mode" type="checkbox"${colorMode === 'dark' ? ' checked' : ''}>
+          <span>Dark mode</span>
+        </label>
+      </form>
     </main>
     <script type="module" src="/widget.js" data-widget-key="main-chat" data-agent="${agent}" data-theme="${theme}" data-color-mode="${colorMode}" data-launcher="${launcher}" data-placement="${placement}" data-privacy-policy-url="/privacy" async></script>
+    <script>
+      const styleControl = document.querySelector("#widget-style");
+      const darkModeControl = document.querySelector("#dark-mode");
+      const updatePreview = (name, value, attributeName) => {
+        const url = new URL(location.href);
+        url.searchParams.set(name, value);
+        history.replaceState(null, "", url);
+        const widget = document.querySelector("formation-chat-widget");
+        if (widget) widget.setAttribute(attributeName, value);
+      };
+      styleControl.addEventListener("change", () => updatePreview("theme", styleControl.value, "theme"));
+      darkModeControl.addEventListener("change", () => {
+        const colorMode = darkModeControl.checked ? "dark" : "light";
+        document.documentElement.dataset.colorMode = colorMode;
+        updatePreview("colorMode", colorMode, "color-mode");
+      });
+    </script>
     <script>new EventSource("/__dev/events").onmessage = () => location.reload();</script>
   </body>
 </html>`;
+}
+
+function styleOptions(selected) {
+  return Object.entries(widgetStyles)
+    .map(
+      ([value, label]) =>
+        `<option value="${value}"${value === selected ? ' selected' : ''}>${label}</option>`,
+    )
+    .join('');
 }
 
 function safeParameter(value, allowed, fallback) {

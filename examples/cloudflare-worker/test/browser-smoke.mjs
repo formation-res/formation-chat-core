@@ -261,6 +261,17 @@ async function exerciseAlias(context, agent, label, options = {}) {
   await widget.locator('.back').click();
   assert.equal(await widget.getAttribute('color-mode'), 'light');
   await widget.evaluate((element) => element.setAttribute('color-mode', 'dark'));
+  const expectedDarkAppearance = {
+    ink: '#fff1f7',
+    paper: '#24131c',
+    surface: '#351c28',
+    muted: '#d8a9bc',
+    line: '#694156',
+    accentInk: '#2a0717',
+    panel: 'rgb(36, 19, 28)',
+    welcome: 'rgb(53, 28, 40)',
+    composer: 'rgb(53, 28, 40)',
+  };
   assert.deepEqual(
     await widget.evaluate((element) => {
       const panel = element.shadowRoot?.querySelector('.panel');
@@ -284,15 +295,7 @@ async function exerciseAlias(context, agent, label, options = {}) {
     }),
     {
       datasetMode: 'dark',
-      ink: '#f5f7f6',
-      paper: '#1b241f',
-      surface: '#252f29',
-      muted: '#bdc8c1',
-      line: '#46554c',
-      accentInk: '#101713',
-      panel: 'rgb(27, 36, 31)',
-      welcome: 'rgb(37, 47, 41)',
-      composer: 'rgb(37, 47, 41)',
+      ...expectedDarkAppearance,
     },
   );
   await widget.evaluate((element) => element.setAttribute('color-mode', 'unknown'));
@@ -363,7 +366,7 @@ async function exerciseAlias(context, agent, label, options = {}) {
       const style = globalThis.getComputedStyle(button);
       return { backgroundColor: style.backgroundColor, color: style.color };
     }),
-    { backgroundColor: 'rgb(255, 117, 173)', color: 'rgb(27, 33, 30)' },
+    { backgroundColor: 'rgb(255, 117, 173)', color: 'rgb(16, 23, 19)' },
   );
   let agentAvatarIndex = Number(
     await widget.locator('.header-avatar').getAttribute('data-agent-avatar-index'),

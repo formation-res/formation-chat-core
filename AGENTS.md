@@ -29,3 +29,16 @@ Read these files before changing code:
 - Update the implementation plan when a task is completed or materially changed.
 - Document any new public endpoint, event, or connector behavior with the code.
 - State what changed, what remains, and any decision the next session must make.
+
+## Shipping shorthand
+
+- `cp` means run `npm run cp -- --message "type: summary" -- <files...>` to verify, commit only
+  the named files, and push the current branch.
+- `cpd` means run `npm run cpd -- --message "type: summary" -- <files...>` on `main` to do the
+  same work, wait for the backend deployment workflow, deploy the production Worker, and verify
+  production readiness and static assets.
+- Use `--staged` instead of file paths only when the staged set has already been deliberately
+  reviewed. Do not manually reproduce steps already owned by `scripts/release.mjs`.
+- When a change adds or alters a deployable service, workflow, migration requirement, production
+  configuration, health check, or public asset, update `scripts/release-plan.mjs`, its tests, and
+  the release implementation in the same change.

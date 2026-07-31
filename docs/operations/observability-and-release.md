@@ -9,6 +9,30 @@ and cookie headers.
 
 ## Release
 
+Routine agent-assisted shipping uses the repository-owned release command. It stages only an
+explicit file list, checks the staged patch, runs the local CI gates, commits, and pushes:
+
+```sh
+npm run cp -- --message "fix: describe the change" -- path/to/file another/file
+```
+
+For a production release from `main`, use `cpd`. It additionally waits for the container publish
+and clawd deployment workflow, checks backend readiness, deploys the Worker with the ignored
+production Wrangler configuration and `--keep-vars`, then compares cache-busted production assets
+with the local build:
+
+```sh
+npm run cpd -- --message "fix: describe the change" -- path/to/file another/file
+```
+
+Use `--staged` only for an already reviewed staging area, and `--dry-run` to print the selected
+plan without changing Git or production. Deployment targets and checks live in
+`scripts/release-plan.mjs`; any new deployable surface or required release check must update that
+plan, its tests, and `scripts/release.mjs` in the same change.
+
+The command automates routine release execution. The broader checklist below still applies when a
+change introduces migrations, modifies recovery behavior, or otherwise needs a rehearsed release.
+
 1. Review the diff, accepted ADRs, generated contract drift, migration order, and rollback notes.
 2. Run `npm ci`, `npm test`, `npm run typecheck`, `npm run lint`, and `npm run build`.
 3. Run `npm audit --omit=dev --audit-level=high` and a repository secret scanner such as Gitleaks.

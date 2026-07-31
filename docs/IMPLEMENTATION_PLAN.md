@@ -899,6 +899,22 @@ starts it, builds and runs Chat Core, provisions the example, serves the visitor
 admin-route-only dashboard proxy, and prints a scoped in-memory dashboard token. Ctrl+C and
 `dev:local:stop` shut down owned processes without removing local database data.
 
+**Shared-widget preview follow-up:** 2026-07-31. The `dev:widget` mock keeps its SSE connection
+open instead of driving the browser client's reconnect loop. It retains repeated user and assistant
+messages in memory for the lifetime of the preview server and returns a representative Markdown
+response so scrolling and printed transcripts can be tested locally. The host page can switch
+between every widget style and light/dark color mode through its query-backed preview controls
+without remounting the open widget or losing its transcript and draft. Light mode retains one
+shared neutral palette; dark mode derives the panel, message, input, border, text, metadata, and
+action colors from the selected style.
+
+**Release-command follow-up:** 2026-07-31. Root `cp` and `cpd` commands now own the repeatable
+verify, scoped staging, commit, and push flow. `cpd` is restricted to `main`, waits for the existing
+container deployment workflow before deploying the Worker, preserves remote Worker variables, and
+verifies backend readiness plus cache-busted production assets against the local build. The
+repository working agreement requires deployment targets and checks to evolve with deployable
+surfaces instead of being reconstructed ad hoc during each release.
+
 ### Release checkpoint
 
 - Contract artifacts have no drift from runtime behavior.
