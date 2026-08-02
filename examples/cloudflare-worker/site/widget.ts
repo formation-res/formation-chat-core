@@ -20,6 +20,7 @@ import {
   AVATARS_PER_SHEET as USER_AVATARS_PER_SHEET,
   USER_AVATAR_COUNT,
   type AvatarRole,
+  type UserAvatarSheet,
   avatarCoordinates,
   avatarStorageKey,
   selectStoredConversationAvatars,
@@ -35,11 +36,33 @@ const agentSpriteUrls: Readonly<Record<WidgetTheme, string>> = {
   light: new URL('./formation-agent-sprite-light.webp', import.meta.url).href,
   'rgb-neon': new URL('./formation-agent-sprite-rgb-neon.webp', import.meta.url).href,
 };
-const userSpriteUrls = {
-  people: new URL('./formation-user-sprite.webp', import.meta.url).href,
-  'people-alt': new URL('./formation-user-sprite-alt.webp', import.meta.url).href,
-  animals: new URL('./formation-user-animal-sprite.webp', import.meta.url).href,
-} as const;
+const userSpriteUrls: Readonly<Record<WidgetTheme, Readonly<Record<UserAvatarSheet, string>>>> = {
+  'hot-pink': {
+    people: new URL('./formation-user-sprite-hot-pink-v2.webp', import.meta.url).href,
+    'people-alt': new URL('./formation-user-sprite-alt-hot-pink-v2.webp', import.meta.url).href,
+    animals: new URL('./formation-user-animal-sprite-hot-pink-v2.webp', import.meta.url).href,
+  },
+  blue: {
+    people: new URL('./formation-user-sprite-blue-v2.webp', import.meta.url).href,
+    'people-alt': new URL('./formation-user-sprite-alt-blue-v2.webp', import.meta.url).href,
+    animals: new URL('./formation-user-animal-sprite-blue-v2.webp', import.meta.url).href,
+  },
+  'dark-green': {
+    people: new URL('./formation-user-sprite-dark-green-v2.webp', import.meta.url).href,
+    'people-alt': new URL('./formation-user-sprite-alt-dark-green-v2.webp', import.meta.url).href,
+    animals: new URL('./formation-user-animal-sprite-dark-green-v2.webp', import.meta.url).href,
+  },
+  light: {
+    people: new URL('./formation-user-sprite-light-v2.webp', import.meta.url).href,
+    'people-alt': new URL('./formation-user-sprite-alt-light-v2.webp', import.meta.url).href,
+    animals: new URL('./formation-user-animal-sprite-light-v2.webp', import.meta.url).href,
+  },
+  'rgb-neon': {
+    people: new URL('./formation-user-sprite-rgb-neon-v2.webp', import.meta.url).href,
+    'people-alt': new URL('./formation-user-sprite-alt-rgb-neon-v2.webp', import.meta.url).href,
+    animals: new URL('./formation-user-animal-sprite-rgb-neon-v2.webp', import.meta.url).href,
+  },
+};
 const agentFlowArtworkUrls: Readonly<Record<WidgetTheme, string>> = {
   'hot-pink': new URL('./agent-flow-diagram-hot-pink.webp', import.meta.url).href,
   blue: new URL('./agent-flow-diagram-blue.webp', import.meta.url).href,
@@ -972,7 +995,7 @@ class FormationChatWidget extends HTMLElement {
 
   private profileSpriteUrl(role: AvatarRole, index: number): string {
     if (role === 'agent') return agentSpriteUrls[this.widgetTheme];
-    return userSpriteUrls[userAvatarSheet(index).sheet];
+    return userSpriteUrls[this.widgetTheme][userAvatarSheet(index).sheet];
   }
 
   private openAvatarPicker(role: AvatarRole): void {

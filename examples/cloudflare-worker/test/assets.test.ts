@@ -40,9 +40,34 @@ describe('Cloudflare gateway static assets', () => {
     expect(source).toContain("new URL('./formation-agent-sprite-dark-green.webp'");
     expect(source).toContain("new URL('./formation-agent-sprite-light.webp'");
     expect(source).toContain("new URL('./formation-agent-sprite-rgb-neon.webp'");
-    expect(source).toContain("new URL('./formation-user-sprite.webp'");
-    expect(source).toContain("new URL('./formation-user-sprite-alt.webp'");
-    expect(source).toContain("new URL('./formation-user-animal-sprite.webp'");
+    const userSpriteFiles = ['hot-pink', 'blue', 'dark-green', 'light', 'rgb-neon'].flatMap(
+      (theme) => [
+        `formation-user-sprite-${theme}-v2.webp`,
+        `formation-user-sprite-alt-${theme}-v2.webp`,
+        `formation-user-animal-sprite-${theme}-v2.webp`,
+      ],
+    );
+    const archivedUserSpriteFiles = [
+      'formation-user-sprite-hot-pink-v1.webp',
+      'formation-user-sprite-alt-hot-pink-v1.webp',
+      'formation-user-animal-sprite-hot-pink-v1.webp',
+    ];
+    for (const file of archivedUserSpriteFiles) {
+      await expect(stat(new URL(`../site/${file}`, import.meta.url))).resolves.toEqual(
+        expect.objectContaining({ size: expect.any(Number) }),
+      );
+      expect(buildScript).not.toContain(`'${file}'`);
+      expect(headers).not.toContain(`/${file}`);
+    }
+    for (const file of userSpriteFiles) {
+      expect(source).toContain(`new URL('./${file}'`);
+      expect(buildScript).toContain(`'${file}'`);
+      expect(headers).toMatch(
+        new RegExp(
+          `/${file.replaceAll('.', '\\.')}[\\s\\S]*Cross-Origin-Resource-Policy: cross-origin`,
+        ),
+      );
+    }
     expect(source).toContain("new URL('./agent-flow-diagram-hot-pink.webp'");
     expect(source).toContain("new URL('./agent-flow-diagram-blue.webp'");
     expect(source).toContain("new URL('./agent-flow-diagram-dark-green.webp'");
@@ -87,9 +112,6 @@ describe('Cloudflare gateway static assets', () => {
     expect(buildScript).toContain("'formation-agent-sprite-dark-green.webp'");
     expect(buildScript).toContain("'formation-agent-sprite-light.webp'");
     expect(buildScript).toContain("'formation-agent-sprite-rgb-neon.webp'");
-    expect(buildScript).toContain("'formation-user-sprite.webp'");
-    expect(buildScript).toContain("'formation-user-sprite-alt.webp'");
-    expect(buildScript).toContain("'formation-user-animal-sprite.webp'");
     expect(buildScript).toContain("'agent-flow-diagram-hot-pink.webp'");
     expect(buildScript).toContain("'agent-flow-diagram-blue.webp'");
     expect(buildScript).toContain("'agent-flow-diagram-dark-green.webp'");
@@ -104,15 +126,6 @@ describe('Cloudflare gateway static assets', () => {
     expect(headers).toMatch(/\/widget\.js[\s\S]*Access-Control-Allow-Origin: \*/);
     expect(headers).toMatch(
       /\/formation-agent-sprite-v2\.webp[\s\S]*Cross-Origin-Resource-Policy: cross-origin/,
-    );
-    expect(headers).toMatch(
-      /\/formation-user-sprite\.webp[\s\S]*Cross-Origin-Resource-Policy: cross-origin/,
-    );
-    expect(headers).toMatch(
-      /\/formation-user-sprite-alt\.webp[\s\S]*Cross-Origin-Resource-Policy: cross-origin/,
-    );
-    expect(headers).toMatch(
-      /\/formation-user-animal-sprite\.webp[\s\S]*Cross-Origin-Resource-Policy: cross-origin/,
     );
     expect(headers).toMatch(
       /\/agent-flow-diagram-hot-pink\.webp[\s\S]*Cross-Origin-Resource-Policy: cross-origin/,

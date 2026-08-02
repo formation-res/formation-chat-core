@@ -545,6 +545,15 @@ both color and portrait artwork. Hot-pink replaces beige as the default, while l
 `dark-green`, `light`, and `rgb-neon`. Visitors now choose from 108 profiles split into two diverse
 people sections and a separate animal section with common and exotic species.
 
+**Themed visitor avatar follow-up:** 2026-08-02. Visitor avatars now use theme-specific sprites for
+hot-pink, blue, dark-green, light, and rgb-neon while preserving one stable selection index across
+theme changes. Every theme ships two 6-by-6 human sheets and one 6-by-6 animal sheet. The regenerated
+human library emphasizes visibly different combinations of gender presentation, age, skin tone,
+hair, facial features, and accessories. Original hot-pink visitor sheets remain tracked as `v1`;
+the current theme-specific set is explicitly versioned `v2`. Only the 15 active `v2` assets enter
+the Worker build, and the browser requests only the three sheets belonging to the selected theme.
+The release check verifies all 15 active public user-sprite assets.
+
 **Themed flow artwork and illustrated print transcript:** 2026-07-29. The About diagram now has
 tightly cropped hot-pink, blue, dark-green, light, and rgb-neon variants selected with the widget
 theme. Its card border and highlighted caption strip are removed, allowing the maximized About page

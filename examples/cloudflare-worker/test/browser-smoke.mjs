@@ -143,7 +143,7 @@ try {
     .map(({ body }) => body.agentAlias)
     .sort();
   assert.equal(sessionAliases.filter((alias) => alias === 'sales').length, 2);
-  assert.equal(sessionAliases.filter((alias) => alias === 'support').length, 7);
+  assert.equal(sessionAliases.filter((alias) => alias === 'support').length, 8);
   assert.ok(
     requests.every(
       ({ body }) =>
@@ -170,8 +170,8 @@ try {
   const analyticsTypes = analyticsEvents.map(({ body }) => body.type);
   assert.equal(analyticsTypes.filter((type) => type === 'chat_conversation_length').length, 2);
   assert.equal(analyticsTypes.filter((type) => type === 'chat_conversation_started').length, 2);
-  assert.equal(analyticsTypes.filter((type) => type === 'chat_message_sent').length, 2);
-  assert.equal(analyticsTypes.filter((type) => type === 'chat_session_started').length, 9);
+  assert.equal(analyticsTypes.filter((type) => type === 'chat_message_sent').length, 7);
+  assert.equal(analyticsTypes.filter((type) => type === 'chat_session_started').length, 10);
   assert.ok(
     analyticsEvents.every(
       ({ body, origin }) =>
@@ -361,6 +361,12 @@ async function exerciseAlias(context, agent, label, options = {}) {
     };
   });
   assert.ok(headerAlignment.headerRight - headerAlignment.actionsRight <= 12);
+  await page.mouse.move(0, 0);
+  await widget
+    .locator('.send')
+    .evaluate((button) =>
+      Promise.all(button.getAnimations().map((animation) => animation.finished)),
+    );
   assert.deepEqual(
     await widget.locator('.send').evaluate((button) => {
       const style = globalThis.getComputedStyle(button);
@@ -498,7 +504,7 @@ async function exerciseAlias(context, agent, label, options = {}) {
       await widget
         .locator('.message-avatar.user-sprite')
         .evaluate((avatar) => globalThis.getComputedStyle(avatar).backgroundImage)
-    ).match(/formation-user-(?:sprite|sprite-alt|animal-sprite)\.webp/),
+    ).match(/formation-user-(?:sprite|sprite-alt|animal-sprite)-hot-pink-v2\.webp/),
   );
   const replacementUserIndex = (userAvatarIndex + 1) % 108;
   await widget.locator('.message-avatar.user-sprite').click();
@@ -745,12 +751,53 @@ async function exerciseAlias(context, agent, label, options = {}) {
 
 async function verifyThemeArtwork(context) {
   const page = await context.newPage();
+  const requestedUserSprites = [];
+  page.on('request', (request) => {
+    const pathname = new URL(request.url()).pathname;
+    if (pathname.includes('/formation-user-')) requestedUserSprites.push(pathname);
+  });
   await page.setViewportSize({ width: 1024, height: 768 });
-  for (const theme of ['blue', 'dark-green', 'light', 'rgb-neon']) {
+  for (const theme of ['hot-pink', 'blue', 'dark-green', 'light', 'rgb-neon']) {
+    requestedUserSprites.length = 0;
+    const expectedUserSprites = [
+      `/formation-user-sprite-${theme}-v2.webp`,
+      `/formation-user-sprite-alt-${theme}-v2.webp`,
+      `/formation-user-animal-sprite-${theme}-v2.webp`,
+    ];
+    const userSpriteResponses = expectedUserSprites.map((pathname) =>
+      page.waitForResponse((response) => new URL(response.url()).pathname === pathname),
+    );
     await page.goto(`${baseUrl}/host?agent=support&theme=${theme}`, { waitUntil: 'networkidle' });
     const widget = page.locator('formation-chat-widget').first();
     await widget.locator('button.launcher').click();
     await widget.getByText('What can we help you with?').waitFor();
+    await widget.locator('textarea').fill(`Theme ${theme}`);
+    await widget.locator('textarea').press('Enter');
+    await widget.getByText(`Theme ${theme}`, { exact: true }).waitFor();
+    const userAvatar = widget.locator('.message-avatar.user-sprite');
+    const userAvatarIndex = Number(await userAvatar.getAttribute('data-user-avatar-index'));
+    await userAvatar.click();
+    for (const [index, sheet] of [
+      [0, 'sprite'],
+      [36, 'sprite-alt'],
+      [72, 'animal-sprite'],
+    ]) {
+      assert.match(
+        await widget
+          .locator(`[data-avatar-choice="${index}"]`)
+          .evaluate((avatar) => globalThis.getComputedStyle(avatar).backgroundImage),
+        new RegExp(`formation-user-${sheet}-${theme}-v2\\.webp`),
+      );
+    }
+    await Promise.all(userSpriteResponses);
+    assert.deepEqual([...new Set(requestedUserSprites)].sort(), expectedUserSprites.sort());
+    await widget.locator(`[data-avatar-choice="${userAvatarIndex}"]`).click();
+    assert.equal(
+      Number(
+        await widget.locator('.message-avatar.user-sprite').getAttribute('data-user-avatar-index'),
+      ),
+      userAvatarIndex,
+    );
     await widget.locator('.menu').click();
     await widget.getByText('About this chat', { exact: true }).click();
     const artwork = widget.locator('.artwork-frame img');
@@ -763,7 +810,11 @@ async function verifyThemeArtwork(context) {
       await widget
         .locator('.header-avatar')
         .evaluate((avatar) => globalThis.getComputedStyle(avatar).backgroundImage),
-      new RegExp(`formation-agent-sprite-${theme}\\.webp`),
+      new RegExp(
+        theme === 'hot-pink'
+          ? 'formation-agent-sprite-v2\\.webp'
+          : `formation-agent-sprite-${theme}\\.webp`,
+      ),
     );
     await widget
       .locator('[data-page="about"]')

@@ -34,15 +34,63 @@
   Access-Control-Allow-Origin: *
   Cross-Origin-Resource-Policy: cross-origin
 
-/formation-user-sprite.webp
+/formation-user-sprite-hot-pink-v2.webp
   Access-Control-Allow-Origin: *
   Cross-Origin-Resource-Policy: cross-origin
 
-/formation-user-sprite-alt.webp
+/formation-user-sprite-alt-hot-pink-v2.webp
   Access-Control-Allow-Origin: *
   Cross-Origin-Resource-Policy: cross-origin
 
-/formation-user-animal-sprite.webp
+/formation-user-animal-sprite-hot-pink-v2.webp
+  Access-Control-Allow-Origin: *
+  Cross-Origin-Resource-Policy: cross-origin
+
+/formation-user-sprite-blue-v2.webp
+  Access-Control-Allow-Origin: *
+  Cross-Origin-Resource-Policy: cross-origin
+
+/formation-user-sprite-alt-blue-v2.webp
+  Access-Control-Allow-Origin: *
+  Cross-Origin-Resource-Policy: cross-origin
+
+/formation-user-animal-sprite-blue-v2.webp
+  Access-Control-Allow-Origin: *
+  Cross-Origin-Resource-Policy: cross-origin
+
+/formation-user-sprite-dark-green-v2.webp
+  Access-Control-Allow-Origin: *
+  Cross-Origin-Resource-Policy: cross-origin
+
+/formation-user-sprite-alt-dark-green-v2.webp
+  Access-Control-Allow-Origin: *
+  Cross-Origin-Resource-Policy: cross-origin
+
+/formation-user-animal-sprite-dark-green-v2.webp
+  Access-Control-Allow-Origin: *
+  Cross-Origin-Resource-Policy: cross-origin
+
+/formation-user-sprite-light-v2.webp
+  Access-Control-Allow-Origin: *
+  Cross-Origin-Resource-Policy: cross-origin
+
+/formation-user-sprite-alt-light-v2.webp
+  Access-Control-Allow-Origin: *
+  Cross-Origin-Resource-Policy: cross-origin
+
+/formation-user-animal-sprite-light-v2.webp
+  Access-Control-Allow-Origin: *
+  Cross-Origin-Resource-Policy: cross-origin
+
+/formation-user-sprite-rgb-neon-v2.webp
+  Access-Control-Allow-Origin: *
+  Cross-Origin-Resource-Policy: cross-origin
+
+/formation-user-sprite-alt-rgb-neon-v2.webp
+  Access-Control-Allow-Origin: *
+  Cross-Origin-Resource-Policy: cross-origin
+
+/formation-user-animal-sprite-rgb-neon-v2.webp
   Access-Control-Allow-Origin: *
   Cross-Origin-Resource-Policy: cross-origin
 
